@@ -1,2 +1,0 @@
-
-checkentail x::cell<_> |- false.
