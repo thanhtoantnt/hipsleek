@@ -75,9 +75,9 @@ jobs:
           endGroup
           startGroup "fixcalc"
             git clone https://github.com/hipsleek/omega_stub.git
-            (cd omega_stub; make)
+            (cd omega_stub; git checkout 60cdae42b429; make)
             git clone https://github.com/hipsleek/fixcalc.git fixcalc_src
-            (cd fixcalc_src; make fixcalc)
+            (cd fixcalc_src; git checkout 7de7c55730f1; make fixcalc)
             echo $PWD/fixcalc_src >> $GITHUB_PATH
           endGroup
 
