@@ -45,7 +45,8 @@ opam install . --deps-only -y
 
 # --- omega (vendored) --------------------------------------------------------
 log "building omega"
-(cd omega_modified && make oc)
+# ponytail: ~/bin/g++ is a clang shim here; omega's coef_fmt string-concat needs real g++
+(cd omega_modified && make oc CC=/usr/bin/g++)
 export PATH="$PWD/omega_modified/omega_calc/obj:$PATH"
 
 # --- mona (from committed tarball, as CI) ------------------------------------
