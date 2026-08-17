@@ -12,6 +12,12 @@ mona-1.4/config.h
 fixcalc_src/
 omega_stub/
 
+# omega vendored tree builds in-place; obj/ holds only artifacts + tracked
+# makefiles (generated parser files are untracked, rebuilt from parser.y)
+omega_modified/*/obj/*
+!omega_modified/*/obj/Makefile*
+!omega_modified/*/obj/parser.y
+
 # scratch
 .envrc
 logs/
