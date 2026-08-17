@@ -53,8 +53,9 @@ PATH_add fixcalc_src
 
 ### Mona
 
+Mona source is vendored in `mona-1.4/`. Build it in place:
+
 ```sh
-tar -xvf mona-1.4-modif.tar.gz
 cd mona-1.4
 ./configure --prefix=$(pwd)
 make install
