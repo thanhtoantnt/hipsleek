@@ -1,5 +1,0 @@
-update(a,anew,ind,elm) 
-   = anew[ind]=elem 
-   & forall(i:i!=ind -> anew[i]=a[i])
-
-a[ind]=res

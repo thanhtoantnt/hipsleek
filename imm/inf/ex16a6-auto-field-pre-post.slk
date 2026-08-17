@@ -1,7 +1,0 @@
-data cell {
- int fst;
- int snd;
-}.
-
-infer [a] x::cell<_,_>@a |- x::cell<_,_>@L.
-print residue. 

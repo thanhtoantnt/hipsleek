@@ -1,5 +1,0 @@
-pred_prim ann<n:int, b:bool>.
-
-checkentail x::ann<i,b> & i=10 |- x::ann<p,q>.
-print residue.
-

@@ -1,2 +1,0 @@
-X:={[x,i,self,n]:(i+1=n & x=i+self) | (x=i+self)};
-X;

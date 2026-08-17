@@ -1,7 +1,0 @@
-relation Q(int[] a,int[] b,int r).
-
-
-infer[@arrvar,Q] htrue&res=a'[4] & aaa'=aaa & (aaa'[5])<=0  |-  emp&Q(aaa,aaa',res).
-print residue.
-
-

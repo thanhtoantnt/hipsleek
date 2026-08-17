@@ -1,4 +1,0 @@
-checkentail true & ["":a>0; "b":a>1] |- true & ["","b":a>6].
-
-//checkentail true & ["x":a>0; "b":a>1] |- true & ["x","b":a>6].
-

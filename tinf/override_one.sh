@@ -1,1 +1,0 @@
-cp -f result/$1.ss.out ref/$1.ss.ref
