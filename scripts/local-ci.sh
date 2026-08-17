@@ -16,7 +16,7 @@ if ! command -v opam >/dev/null; then
   chmod +x "$HOME/.local/bin/opam"
 fi
 
-if ! command -v ghc >/dev/null || [ "$(ghc --numeric-version 2>/dev/null)" != 9.4.8 ]; then
+if [ ! -x "$HOME/.local/ghc-9.4.8/bin/ghc" ] || [ ! -x "$HOME/.local/bin/cabal" ]; then
   log "installing ghc 9.4.8 + cabal 3.10.3.0 (downloads.haskell.org)"
   # direct bindists, no ghcup: its metadata lives on raw.githubusercontent (flaky)
   if [ ! -x "$HOME/.local/ghc-9.4.8/bin/ghc" ]; then
@@ -49,18 +49,16 @@ log "building omega"
 (cd omega_modified && make oc CC=/usr/bin/g++)
 export PATH="$PWD/omega_modified/omega_calc/obj:$PATH"
 
-# --- mona (from committed tarball, as CI) ------------------------------------
+# --- mona (vendored in-tree, source tracked) --------------------------------
 if [ ! -x mona-1.4/bin/mona ]; then
   log "building mona"
-  tar -xzf mona-1.4-modif.tar.gz
   (cd mona-1.4 && ./configure --prefix="$PWD" && make install)
 fi
 [ -f mona_predicates.mona ] || cp mona-1.4/mona_predicates.mona .
 export PATH="$PWD/mona-1.4/bin:$PATH"
 
 # --- fixcalc + haskell deps (pins match .github/workflows/test.yml) ----------
-if ! ghc-pkg list --global-package-db >/dev/null 2>&1 \
-   || ! ghc-pkg field regex-compat id >/dev/null 2>&1; then
+if ! grep -q "regex-compat" "$HOME/.ghc/x86_64-linux-9.4.8/environments/default" 2>/dev/null; then
   log "cabal lib deps"
   cabal update
   cabal install --lib regex-compat old-time
