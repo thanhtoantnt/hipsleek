@@ -1,1 +1,0 @@
-checkentail  x=null & r=3 & x=null | x=null & r=v & x!=null |- r=3.

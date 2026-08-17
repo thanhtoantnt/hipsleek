@@ -1,2 +1,0 @@
-pred_prim R<low:int, high:int> 
- inv low<=high & high>=0.

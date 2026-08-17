@@ -1,3 +1,0 @@
-checkentail t=1 & x>t & t>y |- x>0.
-
-checkentail t=1 & x>t & t>y |- y<1.

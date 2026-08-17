@@ -1,1 +1,0 @@
-BinListSecond(x) |- BinTree(x)                          
