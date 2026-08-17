@@ -758,7 +758,7 @@ let common_arguments = [
    "Cache result of satisfiability and validity checking");
   ("--dis-simplify-imply", Arg.Clear Globals.simplify_imply,
    "Simplification of existential for imply calls");
-  ("--web", Arg.String (fun s -> (Tpdispatcher.Netprover.set_use_socket_for_web s); Tpdispatcher.webserver := true; Typechecker.webserver := true; Paralib1v2.webs := true; Paralib1.webs := true) ,
+  ("--web", Arg.String (fun s -> (Tpdispatcher.Netprover.set_use_socket_for_web s); Tpdispatcher.webserver := true; Typechecker.webserver := true) ,
    "<host:port>: use external web service via socket");
   ("-para", Arg.Int Typechecker.parallelize,
    "Use Paralib map_para instead of List.map in typecheker");
