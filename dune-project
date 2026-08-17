@@ -1,5 +1,7 @@
 (lang dune 3.14)
 
+(using menhir 3.0)
+
 (name hipsleek)
 (generate_opam_files true)
 
@@ -24,6 +26,7 @@
   (ppx_expect (>= v0.15.1))
   (ppx_deriving (>= 6.0.3))
   (visitors (>= 20210608))
+  (menhir (>= 20220210))
   dune
   (cppo :build)
 ))
