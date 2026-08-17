@@ -1,7 +1,7 @@
 /*
-  Merged ocamlyacc grammar replacing the camlp4 EXTEND grammars in
-  parse_fix.ml, parse_fixbag.ml and parse_shape.ml (parse_cmd.ml had no
-  live callers and was deleted). Semantic actions are copied verbatim;
+  Merged menhir grammar replacing the camlp4 EXTEND grammars in
+  parse_fix.ml, parse_fixbag.ml, parse_shape.ml and parse_cmd.ml
+  (all four are thin wrappers now). Semantic actions are copied verbatim;
   nonterminals are prefixed per family. One shared lexer (fixlexer.mll).
 */
 %{
@@ -67,8 +67,10 @@ let shape_parse_lbl x = match x with
 
 %left BARBAR
 %left ANDAND
-%left PLUS MINUS
+(* STAR below PLUS/MINUS: camlp4's "INT * SELF" at LEFTA level bound
+   2*n+1 as 2*(n+1); keeping STAR lowest reproduces that (shift wins on +) *)
 %left STAR
+%left PLUS MINUS
 
 %%
 

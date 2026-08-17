@@ -1,10 +1,9 @@
 {
-(* Shared lexer for the fixcalc/fixbag/shape output parsers.
+(* Shared lexer for the fixcalc/fixbag/shape/cmd parsers.
    Replaces camlp4's dynamic keyword lexer with a fixed token set: the
    keyword set below is the union of all quoted literals that the four
-   old camlp4 grammars registered globally (parse_cmd's keywords dropped
-   along with that dead module), so tokenization matches the old shared
-   camlp4 lexer exactly. *)
+   camlp4 grammars registered globally, so tokenization matches the old
+   shared camlp4 lexer exactly. *)
 open Fixparser
 exception Error of string
 let kw s = match s with
