@@ -631,17 +631,5 @@ let add_pure_imply ante conseq is_valid prover_name prover_input prover_output =
 (* End of JSON proof generator *)
 
 let write_html_output () =
-  let resource_dir = (Gen.get_path Sys.executable_name) ^ "html_resources/" in
-  let template = Gen.SysUti.string_of_file (resource_dir ^ "hipsleek.html") in
-  let setup_script = !jsonproof ^ "\n];\n" in
-  let htmloutres = Str.global_replace (Str.regexp_string "//$SETUP_SCRIPT") setup_script template in
-  let htmloutres = Str.global_replace (Str.regexp_string "$$RESOURCE_DIR_URL$$") ("file://" ^ resource_dir) htmloutres in
-  (* let () = print_endline !jsonproof in *)
-  let () = post_process_html () in
-  let chn = open_out !html_output_file in
-  let chntest = open_out "testjason.html" in
-  output_string chn !html_output;
-  output_string chntest htmloutres;
-  close_out chn;
-  close_out chntest;;
+  print_endline_quiet "HTML proof export (-wpf) removed with html_resources/"
 
