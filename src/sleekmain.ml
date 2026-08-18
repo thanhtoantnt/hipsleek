@@ -86,7 +86,7 @@ module M = Lexer.Make(Token.Token)
 (* 	  | End_of_file -> *)
 (* 		  print_string ("\n") *)
 (*     | M.Loc.Exc_located (l,t)->  *)
-(*       (print_string ((Camlp4.PreCast.Loc.to_string l)^"\n error: "^(Printexc.to_string t)^"\n at:"^(Printexc.get_backtrace ())); *)
+(*       (print_string ((Loc.to_string l)^"\n error: "^(Printexc.to_string t)^"\n at:"^(Printexc.get_backtrace ())); *)
 (*       raise t) *)
 
   let proc_one_cmd c = 
@@ -243,7 +243,7 @@ let parse_file (parse) (source_file : string) =
     with
     | End_of_file -> List.rev cmds
     | M.Loc.Exc_located (l,t)-> (
-        print_string_quiet ((Camlp4.PreCast.Loc.to_string l)^"\n error: "
+        print_string_quiet ((Loc.to_string l)^"\n error: "
                             ^(Printexc.to_string t)^"\n at:"^(get_backtrace_quiet ()));
         raise t
       ) in
