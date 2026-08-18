@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 (* module CP = Cpure    *)
 (* module CF = Cformula *)
@@ -801,7 +801,7 @@ let update_spec_proc prog proc =
   try
     let ispec = Hashtbl.find proc_case_specs mn in
     let nspec = tnt_spec_of_proc prog proc ispec in
-    let () = proc.Cast.proc_stk_of_static_specs # push_pr x_loc nspec in 
+    let () = proc.Cast.proc_stk_of_static_specs # push_pr __LOC__ nspec in 
     (* let proc = { proc with Cast.proc_static_specs = nspec; }  in *)
     (* let () = Cprinter.string_of_proc_decl_no_body nproc in *)
     proc

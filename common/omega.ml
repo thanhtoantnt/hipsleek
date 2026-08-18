@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
   Call Omega Calculator, send input to it
 *)

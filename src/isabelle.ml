@@ -1,4 +1,3 @@
-#include "xdebug.cppo"
 open Hipsleek_common
 (*
   Create the input file for Isabelle.

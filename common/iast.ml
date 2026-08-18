@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
   Created 19-Feb-2006
 
@@ -1800,7 +1800,7 @@ let rec look_up_data_def_x pos (defs : data_decl list) (name : ident) = match de
   | d :: rest -> if d.data_name = name then d else look_up_data_def_x pos rest name
   | [] ->
     let msg = ("Cannot find definition of iview " ^ name) in
-    let () = if !VarGen.trace_exc then y_winfo_pp (x_loc^msg) in
+    let () = if !VarGen.trace_exc then y_winfo_pp (__LOC__^msg) in
     Err.report_error {Err.error_loc = pos; Err.error_text = "no type declaration named " ^ name ^ " is found"}
 
 and look_up_data_def i pos (defs : data_decl list) (name : ident)
@@ -2382,7 +2382,7 @@ and update_fixpt_x iprog (vl:(view_decl * ident list *ident list) list)  =
         else if v.view_kind = View_DERV  then
           match v.view_derv_info with
           | ((orig_view_name,orig_args),(extn_view_name,extn_props,extn_args))::_ ->
-            let orig_vdecl = look_up_view_def_raw x_loc iprog.prog_view_decls orig_view_name in
+            let orig_vdecl = look_up_view_def_raw __LOC__ iprog.prog_view_decls orig_view_name in
             let () = x_tinfo_hp (add_str "XXX:view" pr_id) v.view_name no_pos in
             let () = x_tinfo_hp (add_str "XXX:orig_vdecl" pr_id) orig_vdecl.view_data_name no_pos in
             v.view_data_name <- orig_vdecl.view_data_name
@@ -2392,7 +2392,7 @@ and update_fixpt_x iprog (vl:(view_decl * ident list *ident list) list)  =
             v.view_data_name <- (v.view_name)
         (* else if String.length v.view_data_name = 0 then *)
         (*   (\* self has unknown type *\) *)
-        (*   report_warning no_pos (x_loc^"self of "^(v.view_name)^" cannot have its type determined") *)
+        (*   report_warning no_pos (__LOC__^"self of "^(v.view_name)^" cannot have its type determined") *)
         else ()
       else
         let () = x_tinfo_hp (add_str "XXX:view" pr_id) v.view_name no_pos in
@@ -2452,7 +2452,7 @@ and data_name_of_view1 (view_decls : view_decl list) (f0 : F.formula) : ident =
         (* if c is a view, use the view's data name recursively.
            			   Otherwise (c is data) use c *)
         try
-          let vdef = look_up_view_def_raw x_loc view_decls c in
+          let vdef = look_up_view_def_raw __LOC__ view_decls c in
           if String.length (vdef.view_data_name) > 0 then
             Some vdef.view_data_name
           else
@@ -3686,7 +3686,7 @@ let trans_to_exp_form exp0 =
 
 let lbl_getter prog vn id =
   try
-    let vd = look_up_view_def_raw x_loc prog.prog_view_decls vn in
+    let vd = look_up_view_def_raw __LOC__ prog.prog_view_decls vn in
     let vl, v_has_l = vd.view_labels in
     if v_has_l then
       try
@@ -3702,7 +3702,7 @@ let eq_coercion_list = (==)             (* to be modified *)
 
 let annot_args_getter_all prog vn: (P.ann * int) list =
   try
-    let vd = look_up_view_def_raw x_loc prog.prog_view_decls vn in
+    let vd = look_up_view_def_raw __LOC__ prog.prog_view_decls vn in
     vd.view_imm_map
   with
   | Not_found -> []
@@ -3956,7 +3956,7 @@ let gen_name_pairs_struc view_decls0 vname (f:F.struc_formula): (ident * ident) 
       (* then [] *)
       (* else *)
       (try
-         let todo_unk = look_up_view_def_raw x_loc view_decls0 c in [ (vname, c) ]
+         let todo_unk = look_up_view_def_raw __LOC__ view_decls0 c in [ (vname, c) ]
        with | Not_found ->
          if view_scc_obj # in_dom c then [(vname,c)]
          else []

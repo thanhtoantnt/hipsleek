@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 open Globals
 open Wrapper
@@ -120,7 +120,7 @@ let run_entail_check inf_obj ctx (iante : lem_formula) (iconseq : lem_formula) (
     | None -> if (!Globals.allow_lemma_residue) then Some false (* inexact *) else Some true (* exact *) 
     | _ -> exact_flag in
   (* TODO:WN Using wrap_inf_obj_obly cos inf_obj is not properly propated *)
-  wrap_inf_obj_only inf_obj (wrap_classic x_loc allow_r (run_entail_check_helper ctx iante iconseq inf_vars)) cprog
+  wrap_inf_obj_only inf_obj (wrap_classic __LOC__ allow_r (run_entail_check_helper ctx iante iconseq inf_vars)) cprog
 
 let run_entail_check inf_obj ctx (iante : lem_formula) (iconseq : lem_formula) 
     (inf_vars: CP.spec_var list) (cprog: C.prog_decl) (exact : bool option) =
@@ -418,7 +418,7 @@ let check_coercion_struc coer lhs rhs (cprog: C.prog_decl) =
 
 let check_coercion_struc coer lhs rhs (cprog: C.prog_decl) =
   if Cast.folding_coercion coer then 
-    Solver.wrapper_lemma_soundness x_loc coer 
+    Solver.wrapper_lemma_soundness __LOC__ coer 
       (check_coercion_struc coer lhs rhs) cprog
   else check_coercion_struc coer lhs rhs cprog
 

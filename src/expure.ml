@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 open Globals
 open Wrapper
@@ -25,7 +25,7 @@ let find_baga_inv view  =
   (*   | None -> *)
   (*     match view.Cast.view_baga_x_over_inv with *)
   (*     | Some efpd -> efpd *)
-  (*     | None -> failwith (x_loc^"cannot find baga inv 2") *)
+  (*     | None -> failwith (__LOC__^"cannot find baga inv 2") *)
   try
     Excore.map_baga_invs # find view.Cast.view_name
   with _ ->
@@ -34,7 +34,7 @@ let find_baga_inv view  =
     | None ->
       match view.Cast.view_baga_x_over_inv with
       | Some efpd -> efpd
-      | None -> failwith (x_loc^"cannot find baga inv 2")
+      | None -> failwith (__LOC__^"cannot find baga inv 2")
 
 let find_baga_under_inv view =
   match view.Cast.view_baga_under_inv with
@@ -431,7 +431,7 @@ let fix_ef_x (view_list : Cast.view_decl list) (all_views : Cast.view_decl list)
       inv_list
     else
       let () = List.iter (fun (vc,inv) ->
-          map_baga_invs # replace x_loc vc.Cast.view_name (EPureI.to_cpure_disj inv)
+          map_baga_invs # replace __LOC__ vc.Cast.view_name (EPureI.to_cpure_disj inv)
         ) (List.combine view_list inv_list) in
       let inv_list = List.fold_left (fun inv_list vc ->
           inv_list@[(build_ef_view vc all_views)]
@@ -444,7 +444,7 @@ let fix_ef_x (view_list : Cast.view_decl list) (all_views : Cast.view_decl list)
       (* this version is being printed *)
       (* let () = Debug.ninfo_hprint (add_str ("baga inv("^vc.Cast.view_name^")") (EPureI.string_of_disj)) inv no_pos in *)
       (* let () = print_string_quiet "\n" in *)
-      map_baga_invs # replace x_loc vc.Cast.view_name (EPureI.to_cpure_disj inv)
+      map_baga_invs # replace __LOC__ vc.Cast.view_name (EPureI.to_cpure_disj inv)
     ) (List.combine view_list inv_list) in
   inv_list
 

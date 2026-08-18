@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 
 (* extension of cpure, focused on imm related operations  *)
 

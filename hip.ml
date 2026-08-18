@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open Hipsleek
 open VarGen
 (* test - added to immutability branch *)
@@ -342,7 +342,7 @@ let reverify_with_hp_rel cprog iprog =
       match hp_kind with
       |  Cpure.HPRelDefn (hp,r,args) -> begin
           try
-            let todo_unk = x_add Cast.look_up_view_def_raw x_loc cprog.Cast.prog_view_decls
+            let todo_unk = x_add Cast.look_up_view_def_raw __LOC__ cprog.Cast.prog_view_decls
                 (Cpure.name_of_spec_var hp)
             in
             (r_hp_defs, r_unk_hps)

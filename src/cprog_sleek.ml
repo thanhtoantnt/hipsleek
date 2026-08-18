@@ -1,6 +1,6 @@
-#include "xdebug.cppo"
 (** pretty printing for formula and cast *)
 open Hipsleek_common
+open Xdebug
 open Format
 open Globals
 open VarGen
@@ -50,7 +50,7 @@ let () =
 let get_sorted_view_decls () = Cast.get_sorted_view_decls !cprog
 
 let update_view_decl_cprog vdef =
-  x_add (Cast.update_view_decl ~caller:x_loc) !cprog vdef
+  x_add (Cast.update_view_decl ~caller:__LOC__) !cprog vdef
 
 let update_view_decl_iprog_g update_scc upd_flag vdef =
   try
@@ -75,10 +75,10 @@ let update_view_decl_iprog_g update_scc upd_flag vdef =
         let () = y_tinfo_hp (add_str "fvars2" (pr_list pr_id)) fvars2 in
         let () = y_tinfo_hp (add_str "view" pr_id) n in
         let () = y_tinfo_hp (add_str "lst(pairs)" (pr_list (pr_pair pr_id pr_id))) lst in
-        HipUtil.view_scc_obj # replace x_loc n fvars2
+        HipUtil.view_scc_obj # replace __LOC__ n fvars2
       end;
     if upd_flag then x_add Iast.update_view_decl iprog vdef
-  with _ -> failwith (x_loc^" iprog not found")
+  with _ -> failwith (__LOC__^" iprog not found")
 
 let update_view_decl_iprog_g update_scc upd_flag vdef =
   let pr = fun v -> v.Iast.view_name in

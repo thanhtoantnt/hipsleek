@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 open Globals
 open Wrapper
@@ -1006,7 +1006,7 @@ let do_unfold_view_hf cprog hf0 =
       fold_fnc ls_hf_p1 ls_hf_p2 conj_fnc
     | CF.ViewNode hv -> begin
         try
-          let vdcl = x_add C.look_up_view_def_raw x_loc cprog.C.prog_view_decls hv.CF.h_formula_view_name in
+          let vdcl = x_add C.look_up_view_def_raw __LOC__ cprog.C.prog_view_decls hv.CF.h_formula_view_name in
           let fs = List.map fst vdcl.C.view_un_struc_formula in
           let f_args = (CP.SpecVar (Named vdcl.C.view_name,self, Unprimed))::vdcl.C.view_vars in
           let a_args = hv.CF.h_formula_view_node::hv.CF.h_formula_view_arguments in

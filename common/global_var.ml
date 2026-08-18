@@ -1,4 +1,3 @@
-#include "xdebug.cppo"
 module CP = Cpure
 
 let pr_sv = CP.string_of_spec_var

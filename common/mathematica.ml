@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
  * Interact with Mathematica
  * Created on June 23, 2012

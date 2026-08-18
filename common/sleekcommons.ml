@@ -1,4 +1,3 @@
-#include "xdebug.cppo"
 open VarGen
 (*
   let $a = <formula>.

@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 module CP = Cpure
 (* module CF = Cformula *)
@@ -1264,7 +1264,7 @@ let subst_phase_num_proc rp subst (proc: Cast.proc_decl) : Cast.proc_decl =
   (* let s_specs = subst_phase_num_struc rp subst proc.Cast.proc_static_specs in *)
   let s_specs = subst_phase_num_struc rp subst (proc.Cast.proc_stk_of_static_specs # top) in
   let d_specs = subst_phase_num_struc rp subst proc.Cast.proc_dynamic_specs in
-  let () = proc.Cast.proc_stk_of_static_specs # push_pr x_loc s_specs in 
+  let () = proc.Cast.proc_stk_of_static_specs # push_pr __LOC__ s_specs in 
   { proc with
     (* Cast.proc_static_specs = s_specs; *)
     Cast.proc_dynamic_specs = d_specs; }

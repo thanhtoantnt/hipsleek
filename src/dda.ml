@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open Cast
 open Globals
 open VarGen
@@ -62,7 +62,7 @@ let set_inf_obj_proc itype proc =
   (* let n_static_specs = Cformula.set_inf_obj_struc itype proc.proc_static_specs in *)
   let n_static_specs = Cformula.set_inf_obj_struc itype (proc.proc_stk_of_static_specs # top) in
   let n_dynamic_specs = Cformula.set_inf_obj_struc itype proc.proc_dynamic_specs in
-  let () = proc.proc_stk_of_static_specs # push_pr x_loc n_static_specs in
+  let () = proc.proc_stk_of_static_specs # push_pr __LOC__ n_static_specs in
   { proc with 
     (* proc_static_specs = n_static_specs; *)
     proc_dynamic_specs = n_dynamic_specs; }

@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
   Created 21-Feb-2006
 
@@ -677,7 +677,7 @@ let cprog_obj =
         List.find (fun v -> v.hp_name = n) lst
       with e ->
         let () = y_tinfo_hp (add_str "hp_decls: " (pr_list !print_hp_decl)) lst in
-        failwith (x_loc^(" cannot find hp_rel "^n))
+        failwith (__LOC__^(" cannot find hp_rel "^n))
     method set_hp_root hp posn =
       let n = CP.name_of_spec_var hp in
       let hp_d = self # get_hp_one_decl n in
@@ -698,7 +698,7 @@ let cprog_obj =
               let f_args = hp_d.hp_vars_inst in
               let rec aux xs n =
                 match xs with
-                | [] -> failwith (x_loc^"no root position left")
+                | [] -> failwith (__LOC__^"no root position left")
                 | (_,ann)::xs ->
                   if ann=NI then aux xs (n+1)
                   else n in
@@ -1369,7 +1369,7 @@ let rec look_up_view_def_raw loc (defs : view_decl list) (name : ident) = match 
     let () = y_tinfo_pp (loc^msg) in
     raise Not_found
     (* let msg = ("Cannot find definition of view " ^ name) in *)
-    (* failwith (x_loc^msg) *)
+    (* failwith (__LOC__^msg) *)
 
 let look_up_view_def_raw loc (defs : view_decl list) (name : ident) =
   let pr = fun x -> x in
@@ -1378,7 +1378,7 @@ let look_up_view_def_raw loc (defs : view_decl list) (name : ident) =
     (fun _ -> look_up_view_def_raw loc defs name) name
 
 let look_up_view_def_prog prog (name : ident) =
-  look_up_view_def_raw x_loc prog.prog_view_decls name
+  look_up_view_def_raw __LOC__ prog.prog_view_decls name
 
 let look_up_view_def_ext_size (defs : view_decl list) num_rec_br0 num_base0 =
   let ext_views = List.filter (fun v ->
@@ -1408,7 +1408,7 @@ let extract_view_x_invs transed_views=
     ) [] transed_views
 
 let look_up_view_inv defs act_args name inv_compute_fnc =
-  let vdcl = look_up_view_def_raw x_loc defs name in
+  let vdcl = look_up_view_def_raw __LOC__ defs name in
   let ss = List.combine ((P.SpecVar (Named vdcl.view_data_name, self, Unprimed))::vdcl.view_vars) act_args in
   let inv =
     let p1 = MP.pure_of_mix vdcl.view_user_inv in
@@ -1541,7 +1541,7 @@ let add_raw_hp_rel_x ?(caller="") prog is_pre is_unknown unknown_ptrs pos=
               List.map (fun sv -> P.mkVar sv pos) unk_args,
               pos)
     in
-    (* let () = cprog_obj # check_prog_upd (x_loc ^ ":" ^ caller) prog in *)
+    (* let () = cprog_obj # check_prog_upd (__LOC__ ^ ":" ^ caller) prog in *)
     let () = x_winfo_hp (add_str "define: " !print_hp_decl) hp_decl pos in
     Debug.ninfo_zprint (lazy (("       gen hp_rel: " ^ (!F.print_h_formula hf)))) pos;
     (hf, P.SpecVar (HpT,hp_decl.hp_name, Unprimed))
@@ -1675,13 +1675,13 @@ let get_root_view prog name ptr args =
 
 (*check whether a view is a lock invariant*)
 let get_lock_inv prog (name : ident) : (bool * F.formula) =
-  let vdef = look_up_view_def_raw x_loc prog.prog_view_decls name in
+  let vdef = look_up_view_def_raw __LOC__ prog.prog_view_decls name in
   match vdef.view_inv_lock with
   | None -> (false, (F.mkTrue (F.mkTrueFlow ()) no_pos))
   | Some f -> (true, f)
 
 let is_lock_inv prog (name : ident) : bool =
-  let vdef = look_up_view_def_raw x_loc prog.prog_view_decls name in
+  let vdef = look_up_view_def_raw __LOC__ prog.prog_view_decls name in
   match vdef.view_inv_lock with
   | None -> false
   | Some f -> true
@@ -1909,7 +1909,7 @@ let update_sspec_proc (procs : (ident, proc_decl) Hashtbl.t) pname spec =
     let proc = Hashtbl.find procs pname in
     (* let new_proc = {proc with proc_static_specs = spec} in *)
     (* let () = Hashtbl.replace procs pname new_proc in       *)
-    let () = proc.proc_stk_of_static_specs # push_pr x_loc spec in
+    let () = proc.proc_stk_of_static_specs # push_pr __LOC__ spec in
     let () = Hashtbl.replace procs pname proc in
     procs
   with Not_found -> Error.report_error {
@@ -2573,7 +2573,7 @@ let formula_of_unstruc_view_f vd =
 let vdef_fold_use_bc prog ln2  = match ln2 with
   | F.ViewNode vn ->
     (try
-       let vd = look_up_view_def_raw x_loc prog.prog_view_decls vn.F.h_formula_view_name in
+       let vd = look_up_view_def_raw __LOC__ prog.prog_view_decls vn.F.h_formula_view_name in
        match vd.view_raw_base_case with
        | None -> None
        | Some f-> Some {vd with view_formula = F.formula_to_struc_formula f}
@@ -2613,7 +2613,7 @@ let vdef_lemma_fold prog coer  =
           match bf.F.formula_base_heap with
           | F.ViewNode vn ->
             (try
-               let vd = look_up_view_def_raw x_loc prog.prog_view_decls vn.F.h_formula_view_name in
+               let vd = look_up_view_def_raw __LOC__ prog.prog_view_decls vn.F.h_formula_view_name in
                let to_vars = vd.view_vars in
                let from_vars = vn.F.h_formula_view_arguments in
                let subs = List.combine from_vars to_vars in
@@ -2648,7 +2648,7 @@ let vdef_lemma_fold prog coer  =
 (*               match bf.F.formula_base_heap with *)
 (*                 | F.ViewNode vn ->  *)
 (*                       (try  *)
-(*                         let vd = look_up_view_def_raw x_loc prog.prog_view_decls vn.F.h_formula_view_name in *)
+(*                         let vd = look_up_view_def_raw __LOC__ prog.prog_view_decls vn.F.h_formula_view_name in *)
 (*                         Some {vd with view_formula = rhs} *)
 (*                       with   *)
 (*                         | Not_found -> None *)
@@ -2778,7 +2778,7 @@ let rec add_uni_vars_to_view_x cprog (l2r_coers:coercion_decl list) (view:view_d
       | F.ViewNode vn ->
         if ((String.compare vn.F.h_formula_view_name view.view_name)=0) then []
         else
-          let vdef = look_up_view_def_raw x_loc cprog.prog_view_decls vn.F.h_formula_view_name in
+          let vdef = look_up_view_def_raw __LOC__ cprog.prog_view_decls vn.F.h_formula_view_name in
           let vdef = add_uni_vars_to_view_x cprog l2r_coers vdef in
           let vdef_uni_vars = vdef.view_uni_vars in
           let fr = vdef.view_vars in
@@ -2961,7 +2961,7 @@ and add_term_nums_proc (proc: proc_decl) log_vars add_call add_phase =
     (* let n_ss, pvl1 = F.add_term_nums_struc proc.proc_static_specs log_vars call_num add_phase in *)
     let n_ss, pvl1 = F.add_term_nums_struc (proc.proc_stk_of_static_specs # top) log_vars call_num add_phase in
     let n_ds, pvl2 = F.add_term_nums_struc proc.proc_dynamic_specs log_vars call_num add_phase in
-    let () = proc.proc_stk_of_static_specs # push_pr x_loc n_ss in
+    let () = proc.proc_stk_of_static_specs # push_pr __LOC__ n_ss in
     ({ proc with
        (* proc_static_specs = n_ss; *)
        proc_dynamic_specs = n_ds;
@@ -2973,7 +2973,7 @@ let collect_hp_rels prog= Hashtbl.fold (fun i p acc->
     (List.map (fun c-> name,c) p.proc_hpdefs)@acc) prog.new_proc_decls []
 
 let look_up_cont_args_x a_args vname cviews=
-  let vdef = look_up_view_def_raw x_loc cviews vname in
+  let vdef = look_up_view_def_raw __LOC__ cviews vname in
   let pr_args = List.combine vdef.view_vars a_args in
   List.fold_left (fun ls cont_sv -> ls@[List.assoc cont_sv pr_args]) [] vdef.view_cont_vars
 
@@ -4108,7 +4108,7 @@ let update_view_decl ?(caller="") prog vdecl =
       y_info_pp ("Updating an available view decl (" ^ vhdr ^ ") in cprog.")
     else y_info_pp ("Adding the view " ^ vhdr ^ " into cprog.")
   in
-  (* let () = cprog_obj # check_prog_upd(* _only *) (x_loc ^ ":" ^ caller) prog in *)
+  (* let () = cprog_obj # check_prog_upd(* _only *) (__LOC__ ^ ":" ^ caller) prog in *)
   prog.prog_view_decls <- others @ [vdecl]
 
 let update_view_decl ?(caller="") prog vdecl =
@@ -4151,8 +4151,8 @@ let is_finish_equiv_view_decl frm_vdecl to_vdecl =
 let smart_view_name_equiv view_decls vl vr =
   let vl_name = vl.h_formula_view_name in
   let vr_name = vr.h_formula_view_name in
-  let vdef1 = look_up_view_def_raw x_loc view_decls vl_name in
-  let vdef2 = look_up_view_def_raw x_loc view_decls vr_name in
+  let vdef1 = look_up_view_def_raw __LOC__ view_decls vl_name in
+  let vdef2 = look_up_view_def_raw __LOC__ view_decls vr_name in
   let ans = try
       if !Globals.old_view_equiv then None
       else
@@ -4194,15 +4194,15 @@ let smart_view_name_equiv view_decls vl vr =
     | Some (vl,vr) ->
           let vl_name = vl.h_formula_view_name in
           let vr_name = vr.h_formula_view_name in
-          let vdef1 = look_up_view_def_raw x_loc view_decls vl_name in
-          let vdef2 = look_up_view_def_raw x_loc view_decls vr_name in
+          let vdef1 = look_up_view_def_raw __LOC__ view_decls vl_name in
+          let vdef2 = look_up_view_def_raw __LOC__ view_decls vr_name in
           vdef1, vdef2,vl_name,vr_name
   in
   (vdef1,vdef2,vl_name,vr_name,ans)
 
 let get_view_name_equiv view_decls vl =
   let vname = vl.h_formula_view_name in
-  let vdef = look_up_view_def_raw x_loc view_decls vname in
+  let vdef = look_up_view_def_raw __LOC__ view_decls vname in
   (* (vname,vdef) *)
   if vdef.view_equiv_set # is_empty || !Globals.old_view_equiv then (vname,vdef,vl,false)
   else
@@ -4221,7 +4221,7 @@ let get_view_name_equiv view_decls vl =
     (* let new_vl = {vl with h_formula_view_name = new_name; *)
     (*                       h_formula_view_arguments = new_args; *)
     (*              } in *)
-    (new_name,look_up_view_def_raw x_loc view_decls new_name,new_vl,true)
+    (new_name,look_up_view_def_raw __LOC__ view_decls new_name,new_vl,true)
 
 (* let get_lst_unfold lst = List.map fst lst *)
 
@@ -4249,7 +4249,7 @@ let get_unfold_set_simple vdefs =
   let lst = List.filter (fun (_,_,fs) -> (List.length fs) <=1) lst in
   List.map (fun (v,vs,lst) -> match lst with
       | f::_ -> (v,vs,f)
-      | _ -> failwith (x_loc^"empty unfold")) lst
+      | _ -> failwith (__LOC__^"empty unfold")) lst
 
 let get_unfold_set_simple vdefs =
   let pr1 = pr_list !print_view_decl in
@@ -4319,7 +4319,7 @@ let repl_unfold_lemma u_lst lem =
   let () = y_tinfo_hp (add_str "unfolded body" !F.print_formula) body in
   lem.coercion_body <- body;
   lem
-  (* failwith x_tbi *)
+  (* failwith (__LOC__ ^ "TBI") *)
 
 let get_lemma_cprog cdefs =
   let lst = List.map (fun d -> d.coercion_name) cdefs in
@@ -4459,10 +4459,10 @@ let wrapper_lemma_soundness loc coer f x =
   let () = lemma_soundness # start_lemma_proving loc coer in
   try
     let r = f x in
-    let () = lemma_soundness # end_lemma_proving x_loc in
+    let () = lemma_soundness # end_lemma_proving __LOC__ in
     r
   with e ->
-    let () = lemma_soundness # end_lemma_proving x_loc in
+    let () = lemma_soundness # end_lemma_proving __LOC__ in
     raise e
 
 let is_segmented_view vd =

@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 open Globals
 open Gen
@@ -770,10 +770,10 @@ let aux_pred_reuse iprog cprog all_views =
   let ids = List.map (fun x -> x.Cast.view_name) all_views in 
   (* let vdefs = cprog.Cast.prog_view_decls in *)
   let vdefs = C.get_sorted_view_decls cprog in
-  (* let () = Cast.cprog_obj # check_prog_upd x_loc cprog in *)
+  (* let () = Cast.cprog_obj # check_prog_upd __LOC__ cprog in *)
   let () = y_tinfo_pp "XXX Scheduling pred_elim_useless" in
   let vdefs = Norm.norm_elim_useless vdefs ids in
-  (* let () = Cast.cprog_obj # check_prog_upd x_loc cprog in *)
+  (* let () = Cast.cprog_obj # check_prog_upd __LOC__ cprog in *)
   let v_ids = List.map (fun x -> x.Cast.view_name) vdefs in
   let () = y_tinfo_pp "XXX Scheduling pred_reuse" in
   let () = y_tinfo_hp (add_str "XXX derived_view names" (pr_list pr_id)) ids in
@@ -873,7 +873,7 @@ let derive_equiv_view_by_lem ?(tmp_views=[]) iprog cprog view l_ivars l_head l_b
   let () = y_tinfo_hp (add_str ("llemma " ^ l_name) Iprinter.string_of_coercion) llemma in 
   
   (* The below method updates CF.sleek_hprel_assumes via lemma proving *)
-  let lres, _ = wrap_classic x_loc (Some true) (fun llemma -> x_add Lemma.manage_infer_lemmas [llemma] iprog cprog) llemma in
+  let lres, _ = wrap_classic __LOC__ (Some true) (fun llemma -> x_add Lemma.manage_infer_lemmas [llemma] iprog cprog) llemma in
   if not lres then
     let () = y_binfo_pp "XXX fail infer ---> " in
     let () = restore_view iprog cprog view in
@@ -883,7 +883,7 @@ let derive_equiv_view_by_lem ?(tmp_views=[]) iprog cprog view l_ivars l_head l_b
     let () = List.iter (fun v ->
       let () = C.update_un_struc_formula (fun f -> fst (trans_hrel_to_view_formula cprog f)) v in
       let () = C.update_view_formula (x_add_1 trans_hrel_to_view_struc_formula cprog) v in
-      let () = x_add (C.update_view_decl ~caller:x_loc) cprog v in
+      let () = x_add (C.update_view_decl ~caller:__LOC__) cprog v in
       let () = x_add I.update_view_decl iprog (Rev_ast.rev_trans_view_decl v) in
       ()) tmp_views in
     (* derived_views have been added into prog_view_decls of iprog and cprog *)
@@ -975,7 +975,7 @@ let elim_head_pred iprog cprog pred =
     (* let fresh_pred_I_args = List.map (fun v -> (v, I)) (elim_useless_vars fresh_pred_args) in *)
     let pred_I_args = List.map (fun v -> (v, I)) (elim_useless_vars pred.C.view_vars) in
     let hrel_list, unknown_vars = List.split (List.map 
-        (fun v -> x_add (C.add_raw_hp_rel ~caller:x_loc) cprog false true ((v, I)::pred_I_args (* fresh_pred_I_args *)) no_pos) dangling_vars) in
+        (fun v -> x_add (C.add_raw_hp_rel ~caller:__LOC__) cprog false true ((v, I)::pred_I_args (* fresh_pred_I_args *)) no_pos) dangling_vars) in
     let () =  iprog.I.prog_hp_decls <- (List.map Rev_ast.rev_trans_hp_decl cprog.C.prog_hp_decls) in
     let unknown_f = List.fold_left (fun f h -> CF.mkStar_combine_heap f h CF.Flow_combine no_pos) common_f hrel_list in
     let pred_h = CF.mkViewNode self_node pred.C.view_name pred.C.view_vars (* fresh_pred_args *) no_pos in
@@ -1016,7 +1016,7 @@ let elim_tail_pred iprog cprog pred =
     (* let fresh_pred_args = CP.fresh_spec_vars pred.C.view_vars in *)
     let fresh_self_node = CP.fresh_spec_var self_node in
     let pred_h = CF.mkViewNode self_node pred.C.view_name pred.C.view_vars (* fresh_pred_args *) no_pos in
-    let unknown_h, unknown_hpred = x_add (C.add_raw_hp_rel ~caller:x_loc) cprog false true [(self_node, I); (fresh_self_node, I)] no_pos in
+    let unknown_h, unknown_hpred = x_add (C.add_raw_hp_rel ~caller:__LOC__) cprog false true [(self_node, I); (fresh_self_node, I)] no_pos in
     let () =  iprog.I.prog_hp_decls <- (List.map Rev_ast.rev_trans_hp_decl cprog.C.prog_hp_decls) in
     let sst = [(self_node, fresh_self_node)] (* @ (List.combine pred.C.view_vars fresh_pred_args) *) in
     let unknown_f = 
@@ -1048,7 +1048,7 @@ let elim_tail_pred_list iprog cprog preds =
 
 let extn_norm_pred iprog cprog extn_pred norm_pred =
   let equiv_pid = get_equiv_pred cprog norm_pred.C.view_name in 
-  let norm_ipred = I.look_up_view_def_raw x_loc iprog.I.prog_view_decls equiv_pid in
+  let norm_ipred = I.look_up_view_def_raw __LOC__ iprog.I.prog_view_decls equiv_pid in
   let extn_view_name = norm_ipred.I.view_name ^ "_" ^ extn_pred.C.view_name in
   let extn_view_var = extn_pred.C.view_name ^ "_prop" in
   let extn_iview = I.mk_iview_decl ~v_kind:View_DERV extn_view_name "" 
@@ -1071,7 +1071,7 @@ let extn_norm_pred iprog cprog extn_pred norm_pred =
   let comb_extn_name = Derive.retr_extn_pred_name norm_ipred.I.view_name extn_pred.C.view_name in
   let extn_cview = List.find (fun v -> eq_str v.C.view_name comb_extn_name) extn_cview_lst in
   (* let extn_cview = C.rename_view extn_cview equiv_pid in  *)
-  let () = x_add (C.update_view_decl ~caller:x_loc) cprog extn_cview in
+  let () = x_add (C.update_view_decl ~caller:__LOC__) cprog extn_cview in
   let () = norm_pred.C.view_equiv_set # set ([], comb_extn_name) in
   let () = x_add Astsimp.compute_view_x_formula cprog extn_cview !Globals.n_xpure in
   extn_cview
@@ -1088,7 +1088,7 @@ let extn_norm_pred_list iprog cprog extn_pred norm_preds =
 (* Entry point of SLEEK cmd process_shape_extn_view *)
 let extn_pred_list iprog cprog extn preds =
   try
-    let extn_pred = C.look_up_view_def_raw x_loc cprog.C.prog_view_decls extn in
+    let extn_pred = C.look_up_view_def_raw __LOC__ cprog.C.prog_view_decls extn in
     match extn_pred.C.view_kind with
     | View_EXTN -> 
       let norm_preds = List.fold_left (fun acc pred ->
@@ -1104,7 +1104,7 @@ let extn_pred_list iprog cprog extn preds =
 
 let extn_pred_id_list iprog cprog extn preds =
   let pred_decls = List.map (fun id ->
-    try C.look_up_view_def_raw x_loc cprog.C.prog_view_decls id
+    try C.look_up_view_def_raw __LOC__ cprog.C.prog_view_decls id
     with _ -> x_fail ("Cannot find the view " ^ id)) preds in
   extn_pred_list iprog cprog extn pred_decls
 
@@ -1143,7 +1143,7 @@ let unify_disj_pred iprog cprog pred =
     let () = y_tinfo_hp (add_str "Dangling nodes" !CP.print_svl) dangling_vars in
     let pred_I_args = List.map (fun v -> (v, I)) (elim_useless_vars pred.C.view_vars) in
     let hrel_list, unknown_vars = List.split (List.map 
-        (fun v -> x_add (C.add_raw_hp_rel ~caller:x_loc) cprog false true ((v, I)::pred_I_args) no_pos) dangling_vars) in
+        (fun v -> x_add (C.add_raw_hp_rel ~caller:__LOC__) cprog false true ((v, I)::pred_I_args) no_pos) dangling_vars) in
     let () =  iprog.I.prog_hp_decls <- (List.map Rev_ast.rev_trans_hp_decl cprog.C.prog_hp_decls) in
     let unknown_branches = List.fold_left (fun f h -> CF.mkStar_combine_heap f h CF.Flow_combine no_pos) common_f hrel_list in
     let vbody = CF.formula_of_disjuncts (other_branches @ [unknown_branches]) in

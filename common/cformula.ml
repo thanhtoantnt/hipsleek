@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
   Created 21-Feb-2006
 
@@ -11746,7 +11746,7 @@ let add_infer_pure_thus_estate cp es =
   if flag then
     {es with es_infer_pure_thus = CP.mkAnd es.es_infer_pure_thus cp no_pos;
     }
-  else failwith (x_loc^"add_infer_pure_thus_estate")
+  else failwith (__LOC__^"add_infer_pure_thus_estate")
 
 let add_infer_rel_to_estate cp es =
   let new_cp = es.es_infer_rel # clone in
@@ -11775,7 +11775,7 @@ let add_infer_pure_to_estate cp es =
              (* add inferred pre to pure_this too *)
              es_infer_pure_thus = CP.mkAnd es.es_infer_pure_thus (CP.join_conjunctions new_cp) no_pos;
     }
-  else failwith (x_loc^"add_infer_pure_estate")
+  else failwith (__LOC__^"add_infer_pure_estate")
 
 let add_infer_rel_to_ctx cp ctx =
   let rec helper ctx =
@@ -19813,12 +19813,12 @@ let repl_equiv_heap find_f hf =
 (*   let f hf = match hf with *)
 (*     | HTrue | HFalse | HEmp | DataNode _ | Hole _ | HRel _ | HVar _ -> Some hf *)
 (*     | DataNode dl -> *)
-(*       failwith x_tbi *)
+(*       failwith (__LOC__ ^ "TBI") *)
 (*     | ViewNode vl -> *)
 (*       let name = vl.h_formula_view_name in *)
 (*       if List.exists (fun v -> v=name) vns then *)
 (*         begin *)
-(*           failwith x_tbi *)
+(*           failwith (__LOC__ ^ "TBI") *)
 (*         end *)
 (*       else Some hf *)
 (*     | _ -> None *)
@@ -20269,7 +20269,7 @@ let repl_unfold_heap vd stk u_lst hf =
         let () = y_tinfo_hp (add_str "Unfolding -> " (pr_pair pr_hf pr_hf)) (hf,n_hf) in
         let () = y_tinfo_hp (add_str "(exist vars,pure)  " (fun s -> s # string_of)) stk in
         Some (n_hf)
-        (* failwith (x_loc^"TBI") *)
+        (* failwith (__LOC__^"TBI") *)
       | _ -> Some hf
       end
     | _ -> None
@@ -20291,7 +20291,7 @@ let repl_unfold_formula vd u_lst f =
 
 let convert_un_struc_to_formula body =
   match body with
-  | [] -> failwith (x_loc^"should not be empty")
+  | [] -> failwith (__LOC__^"should not be empty")
   | (f,l)::lst ->
     let f = add_label f l in
     List.fold_left (fun acc (nf,l) -> mkOr acc (add_label nf l) no_pos) f lst
@@ -20369,7 +20369,7 @@ let rename_view_struc sst f =
 
 let is_sat_raw = Mcpure.is_sat_raw
 
-let is_xpure_unsat = ref (fun (f:formula) -> ((failwith x_loc):bool))
+let is_xpure_unsat = ref (fun (f:formula) -> ((failwith __LOC__):bool))
 
 let complex_unfold vn (unfold_set1:(Globals.ident * (CP.spec_var list) * (formula list)) list) orig_f =
   let pure_of_f = get_pure orig_f in
@@ -20596,7 +20596,7 @@ let mk_or f1 f2 =
 
 let join_or f_lst =
   match f_lst with
-  | [] -> failwith x_tbi
+  | [] -> failwith (__LOC__ ^ "TBI")
   | x::lst -> List.fold_left (fun acc x -> mk_or x acc) x lst
 
 let get_root_ptr hf =
@@ -20617,7 +20617,7 @@ let add_pure_estate es cp =
   if flag then
     {es with es_formula = combine_star_pure es.es_formula cp;
     }
-  else failwith (x_loc^"add_infer_pure_thus_estate")
+  else failwith (__LOC__^"add_infer_pure_thus_estate")
 
 let same_node_name c rhs_node =
   try

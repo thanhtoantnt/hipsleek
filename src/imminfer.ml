@@ -3,8 +3,8 @@ Created 12-June-2015
 Program transformations related to immutability annotations inference.
 **)
 
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 open Globals
 open Gen
@@ -227,7 +227,7 @@ let infer_imm_ann_proc (proc_static_specs: CF.struc_formula) : (CF.struc_formula
 let update_rel_tables prog rel_list =
   let update_smtrel  rel_decl = Smtsolver.add_relation rel_decl.Cast.rel_name rel_decl.Cast.rel_vars rel_decl.Cast.rel_formula in
   let () = List.iter update_smtrel rel_list in 
-  let () = prog.C.prog_rel_decls # push_list_pr x_loc rel_list in 
+  let () = prog.C.prog_rel_decls # push_list_pr __LOC__ rel_list in 
   prog
 
 let infer_imm_ann (prog: C.prog_decl) (proc_decls: C.proc_decl list) : C.prog_decl * C.proc_decl list =
@@ -241,7 +241,7 @@ let infer_imm_ann (prog: C.prog_decl) (proc_decls: C.proc_decl list) : C.prog_de
         let (pss, pre_rel, post_rel) = x_add_1 infer_imm_ann_proc old_specs in
         let pre_rels = map_opt_def []  (fun r -> [r]) pre_rel in
         let post_rels = map_opt_def [] (fun r -> [r]) post_rel in
-        proc.C.proc_stk_of_static_specs # push_pr x_loc pss;
+        proc.C.proc_stk_of_static_specs # push_pr __LOC__ pss;
         (* pss_stk # push pss; *)
         (pre_rels, post_rels, pss)(* ) old_specs ([], []) *)
       in
@@ -268,7 +268,7 @@ let infer_imm_ann_prog (prog: C.prog_decl) : C.prog_decl =
         let (pss, pre_rel, post_rel) = x_add_1 infer_imm_ann_proc spec in
         let pre_rels = map_opt_def pre_rels (fun r -> r::pre_rels) pre_rel in
         let post_rels = map_opt_def post_rels (fun r -> r::post_rels) post_rel in
-        pss_stk # push_pr x_loc pss;
+        pss_stk # push_pr __LOC__ pss;
         (pre_rels, post_rels)) old_specs ([], []) in
       ((id, { proc with C.proc_stk_of_static_specs = pss_stk;
                      (* C.proc_static_specs = (pss_stk # top) *) })::proc_decls, pre_rels@post_rels@rel_list) in

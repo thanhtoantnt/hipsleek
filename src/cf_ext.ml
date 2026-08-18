@@ -1,6 +1,6 @@
  
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 (*
   Created 21-Feb-2006
 
@@ -76,13 +76,13 @@ class data_table =
     method find_tags dn =
       try
         snd(List.find (fun (n,_) -> n=dn) lst)
-      with _ -> failwith (x_loc^"does not exist :"^dn)
+      with _ -> failwith (__LOC__^"does not exist :"^dn)
     method get_tag_mask dn (t:string) = 
       try 
         let tags = self # find_tags dn in
         List.map (fun ls -> List.mem t ls) tags
       with _ -> 
-        failwith (x_loc^"tag cannot be found")
+        failwith (__LOC__^"tag cannot be found")
         (*   if dn="node" then [false;true] *)
         (* else [false;true;true] *)
   end
@@ -100,8 +100,8 @@ let add_data_tags_to_obj cdata =
       (* let () = data_decl_obj # add_fields dn flds in *)
       let fields = List.map (fun ((t,id),_) -> t) fields in
       let fields = List.filter (fun t -> Globals.is_node_typ t ) fields in
-      let fields = List.map (fun t -> match t with Named id -> id | _ -> failwith ("impossible"^x_loc)) fields in
-      let () = HipUtil.data_scc_obj # replace x_loc dn fields in
+      let fields = List.map (fun t -> match t with Named id -> id | _ -> failwith ("impossible"^__LOC__)) fields in
+      let () = HipUtil.data_scc_obj # replace __LOC__ dn fields in
       ()
     ) cdata in
   let lst = HipUtil.data_scc_obj # get_scc in

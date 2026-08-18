@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 open Gen.Basic
 open Gen.BList
 open Cast

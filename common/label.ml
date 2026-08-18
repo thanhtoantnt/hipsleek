@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 open Gen
 open Globals
 open Label_only

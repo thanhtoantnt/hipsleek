@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 (* module CP = Cpure    *)
 (* module CF = Cformula *)

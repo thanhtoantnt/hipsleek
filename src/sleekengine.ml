@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 (*
   The frontend engine of SLEEK.
@@ -271,7 +271,7 @@ let clear_all () =
 (*   with *)
 (* 	| Not_found -> begin *)
 (* 		try *)
-(* 		  let _ = I.look_up_view_def_raw x_loc iprog.I.prog_view_decls name in *)
+(* 		  let _ = I.look_up_view_def_raw __LOC__ iprog.I.prog_view_decls name in *)
 (* 			false *)
 (* 		with *)
 (* 		  | Not_found -> (\*true*\) *)
@@ -1491,7 +1491,7 @@ let process_rel_assume cond_path (ilhs : meta_formula) (igurad_opt : meta_formul
       let new_rel_ass =  (CP.RelDefn (List.hd rel_ids, None), lhs_p, rhs_p)  in
       let lr = [new_rel_ass] in
       let () = x_binfo_hp (add_str "WARNING : Spurious RelInferred (not collected)" (pr_list CP.print_lhs_rhs)) lr no_pos in
-      let _ = Infer.infer_rel_stk # push_list_pr x_loc lr in
+      let _ = Infer.infer_rel_stk # push_list_pr __LOC__ lr in
       ()
   in
   ()
@@ -1755,7 +1755,7 @@ let process_shape_derive_view (ids: regex_id_list) =
 let process_data_mark_rec (ids: regex_id_star_list) =
   let () = y_binfo_hp (add_str "dmr args" string_of_regex_star_list) ids in
   Norm.find_rec_data iprog !cprog ids
-  (* in failwith x_tbi *)
+  (* in failwith (__LOC__ ^ "TBI") *)
 
 let process_shape_normalize (ids: regex_id_list) =
   let f others hps =
@@ -2609,7 +2609,7 @@ let process_pred_unfold qual reg_to_vname =
   Norm.norm_unfold qual iprog (* !cprog*) vdefs to_vns
 
 let process_shape_reuse_subs reg_to_vname =
-  (* failwith (x_loc^"TBI") *)
+  (* failwith (__LOC__^"TBI") *)
   let vdefs = get_sorted_view_decls () in
   (* Cast.sort_view_list !cprog.Cast.prog_view_decls  *)
   (* !cprog.Cast.prog_view_decls <- vdefs; *)
@@ -2651,7 +2651,7 @@ let process_shape_extract sel_vnames=
 (*   Some true  -->  always check entailment exactly (no residue in RHS)          *)
 (*   Some false -->  always check entailment inexactly (allow residue in RHS)     *)
 let run_entail_check (iante0 : meta_formula list) (iconseq0 : meta_formula) (etype: entail_type) =
-  wrap_classic x_loc etype (fun conseq ->
+  wrap_classic __LOC__ etype (fun conseq ->
       let (r, (cante, cconseq)) = x_add run_infer_one_pass_set_states [] [] iante0 conseq in
       (*let _ = print_endline "run_entail_check_2" in*)
       let res, _, _ = r in
@@ -3058,7 +3058,7 @@ let process_infer itype (ivars: ident list) (iante0 : meta_formula) (iconseq0 : 
     (* let run_infer x = wrap_classic etype (run_infer_one_pass_set_states itype ivars [iante0]) x in *)
     let num_id = "\nEntail "^nn in
     (* CLASSIC: Set classic reasoning for sleek with infer[@classic] cmd *)
-    let run_infer x = wrap_classic x_loc etype (run_infer_one_pass_set_states itype ivars [iante0]) x in
+    let run_infer x = wrap_classic __LOC__ etype (run_infer_one_pass_set_states itype ivars [iante0]) x in
     let run_infer x =
       if is_field_imm_flag then wrap_field_imm (Some true) run_infer x
       else run_infer x in
@@ -3071,7 +3071,7 @@ let process_infer itype (ivars: ident list) (iante0 : meta_formula) (iconseq0 : 
         let (valid, rs, sel_hps),_ = run_infer iconseq0 in
         let res = print_entail_result sel_hps valid rs num_id (List.mem INF_ERR_MUST itype || List.mem INF_ERR_MUST_ONLY itype || List.mem INF_ERR_MAY itype) in
         (* let res = print_entail_result sel_hps valid rs num_id (List.mem INF_ERR_MUST itype || List.mem INF_ERR_MAY itype) in*)
-        (* let (valid, rs, sel_hps),_ = wrap_classic x_loc etype (run_infer_one_pass_set_states itype ivars [iante0]) iconseq0 in *)
+        (* let (valid, rs, sel_hps),_ = wrap_classic __LOC__ etype (run_infer_one_pass_set_states itype ivars [iante0]) iconseq0 in *)
         let _ = if is_tnt_flag then should_infer_tnt := !should_infer_tnt && res in
         (*   match itype with *)
         (* | Some INF_TERM -> should_infer_tnt := !should_infer_tnt && res *)
@@ -3133,7 +3133,7 @@ let process_print_command pcmd0 =
       (*           print_string ((Cprinter.string_of_numbered_list_formula_trace_inst !cprog *)
       (*               (CF.list_formula_trace_of_list_context ls_ctx))^"\n" ); *)
     else if pcmd = "views" then
-      let () = HipUtil.view_scc_obj # build_scc_void x_loc in
+      let () = HipUtil.view_scc_obj # build_scc_void __LOC__ in
       let view_list =  get_sorted_view_decls () (* !cprog.prog_view_decls *) in
       let view_list = Cast.get_selected_views opt view_list in
       let lst = List.filter (fun v -> v.Cast.view_kind!=View_PRIM) view_list in
@@ -3148,8 +3148,8 @@ let process_print_command pcmd0 =
           let n = d.Cast.data_name in
           let fields = List.map (fun ((t,id),_) -> t) d.Cast.data_fields in
           let fields = List.filter (fun t -> is_node_typ t ) fields in
-          let fields = List.map (fun t -> match t with Named id -> id | _ -> failwith ("impossible"^x_loc)) fields in
-          let () = HipUtil.data_scc_obj # replace x_loc n fields in
+          let fields = List.map (fun t -> match t with Named id -> id | _ -> failwith ("impossible"^__LOC__)) fields in
+          let () = HipUtil.data_scc_obj # replace __LOC__ n fields in
       ()
     ) data_d_lst in
       let lst = HipUtil.data_scc_obj # get_scc in
@@ -3190,7 +3190,7 @@ let process_print_command pcmd0 =
       let () = y_binfo_hp (add_str ("Printing data" ^ opt_str ^ "\n") (pr_list (pr_list Cprinter.string_of_data_decl))) sel_data_d in
       ()
     else
-      print_string (x_loc^"unsupported print command: " ^ pcmd)
+      print_string (__LOC__^"unsupported print command: " ^ pcmd)
 
 let process_cmp_command (input: ident list * ident * meta_formula list) =
   let iv,var,fl = input in
