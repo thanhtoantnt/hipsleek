@@ -292,7 +292,12 @@ struct
   let get_var_split_cnt s = 
     let rec helper i cnt = 
       try 
-        let i = BatString.find_from s i "__"  in
+        let i =
+          let rec find_from k =
+            if k + 2 > String.length s then raise Not_found
+            else if s.[k] = '_' && s.[k+1] = '_' then k
+            else find_from (k+1) in
+          find_from i in
         helper (i+2) (cnt+1)
       with Not_found -> cnt in
     helper 0 0
@@ -430,7 +435,7 @@ struct
           let dec_count = List.fold_left (fun a c->
               try 
                 let c = SV.get_name c in
-                let c,r =  List.find (fun (c1,_)->BatString.starts_with c c1) to_decomp in
+                let c,r =  List.find (fun (c1,_)->String.starts_with ~prefix:c1 c) to_decomp in
                 let r = r - get_var_split_cnt c in
                 if r>a then r else a
               with | Not_found -> a) 0 (eq_fv eq) in
@@ -494,7 +499,7 @@ struct
         let lnvv = String.length nvv in
         if lnv=lnvv then ac 
         else 
-        if BatString.starts_with nv nvv then 
+        if String.starts_with ~prefix:nvv nv then 
           match ac with 
           | None -> Some (lnvv,v)
           | Some (nacv, acv) -> 
@@ -789,8 +794,8 @@ struct
       let conseq_fv =  List.map SV.get_name conseq_fv in
       List.filter (fun c-> 
           let c = SV.get_name c in 
-          List.exists (fun d->BatString.starts_with d c) ante_fv && 
-          List.exists (fun d->BatString.starts_with d c) conseq_fv ) int_fv in
+          List.exists (fun d->String.starts_with ~prefix:c d) ante_fv && 
+          List.exists (fun d->String.starts_with ~prefix:c d) conseq_fv ) int_fv in
     let a_dec_vars, a_l_eqs, a_v_e, a_v_c, c_dec_vars,  c_v_e, c_v_c, c_l_eqs =  
       meet_decompositions  (a_d_vs,a_v_e, a_v_c,a_l_eqs)  (c_d_vs, c_v_e, c_v_c, c_l_eqs) int_fv in
     (*decomp the existentials as well*)

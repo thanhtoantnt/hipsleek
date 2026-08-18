@@ -177,7 +177,8 @@ let process_include_files incl_files ref_file =
     let header_files = Gen.BList.remove_dups_eq (=) incl_files in 
     let new_h_files = process_header_with_pragma header_files !Globals.pragma_list in
     try
-      let (curdir,_)=BatString.rsplit ref_file "/" in
+      let i = String.rindex ref_file '/' in
+      let curdir = String.sub ref_file 0 i in
       (* let _= print_endline_quiet ("BachLe curdir: "^curdir) in    *)
       let prims_list = process_includes new_h_files curdir in (*list of includes in header files*)
       prims_list
