@@ -20,9 +20,11 @@ Binaries: `_build/default/hip.exe`, `_build/default/sleek.exe`.
 Z3 is enough for the small examples. Put optional provers on `PATH` when you use them (see below).
 
 ```sh
-dune exec ./hip.exe dune-tests/hip/ll.t/ll.ss
-dune exec ./sleek.exe dune-tests/sleek/sleek2.t/sleek2.slk
+dune exec ./hip.exe examples/hip/ll.ss
+dune exec ./sleek.exe examples/sleek/sleek2.slk
 ```
+
+More in [`examples/`](examples/).
 
 ## External provers (optional)
 
