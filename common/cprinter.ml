@@ -5071,10 +5071,10 @@ let string_of_program_separate_prelude p (iprims:Iast.prog_decl)=
   let remove_prim_procs procs=
     List.fold_left (fun a b->
         try
-          if( (BatString.starts_with b.Cast.proc_name ("is_not_null___"^"$"))
-              || (BatString.starts_with b.Cast.proc_name ("is_null___"^"$")) )
+          if( (String.starts_with ~prefix:("is_not_null___"^"$") b.Cast.proc_name)
+              || (String.starts_with ~prefix:("is_null___"^"$") b.Cast.proc_name) )
           then a else
-            let _=List.find (fun c-> (BatString.starts_with b.Cast.proc_name (c.Iast.proc_name^"$"))
+            let _=List.find (fun c-> (String.starts_with ~prefix:(c.Iast.proc_name^"$") b.Cast.proc_name)
                             ) iprims.Iast.prog_proc_decls in
             a
         with Not_found ->
