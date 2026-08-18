@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 
 (* Created 21 Feb 2006 Simplify Iast to Cast *)
@@ -64,8 +64,8 @@ let compute_inv_baga ls_mut_rec_views cviews0 =
       (*     (not cv.Cast.view_is_prim) *)
       (*   ) cviews0 in *)
       let () = List.iter (fun cv ->
-          (* Hashtbl.add *) Excore.map_baga_invs # replace x_loc cv.C.view_name Excore.EPureI.mk_false_disj;
-          (* Hashtbl.add *) Excore.map_precise_invs # replace x_loc cv.C.view_name true
+          (* Hashtbl.add *) Excore.map_baga_invs # replace __LOC__ cv.C.view_name Excore.EPureI.mk_false_disj;
+          (* Hashtbl.add *) Excore.map_precise_invs # replace __LOC__ cv.C.view_name true
         ) cviews0 in
       let cviews0_with_index = Expure.add_index_to_views cviews0 in
       let ls_mut_rec_views1 = List.fold_left (fun ls cv ->
@@ -219,7 +219,7 @@ let compute_inv_baga ls_mut_rec_views cviews0 =
           let () = y_binfo_hp (add_str "precise_invs" (pr_list string_of_bool)) precise_list in
           let () = x_binfo_hp (add_str "baga_invs" (pr_list Excore.EPureI.string_of_disj)) baga_invs no_pos in
           let () = List.iter (fun (vd,inv) ->
-              (* Hashtbl.add *) Excore.map_num_invs # replace x_loc vd.Cast.view_name ((CP.mk_self None)::vd.Cast.view_vars,inv)
+              (* Hashtbl.add *) Excore.map_num_invs # replace __LOC__ vd.Cast.view_name ((CP.mk_self None)::vd.Cast.view_vars,inv)
             ) (List.combine view_list_baga0 num_invs) in
           let baga_num_invs = List.combine baga_invs num_invs in
           let combined_invs = List.map (fun (disj,pf) ->
@@ -229,7 +229,7 @@ let compute_inv_baga ls_mut_rec_views cviews0 =
             ) baga_num_invs in
           let () = x_binfo_hp (add_str "combined_invs" (pr_list Excore.EPureI.string_of_disj)) combined_invs no_pos in
           let () = List.iter (fun (vd,inv) ->
-              Excore.map_baga_invs # replace x_loc vd.Cast.view_name inv
+              Excore.map_baga_invs # replace __LOC__ vd.Cast.view_name inv
             ) (List.combine view_list_baga0 combined_invs) in
           let () = x_binfo_pp ("Omega call after combine inv: " ^ (string_of_int !Omega.omega_call_count) ^ " invocations") no_pos in
           let unfold_cnt = new Gen.change_flag in
@@ -259,13 +259,13 @@ let compute_inv_baga ls_mut_rec_views cviews0 =
               let () = Debug.ninfo_hprint (add_str "new_invs" (pr_list Excore.EPureI.string_of_disj)) new_invs no_pos in
               if List.length old_invs = 0 then
                 let () = List.iter (fun (vd,new_inv) ->
-                    Excore.map_baga_invs # replace x_loc vd.Cast.view_name new_inv
+                    Excore.map_baga_invs # replace __LOC__ vd.Cast.view_name new_inv
                   ) (List.combine view_list_baga0 new_invs) in
                 unfold precise new_invs
               else if not precise then
                 let () = List.iter (fun (vd,new_inv) ->
-                    Excore.map_baga_invs # replace x_loc vd.Cast.view_name new_inv;
-                    Excore.map_precise_invs # replace x_loc vd.Cast.view_name false
+                    Excore.map_baga_invs # replace __LOC__ vd.Cast.view_name new_inv;
+                    Excore.map_precise_invs # replace __LOC__ vd.Cast.view_name false
                   ) (List.combine view_list_baga0 new_invs) in
                 new_invs
               else if List.for_all (fun (ante,cons) ->
@@ -273,7 +273,7 @@ let compute_inv_baga ls_mut_rec_views cviews0 =
                 old_invs
               else
                 let () = List.iter (fun (vd,new_inv) ->
-                    Excore.map_baga_invs # replace x_loc vd.Cast.view_name new_inv
+                    Excore.map_baga_invs # replace __LOC__ vd.Cast.view_name new_inv
                   ) (List.combine view_list_baga0 new_invs) in
                 unfold precise new_invs
           in

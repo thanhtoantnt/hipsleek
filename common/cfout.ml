@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
 this module contains funtions relating to output of cformula
 *)

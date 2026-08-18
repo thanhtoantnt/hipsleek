@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 (* cview util
    this module contains procedures
@@ -262,7 +262,7 @@ let extract_callee_view_info_x prog f=
     | [] -> res
   in
   let extract_pto vn= [vn.h_formula_view_node]
-  (* let vdcl = x_add Cast.look_up_view_def_raw x_loc prog.Cast.prog_view_decls vn.h_formula_view_name in *)
+  (* let vdcl = x_add Cast.look_up_view_def_raw __LOC__ prog.Cast.prog_view_decls vn.h_formula_view_name in *)
   (* let neqNulls = CP.get_neq_null_svl (Mcpure.pure_of_mix vdcl.Cast.view_x_formula) in *)
   (* let formal_args = CP.SpecVar (Named vdcl.Cast.view_data_name, self, Unprimed):: vdcl.Cast.view_vars in *)
   (* let neqNulls1 = CP.intersect_svl neqNulls formal_args in *)
@@ -454,7 +454,7 @@ let process_vis_x prog term_first_sat (vname,p_root,p_args,p_eqs,p_neqs,p_null_s
         ([],[],new_vis)
   in
   (*********************************)
-  let vdecl = x_add Cast.look_up_view_def_raw x_loc prog.Cast.prog_view_decls vname in
+  let vdecl = x_add Cast.look_up_view_def_raw __LOC__ prog.Cast.prog_view_decls vname in
   let self_sv = if String.compare vdecl.Cast.view_data_name "" != 0 then
       CP.SpecVar (Named vdecl.Cast.view_data_name,self,Unprimed)
     else
@@ -936,7 +936,7 @@ let h_formula_2_mem (f : h_formula) (p : mix_formula) (evars : CP.spec_var list)
   (* let pr0 = Cprinter.string_of_spec_var in *)
   (* let pr_subs = pr_list (pr_pair pr0 pr0) in *)
   Debug.no_3 "h_formula_2_mem"  Cprinter.string_of_h_formula Cprinter.string_of_mix_formula Cprinter.string_of_spec_var_list Cprinter.string_of_mem_formula 
-    (fun f p evars ->  Excore.wrap_h_2_mem x_loc (h_formula_2_mem_x f p evars) prog) f p evars
+    (fun f p evars ->  Excore.wrap_h_2_mem __LOC__ (h_formula_2_mem_x f p evars) prog) f p evars
 
 let rec formula_2_mem_x (f : CF.formula) prog : CF.mem_formula = 
   (* for formula *)
@@ -2574,7 +2574,7 @@ assumption:
 *)
 let get_oa_node_view_x prog seg_vnames=
   let get_oa res vname=
-    let vdecl = x_add Cast.look_up_view_def_raw x_loc prog.Cast.prog_view_decls vname in
+    let vdecl = x_add Cast.look_up_view_def_raw __LOC__ prog.Cast.prog_view_decls vname in
     let ddecl = Cast.look_up_data_def_raw prog.Cast.prog_data_decls vdecl.Cast.view_data_name in
     if List.length vdecl.Cast.view_cont_vars = 1 &&
        List.length vdecl.Cast.view_vars = List.length (List.filter (fun ((t,_),_) ->

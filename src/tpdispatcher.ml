@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 (*
   Choose with theorem prover to prove formula
@@ -3681,7 +3681,7 @@ object (self)
     else
       let old = super # get in
       super # set (CP.mkAnd a old no_pos)
-      (* failwith (x_loc^"over-writing "^old) *)
+      (* failwith (__LOC__^"over-writing "^old) *)
   method is_empty = super # is_empty
   method get_rm = super # get_rm
   method get = super # get

@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 (*translates cformulas to iformulas, with some simplifications*)
 open Globals
@@ -329,7 +329,7 @@ and rev_trans_spec_var_primed (sv: CP.spec_var): (ident * primed) =
 let rev_sv sv = CP.name_of_spec_var sv
 
 let rev_intv (sv,ssv_opt) = (rev_sv sv,
-                             let () = y_binfo_pp x_tbi in
+                             let () = y_binfo_pp (__LOC__ ^ "TBI") in
                              None (* map_opt rev_sv ssv_opt *))
 
 let rev_trans_view_decl (v: C.view_decl): I.view_decl = 

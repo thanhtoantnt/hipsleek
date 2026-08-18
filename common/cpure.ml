@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
   Created 19-Feb-2006
 
@@ -4482,7 +4482,7 @@ and subst_avoid_capture_x (fr : spec_var list) (t : spec_var list) (f : formula)
     (* changing to a parallel substitution below *)
     let f2 = par_subst st1 f in
     f2
-  with _ -> failwith (x_loc ^ "[subst_avoid_capture]: Cannot combine fr and t")
+  with _ -> failwith (__LOC__ ^ "[subst_avoid_capture]: Cannot combine fr and t")
 
 and subst (sst : (spec_var * spec_var) list) (f : formula) : formula = apply_subs sst f
 (* match sst with *)
@@ -5899,7 +5899,7 @@ struct
     (* let baga_conv ?(neq_flag=false) baga : formula = *)
     (*   let choose hd pos = *)
   let get_pure ?(enum_flag=false) ?(neq_flag=false) (lst:t list) =
-    (* let () = y_winfo_pp ("TODO: get_pure"^x_loc) in *)
+    (* let () = y_winfo_pp ("TODO: get_pure"^__LOC__) in *)
     if enum_flag then baga_enum lst
     else baga_conv ~neq_flag:neq_flag lst
 
@@ -6005,7 +6005,7 @@ struct
     (repl v,map_opt repl_e opt)
   (* [(b,d),(b2,d2)],p   ==> p & (d>0 -> b!=null) & (d2>0 -> b2!=null) *)
   let get_pure ?(enum_flag=false) ?(neq_flag=false) (lst:t list) =
-    (* let () = y_winfo_pp ("TODO: get_pure"^x_loc) in *)
+    (* let () = y_winfo_pp ("TODO: get_pure"^__LOC__) in *)
     let lst_intv = List.fold_left (fun acc (_,s) -> match s with
         | None -> acc
         | Some(b,d) -> (b,d)::acc) [] lst in
@@ -6035,7 +6035,7 @@ struct
   (* let mk_elem x = mk_elem_from_sv (x,None) *)
   (* throws exception when duplicate detected during merge *)
   let norm_baga (state:formula) (b:t list) =
-    let () = y_binfo_pp x_tbi in
+    let () = y_binfo_pp (__LOC__ ^ "TBI") in
     b
   let rec merge_baga b1 b2 =
     match b1,b2 with
@@ -15388,7 +15388,7 @@ let combine_labels_w_view_arg  lbl view_arg =
     let view_args_w_lbl = List.map (fun (l,(_,a)) -> (l,a)) no_view_args in
     view_args_w_lbl
   with r ->
-    let () = y_winfo_hp (add_str (x_loc^"combine_labels")
+    let () = y_winfo_hp (add_str (__LOC__^"combine_labels")
                            (pr_pair (pr_list (fun (a,_)->a)) (pr_list pr_none))) (lbl,view_arg) in
     raise r
 

@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
  * Interact with reduce/redlog
  * Created on Aug 31, 2009

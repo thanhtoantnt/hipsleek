@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 module DD = Debug
 open Globals
@@ -323,7 +323,7 @@ let add_post_relation_scc prog scc =
       let spec = proc.proc_stk_of_static_specs # top in
       let () = if is_need_to_add_post_rel spec then
           let new_spec = add_post_relation prog proc spec in
-          proc.proc_stk_of_static_specs # push_pr x_loc new_spec
+          proc.proc_stk_of_static_specs # push_pr __LOC__ new_spec
       in ()
     ) scc in
   let () = if List.length scc > 1 then
@@ -334,7 +334,7 @@ let add_post_relation_scc prog scc =
       List.iter (fun proc ->
           let spec = proc.proc_stk_of_static_specs # top in
           let new_spec = modify_infer_vars spec infer_vars in
-          proc.proc_stk_of_static_specs # push_pr x_loc new_spec
+          proc.proc_stk_of_static_specs # push_pr __LOC__ new_spec
         ) scc
   in ()
 
@@ -946,7 +946,7 @@ let infer_pure (prog : prog_decl) (scc : proc_decl list) =
     let new_specs = List.map (fun new_spec -> Immutable.remove_abs_nodes_struc new_spec) new_specs in
     (* let new_specs = List.map (fun new_spec -> Immutable.infer_specs_imm_post_process new_spec) new_specs in *)
     let () = List.iter (fun (proc,new_spec) ->
-        let () = proc.proc_stk_of_static_specs # push_pr x_loc new_spec in
+        let () = proc.proc_stk_of_static_specs # push_pr __LOC__ new_spec in
         print_endline_quiet "\nPost Inference result:";
         print_endline_quiet proc.proc_name;
         print_endline_quiet (Cprinter.string_of_struc_formula new_spec);

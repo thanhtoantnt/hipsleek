@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 open Globals
 open Gen
@@ -551,7 +551,7 @@ let heap_entail_formula prog (ante: CF.formula) (conseq: CF.formula) =
     (fun _ _ -> heap_entail_formula prog ante conseq) ante conseq
 
 let heap_entail_exact_formula prog (ante: CF.formula) (conseq: CF.formula) =
-  fst (Wrapper.wrap_classic x_loc (Some true) (heap_entail_formula prog ante) conseq)
+  fst (Wrapper.wrap_classic __LOC__ (Some true) (heap_entail_formula prog ante) conseq)
 
 let heap_entail_exact_formula prog (ante: CF.formula) (conseq: CF.formula) =
   let pr1 = !CF.print_formula in
@@ -561,7 +561,7 @@ let heap_entail_exact_formula prog (ante: CF.formula) (conseq: CF.formula) =
 
 let get_equiv_pred prog vid =
   try
-    let vdef = C.look_up_view_def_raw x_loc prog.Cast.prog_view_decls vid in
+    let vdef = C.look_up_view_def_raw __LOC__ prog.Cast.prog_view_decls vid in
     if not !Globals.pred_equiv then vid
     else if vdef.C.view_equiv_set # is_empty then vid
     else
@@ -577,7 +577,7 @@ let trans_hrel_to_view_formula ?(for_spec=false) prog (f: CF.formula) =
       let hrel_id = CP.name_of_spec_var hrel_name in
       let subs_hrel_name, view_args, is_equiv_view =
         try
-          let vdef = C.look_up_view_def_raw x_loc prog.Cast.prog_view_decls hrel_id in
+          let vdef = C.look_up_view_def_raw __LOC__ prog.Cast.prog_view_decls hrel_id in
           let () = y_binfo_hp (add_str "vdef" !C.print_view_decl) vdef in
           if not !Globals.pred_equiv then hrel_name, vdef.view_vars, false
           else if vdef.C.view_equiv_set # is_empty then hrel_name, vdef.view_vars, false
@@ -588,7 +588,7 @@ let trans_hrel_to_view_formula ?(for_spec=false) prog (f: CF.formula) =
               | CP.SpecVar (t, n, p) -> CP.SpecVar (t, subs_hrel_id, p) in
             let equiv_pred_args = 
               try 
-                let edef = C.look_up_view_def_raw x_loc prog.Cast.prog_view_decls subs_hrel_id in
+                let edef = C.look_up_view_def_raw __LOC__ prog.Cast.prog_view_decls subs_hrel_id in
                 edef.view_vars
               with _ ->
                 let () = x_warn ("Cannot find the definition of the equiv pred " ^ subs_hrel_id) in 
@@ -667,7 +667,7 @@ let rec trans_hrel_to_view_struc_formula ?(for_spec=false) prog (sf: CF.struc_fo
 (* let trans_hrel_to_view_spec_proc cprog proc =                                            *)
 (*   let spec = proc.C.proc_stk_of_static_specs # top in                                    *)
 (*   let nspec = trans_hrel_to_view_struc_formula spec in                                   *)
-(*   let () = proc.C.proc_stk_of_static_specs # push_pr ("SynUtils:" ^ x_loc) nspec in      *)
+(*   let () = proc.C.proc_stk_of_static_specs # push_pr ("SynUtils:" ^ __LOC__) nspec in      *)
 (*   let nproc = { proc with                                                                *)
 (*     C.proc_static_specs = nspec;                                                         *)
 (*     C.proc_dynamic_specs = trans_hrel_to_view_struc_formula proc.C.proc_dynamic_specs; } *)
@@ -704,7 +704,7 @@ let trans_spec_proc trans_f cprog proc =
   let pr_spec = Cprinter.string_of_struc_formula_for_spec in
   let () = y_tinfo_hp (add_str "spec" pr_spec) spec in
   let () = y_tinfo_hp (add_str "nspec" pr_spec) nspec in
-  let () = proc.C.proc_stk_of_static_specs # push_pr x_loc nspec in
+  let () = proc.C.proc_stk_of_static_specs # push_pr __LOC__ nspec in
   let nproc = { proc with
     (* C.proc_static_specs = nspec; *)
     C.proc_dynamic_specs = trans_f proc.C.proc_dynamic_specs; }
@@ -872,7 +872,7 @@ let norm_one_derived_view iprog cprog derived_view =
     let norm_cview = match cview with v::[] -> v | _ -> derived_view in
     let () = y_tinfo_hp (add_str "norm_cviews" Cprinter.string_of_view_decl) norm_cview in
     (* norm_cview might not be updated/added into cprog due to exception *)
-    let () = x_add (Cast.update_view_decl ~caller:x_loc) cprog norm_cview in
+    let () = x_add (Cast.update_view_decl ~caller:__LOC__) cprog norm_cview in
     norm_cview
   with _ ->
     let () = x_warn ("Cannot normalize the derived views") in
@@ -900,7 +900,7 @@ let norm_single_view iprog cprog view =
 
 let restore_view iprog cprog view = 
   let iview = Rev_ast.rev_trans_view_decl view in
-  let () = x_add (C.update_view_decl ~caller:x_loc) cprog view in
+  let () = x_add (C.update_view_decl ~caller:__LOC__) cprog view in
   let () = x_add I.update_view_decl iprog iview in
   ()
   
@@ -926,7 +926,7 @@ let update_view_content iprog cprog vdecl f =
   in
   let normed_vdecl = norm_single_view iprog cprog vdecl in
   (* iprog has been updated by norm_single_view *)
-  let () = x_add (Cast.update_view_decl ~caller:x_loc) cprog normed_vdecl in
+  let () = x_add (Cast.update_view_decl ~caller:__LOC__) cprog normed_vdecl in
   let () =  x_add Astsimp.compute_view_x_formula cprog normed_vdecl !Globals.n_xpure in
   let r_vdecl =  Astsimp.set_materialized_prop normed_vdecl in
   r_vdecl

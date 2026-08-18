@@ -1,4 +1,3 @@
-#include "xdebug.cppo"
 open Hipsleek_common
 (*
   Proof tracing facilities:
@@ -631,5 +630,5 @@ let add_pure_imply ante conseq is_valid prover_name prover_input prover_output =
 (* End of JSON proof generator *)
 
 let write_html_output () =
-  print_endline_quiet "HTML proof export (-wpf) removed with html_resources/"
+  print_endline "HTML proof export (-wpf) removed with html_resources/"
 

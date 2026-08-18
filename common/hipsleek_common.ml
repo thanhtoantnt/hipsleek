@@ -51,3 +51,4 @@ module Immutils = Immutils
 module Timelog = Timelog
 module Vartypes = Vartypes
 module Loc = Loc
+module Xdebug = Xdebug

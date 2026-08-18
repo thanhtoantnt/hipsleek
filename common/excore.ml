@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 open Globals
 open VarGen
 (* open Wrapper *)
@@ -706,7 +706,7 @@ module EPURE =
             let v =  Elt.get_interval e in
             match v with 
             | Some (id,d) -> (id,d)
-            | _  -> failwith x_tbi
+            | _  -> failwith (__LOC__ ^ "TBI")
           ) lst2 in
         let lst2 = List.filter (fun (id,(_,d)) -> 
             let rhs = Cpure.mk_exp_geq d 1 in

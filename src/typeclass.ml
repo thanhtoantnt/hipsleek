@@ -1,4 +1,3 @@
-#include "xdebug.cppo"
 (* Class EQ Basic *)
 module type EQ_B =
 sig

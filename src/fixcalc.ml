@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 (*
   Call Fixpoint Calculator for numerical domains
@@ -852,7 +852,7 @@ let substitute_args_x a_rel = match a_rel with
       let prog = !Cast.global_prog in
       (*   match !Cast.global_prog with *)
       (*   | Some p -> p *)
-      (*   | None -> failwith (x_loc^"substitute_args: Initialize global_prog first!") *)
+      (*   | None -> failwith (__LOC__^"substitute_args: Initialize global_prog first!") *)
       (* in *)
       let typed_args =
         try
@@ -991,7 +991,7 @@ let compute_def (rel_fml, pf, no) ante_vars =
     in input_fixcalc
   with e ->
     let () = y_binfo_pp ("Toan : need to remove * in pf for fixcalc") in
-    report_error ~exc:(Some e) no_pos (x_loc^"compute_def:Error in translating the input for fixcalc")
+    report_error ~exc:(Some e) no_pos (__LOC__^"compute_def:Error in translating the input for fixcalc")
 ;;
 
 let compute_def (rel_fml, pf, no) ante_vars =
@@ -1921,7 +1921,7 @@ let compute_def_gfp (rel_fml, pf, no) ante_vars =
       ^ rhs ^ "\n};"
     in input_fixcalc
   with e ->
-    report_error ~exc:(Some e) no_pos (x_loc^"compute_def:Error in translating the input for fixcalc")
+    report_error ~exc:(Some e) no_pos (__LOC__^"compute_def:Error in translating the input for fixcalc")
 ;;
 
 let compute_gfp_aux rel_defs ante_vars=

@@ -1,4 +1,3 @@
-#include "xdebug.cppo"
 open Hipsleek_common
 (* Ocamlgraph RTC program: Find Biconnected component, *)
 (* RTC algorithm generating extra constraints for Equality Logic*)

@@ -1,8 +1,8 @@
-#include "xdebug.cppo"
 (*
   15-06-2006
 *)
 open Hipsleek_common
+open Xdebug
 open Globals
 open VarGen
 open Gen

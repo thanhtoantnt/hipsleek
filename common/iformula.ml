@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (*
   Created 19-Feb-2006
 

@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 open Globals
 open GlobProver
 open Gen.Basic

@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 (** pretty printing for formula and cast *)
 
 open Format

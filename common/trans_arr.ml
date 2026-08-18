@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 
 open Cpure
 open Globals

@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 (*
 created by L2
@@ -204,7 +204,7 @@ let trans_hprel_2_cview_x iprog cprog proc_name hpdefs:
           let hp_name = CP.name_of_spec_var hp in
           try
             let () =  Debug.ninfo_pprint (" hp: " ^ (!CP.print_sv hp)) no_pos in
-            let view = x_add C.look_up_view_def_raw x_loc cprog.C.prog_view_decls hp_name in
+            let view = x_add C.look_up_view_def_raw __LOC__ cprog.C.prog_view_decls hp_name in
             if view.Cast.view_kind == View_HREL then
               (ls1@[hp], ls2@[def], ls3)
             else
@@ -1008,7 +1008,7 @@ let trans_specs_hprel_2_cview iprog cprog proc_name unk_hps
       let _ =  Debug.ninfo_hprint (add_str "n_stk_spec 4" (Cprinter.string_of_struc_formula)) n_stk_spec no_pos in
       let n_stk_specs = proc.C.proc_stk_of_static_specs in
       let () = n_stk_specs # pop in
-      let () = n_stk_specs # push_pr x_loc n_stk_spec in
+      let () = n_stk_specs # push_pr __LOC__ n_stk_spec in
 
       (* let proc_stk_of_static_specs = proc.C.proc_stk_of_static_specs  in *)
       (* let n_proc_stk_of_static_specs = List.map (fun s -> *)
@@ -1083,7 +1083,7 @@ let classify_hp_def cprog hp_defs=
              let f = CF.disj_of_list (List.map fst hp_def.CF.def_rhs) no_pos in
              let simp_hps = if not (CF.is_disj f) then r_simp_hps@[hp] else r_simp_hps in
              try
-               let todo_unk = x_add Cast.look_up_view_def_raw x_loc cprog.Cast.prog_view_decls
+               let todo_unk = x_add Cast.look_up_view_def_raw __LOC__ cprog.Cast.prog_view_decls
                  (Cpure.name_of_spec_var hp)
                in
                (r_hp_defs, r_unk_hps, simp_hps)
@@ -1122,7 +1122,7 @@ let plug_shape_into_specs_x cprog iprog dang_hps proc_names pre_hps post_hps hp_
     (*         let f = CF.disj_of_list (List.map fst hp_def.CF.def_rhs) no_pos in *)
     (*         let simp_hps = if not (CF.is_disj f) then r_simp_hps@[hp] else r_simp_hps in *)
     (*         try *)
-    (*           let todo_unk = x_add Cast.look_up_view_def_raw x_loc cprog.Cast.prog_view_decls *)
+    (*           let todo_unk = x_add Cast.look_up_view_def_raw __LOC__ cprog.Cast.prog_view_decls *)
     (*               (Cpure.name_of_spec_var hp) *)
     (*           in *)
     (*           (r_hp_defs, r_unk_hps, simp_hps) *)

@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 open Globals
 open Others
@@ -40,7 +40,7 @@ let collect_ho_ass iprog cprog is_pre def_hps unk_hps (acc_constrs, post_no_def)
   (* let tmp = Wrapper.check_is_classic in *)
   (* let () = Wrapper.set_classic  true in *)
   let f = wrap_proving_kind log_str (Sacore.do_entail_check (infer_hps@unk_hps) iprog cprog) in
-  let new_constrs = Wrapper.wrap_classic x_loc (Some true) f cs in
+  let new_constrs = Wrapper.wrap_classic __LOC__ (Some true) f cs in
   (* let () = Wrapper.set_classic  tmp in *)
   (acc_constrs@new_constrs, post_no_def@linfer_hps)
 
@@ -3286,7 +3286,7 @@ let infer_shapes iprog prog proc_name (constrs0: CF.hprel list)
       if !Globals.pred_equiv then
         let view_aset = Syn.aux_pred_reuse iprog prog derived_views in
         let derived_views = List.map (fun v -> 
-          try Cast.look_up_view_def_raw x_loc prog.Cast.prog_view_decls v.Cast.view_name
+          try Cast.look_up_view_def_raw __LOC__ prog.Cast.prog_view_decls v.Cast.view_name
           with _ -> v) derived_views in
         view_aset, derived_views
       else [], derived_views

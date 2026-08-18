@@ -1,4 +1,4 @@
-#include "xdebug.cppo"
+open Xdebug
 open Globals
 open Gen.Basic
 open VarGen

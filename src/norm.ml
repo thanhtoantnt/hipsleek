@@ -1,5 +1,5 @@
-#include "xdebug.cppo"
 open Hipsleek_common
+open Xdebug
 open VarGen
 open Globals
 open Gen
@@ -70,7 +70,7 @@ let norm_elim_useless_para stk view_name sf args =
 
 (*assume views are sorted*)
 let norm_elim_useless vdefs sel_vns=
-  (* let () = Cast.cprog_obj # check_prog_upd x_loc !Cprog_sleek.cprog in *)
+  (* let () = Cast.cprog_obj # check_prog_upd __LOC__ !Cprog_sleek.cprog in *)
   let useless_stk = new stack_pr ""  (pr_pair pr_id !CP.print_svl) (=) in
   let elim_vdef ss vdef=
     let new_vdef = { vdef with
@@ -130,15 +130,15 @@ let norm_elim_useless vdefs sel_vns=
           with _ ->
             let () = y_winfo_pp (s^"mismatched vars and ss") in vars in
         let mask = get_useless_para_mask ss in
-        let view_sv_vars2 = select_w_mask x_loc mask vars in
+        let view_sv_vars2 = select_w_mask __LOC__ mask vars in
         let new_def = {vdef with
                        Cast.view_name = new_vname;
                        Cast.view_vars = view_sv_vars2;
-                       (* Cast.view_ann_params = select_w_mask x_loc mask vdef.Cast.view_ann_params; *)
-                       (* Cast.view_cont_vars = select_w_mask x_loc mask vdef.Cast.view_cont_vars; *)
-                       Cast.view_labels = select_w_mask x_loc mask vdef.Cast.view_labels;
-                       Cast.view_params_orig = select_w_mask x_loc mask vdef.Cast.view_params_orig;
-                       (* Cast.view_domains = select_w_mask x_loc mask vdef.Cast.view_domains; *)
+                       (* Cast.view_ann_params = select_w_mask __LOC__ mask vdef.Cast.view_ann_params; *)
+                       (* Cast.view_cont_vars = select_w_mask __LOC__ mask vdef.Cast.view_cont_vars; *)
+                       Cast.view_labels = select_w_mask __LOC__ mask vdef.Cast.view_labels;
+                       Cast.view_params_orig = select_w_mask __LOC__ mask vdef.Cast.view_params_orig;
+                       (* Cast.view_domains = select_w_mask __LOC__ mask vdef.Cast.view_domains; *)
                       } in
         let () = y_tinfo_hp (add_str "mask" (pr_list string_of_int)) mask in
         let () = y_tinfo_hp (add_str "view_vars2" !CP.print_svl) view_sv_vars2 in
@@ -165,7 +165,7 @@ let norm_elim_useless vdefs sel_vns=
   let normal_view, rest_views = List.partition (fun vdcl -> vdcl.Cast.view_kind = View_NORM) vdefs in
   let n_normal_view = interate_helper normal_view [] in
   let () = if not(useless_stk # is_empty) then y_binfo_hp (add_str "USELESS Parameters eliminated" (fun s -> s # string_of)) useless_stk in
-  (* let () = Cast.cprog_obj # check_prog_upd x_loc !Cprog_sleek.cprog in *)
+  (* let () = Cast.cprog_obj # check_prog_upd __LOC__ !Cprog_sleek.cprog in *)
   (rest_views@n_normal_view)
 
 let norm_elim_useless vdefs sel_vns =
@@ -251,7 +251,7 @@ let norm_reuse_one_frm_view iprog prog ?(all=true)
                 let () = y_tinfo_pp "Swapping non-rec view to RHS" in
                 (f2,f1)
             in
-            let flag = Wrapper.wrap_exc_as_false ~msg:("check_lemeq_sem"^x_loc) (!check_lemeq_sem iprog prog f1 f2 [] []) [] in
+            let flag = Wrapper.wrap_exc_as_false ~msg:("check_lemeq_sem"^__LOC__) (!check_lemeq_sem iprog prog f1 f2 [] []) [] in
             let msg = if flag then "\n Proven :" else "\n Failed :" in
             let () = y_tinfo_pp (msg ^ (!CF.print_formula f1) ^ " <-> " ^ (!CF.print_formula f2)) in
             if flag (* !check_lemeq_sem iprog prog f1 f2 [] [] [] *) then
@@ -568,7 +568,7 @@ let norm_trans_equiv iprog cprog vdefs =
       let sst = List.map fst new_sst in
       if ordered sst then []
       else sst
-    with _ -> failwith(x_loc^"mismatching sst") in
+    with _ -> failwith(__LOC__^"mismatching sst") in
   let comp_sst sst1 sst2 =
     match sst1 with
     | [] -> sst2
@@ -836,7 +836,7 @@ let check_view_split_global_x iprog prog cands =
   (*each partition, create new hp and its corresponding HRel formula*)
   let pred_helper1 pos args =
     let args1 = List.map (fun sv -> (sv,I)) args in
-    let hf,new_hp_sv = x_add (Sautil.add_raw_hp_rel ~caller:x_loc) prog true false args1 pos in
+    let hf,new_hp_sv = x_add (Sautil.add_raw_hp_rel ~caller:__LOC__) prog true false args1 pos in
     (*add rel decl in iprog*)
     let ihp_decl = { Iast.hp_name = CP.name_of_spec_var new_hp_sv;
                       Iast.hp_typed_inst_vars = List.map (fun (CP.SpecVar (t,id,_), i) -> (t,id,i)) args1;
@@ -958,7 +958,7 @@ let update_scc_view_args prog vdecl=
     match svl with
       | [] -> ()
       | sv::rest ->
-            let () = HipUtil.view_args_scc_obj # add x_loc sv (done_svl@rest) in
+            let () = HipUtil.view_args_scc_obj # add __LOC__ sv (done_svl@rest) in
              update_scc_alias rest (done_svl@[sv])
   in
   let update_scc_view_args_alias args eqs =
@@ -979,7 +979,7 @@ let update_scc_view_args prog vdecl=
         let v_args = (hv.CF.h_formula_view_node::hv.CF.h_formula_view_arguments) in
         let inter_svl = CP.intersect_svl v_args part2a in
         if inter_svl != [] then
-          let vdecl1 = Cast.look_up_view_def_raw x_loc prog.Cast.prog_view_decls hv.CF.h_formula_view_name in
+          let vdecl1 = Cast.look_up_view_def_raw __LOC__ prog.Cast.prog_view_decls hv.CF.h_formula_view_name in
           let self_sv = CP.SpecVar ((Named vdecl1.Cast.view_data_name) ,self, Unprimed) in
           let sst = List.combine v_args (self_sv::vdecl1.Cast.view_vars) in
           let inter_rename = CP.subst_var_list sst inter_svl in
@@ -994,7 +994,7 @@ let update_scc_view_args prog vdecl=
     let name = CP.name_of_spec_var sv in
     let src_id = add_v vdecl.Cast.view_name name in
     List.iter (fun dest_names ->
-        HipUtil.view_args_scc_obj # add x_loc src_id dest_names
+        HipUtil.view_args_scc_obj # add __LOC__ src_id dest_names
     ) inter_hvs
   in
   let update_scc_view_args_branch args f =
@@ -1060,7 +1060,7 @@ let norm_split_x iprog prog vdefs sel_vns=
       examine_one_arg fs_tl a new_res
   in
   let add_view_args (vn, parts)=
-    let vdecl = C.look_up_view_def_raw x_loc vdefs vn in
+    let vdecl = C.look_up_view_def_raw __LOC__ vdefs vn in
     let self_sv = CP.SpecVar ((Named vdecl.Cast.view_data_name) ,self, Unprimed) in
     let args = self_sv::vdecl.C.view_vars in
     let sv_parts = List.map (fun ids ->
@@ -1083,7 +1083,7 @@ let norm_split_x iprog prog vdefs sel_vns=
   let sel_scclist = List.filter (fun scc -> (Gen.BList.intersect_eq string_eq scc sel_vns) != []) scclist in
   let cl_sel_vns = List.concat sel_scclist in
   let () = y_tinfo_hp (add_str "\n" pr_id) ((pr_list pr_id) cl_sel_vns) in
-  let sel_vdecls = List.map (C.look_up_view_def_raw x_loc vdefs) sel_vns in
+  let sel_vdecls = List.map (C.look_up_view_def_raw __LOC__ vdefs) sel_vns in
   (* split candidate *)
   let () = List.iter (update_scc_view_args prog) sel_vdecls in
   (* let split_cands = view_split_cands prog sel_vdecls in *)
@@ -2089,10 +2089,10 @@ let find_rec_data iprog cprog ids =
       let () = y_tinfo_hp (add_str "name" pr_id) n in
       let fields = List.map (fun ((t,id),_) -> t) d.Cast.data_fields in
       let fields = List.filter (fun t -> is_node_typ t) fields in
-      let fields = List.map (fun t -> match t with Named id -> id | _ -> failwith ("impossible"^x_loc)) fields in
+      let fields = List.map (fun t -> match t with Named id -> id | _ -> failwith ("impossible"^__LOC__)) fields in
       (* let () = y_tinfo_hp (add_str "fields" (pr_list (pr_pair CF.string_of_typed_ident (pr_list pr_id)))) d.Cast.data_fields in *)
       let () = y_tinfo_hp (add_str "fields" (pr_list pr_id)) fields in
-      let () = HipUtil.data_scc_obj # replace x_loc n fields in
+      let () = HipUtil.data_scc_obj # replace __LOC__ n fields in
       ()
     ) data_d_lst in
   let () = y_tinfo_hp (add_str "data_scc_obj" pr_id) HipUtil.data_scc_obj # string_of in

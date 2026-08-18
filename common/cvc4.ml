@@ -1,4 +1,3 @@
-#include "xdebug.cppo"
 open Globals
 open VarGen
 open GlobProver
