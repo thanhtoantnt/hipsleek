@@ -1,5 +1,6 @@
 #include "xdebug.cppo"
-open Camlp4.PreCast
+(* camlp4 dropped: token stream type only feeds our own grammar (camlp5) *)
+open Loc
 
 type lemma_kind_t = TLEM_TEST | TLEM_PROP | TLEM_SPLIT | TLEM_TEST_NEW | TLEM | TLEM_UNSAFE | TLEM_INFER | TLEM_INFER_PRED | TLEM_SAFE
 
@@ -127,7 +128,7 @@ type sleek_token =
 (* | IN_RFLOW | OUT_RFLOW (* For HO resource reasoning *) *)
 
 
-module type SleekTokenS = Camlp4.Sig.Token with type t = sleek_token
+module type SleekTokenS = sig type t val print : Format.formatter -> t -> unit val to_string : t -> string end
 
 module Token = struct
   open Format
@@ -297,7 +298,7 @@ module Token = struct
   end
 
   module Filter = struct
-    type token_filter = (t, Loc.t) Camlp4.Sig.stream_filter
+    type token_filter = (t * Loc.t) Stream.t -> (t * Loc.t) Stream.t
 
     type t =
       { is_kwd : string -> bool;
@@ -316,4 +317,9 @@ module Token = struct
   end
 
 end
-module Error = Camlp4.Struct.EmptyError
+module Error = struct
+  type t = string
+  exception E of string
+  let print = Format.pp_print_string
+  let to_string x = x
+end

@@ -1,6 +1,10 @@
+#load "pa_extend.cmo";;
+
 open VarGen
 module DD=Debug (* which Debug is this? *)
-open Camlp4
+open Grammar
+open Plexing
+open Loc
 open Globals
 (* open Exc.ETABLE_NFLOW *)
 open Exc.GTable
@@ -25,7 +29,120 @@ module Lbl = Label_only
 
 module LO2 = Label_only.Lab2_List
 
-module SHGram = Camlp4.Struct.Grammar.Static.Make(Lexer.Make(Token))
+module SleekLexer = Lexer.Make(Token)
+
+module SleekC5Lexer = struct
+  (* sleek_token -> (constructor, payload-string) for camlp5's dynamic grammar *)
+  (* keyword tokens must match their CONSTRUCTOR name, not their text *)
+  let constructor_name (tok : sleek_token) : string =
+    match tok with
+    | EOF -> "EOF" | RLEMMA -> "RLEMMA" | ANDLIST -> "ANDLIST" | ABSTRACT -> "ABSTRACT" | ASSERT -> "ASSERT" | ASSERT_EXACT -> "ASSERT_EXACT" | ASSERT_INEXACT -> "ASSERT_INEXACT" | ASSUME -> "ASSUME"
+    | INFER_ASSUME -> "INFER_ASSUME" | ALLN -> "ALLN" | APPEND -> "APPEND" | AXIOM -> "AXIOM" | BIND -> "BIND" | BOOL -> "BOOL" | BREAK -> "BREAK" | BAGMAX -> "BAGMAX"
+    | BAGMIN -> "BAGMIN" | BAG -> "BAG" | BARRIER -> "BARRIER" | PASS_COPY -> "PASS_COPY" | SLK_HULL -> "SLK_HULL" | SLK_PAIRWISE -> "SLK_PAIRWISE" | CASE -> "CASE" | SIMPLIFY -> "SIMPLIFY"
+    | CAPTURERESIDUE -> "CAPTURERESIDUE" | CLASS -> "CLASS" | COMPOSE -> "COMPOSE" | CONST -> "CONST" | CONTINUE -> "CONTINUE" | CHECKNORM -> "CHECKNORM" | CHECKEQ -> "CHECKEQ" | CHECKSAT -> "CHECKSAT"
+    | CHECK_NONDET -> "CHECK_NONDET" | CHECKENTAIL -> "CHECKENTAIL" | CHECKENTAIL_EXACT -> "CHECKENTAIL_EXACT" | CHECKENTAIL_INEXACT -> "CHECKENTAIL_INEXACT" | DATA -> "DATA" | DDEBUG -> "DDEBUG" | DIFF -> "DIFF" | DYNAMIC -> "DYNAMIC"
+    | RELASSUME -> "RELASSUME" | RELDEFN -> "RELDEFN" | SHAPE_INFER -> "SHAPE_INFER" | SHAPE_INFER_PROP -> "SHAPE_INFER_PROP" | SHAPE_POST_OBL -> "SHAPE_POST_OBL" | SHAPE_DIVIDE -> "SHAPE_DIVIDE" | SHAPE_CONQUER -> "SHAPE_CONQUER" | SHAPE_LFP -> "SHAPE_LFP"
+    | SHAPE_REC -> "SHAPE_REC" | SHAPE_SPLIT_BASE -> "SHAPE_SPLIT_BASE" | SHAPE_EXTRACT -> "SHAPE_EXTRACT" | SHAPE_DECL_DANG -> "SHAPE_DECL_DANG" | SHAPE_DECL_UNKNOWN -> "SHAPE_DECL_UNKNOWN" | SHAPE_STRENGTHEN_CONSEQ -> "SHAPE_STRENGTHEN_CONSEQ" | SHAPE_WEAKEN_ANTE -> "SHAPE_WEAKEN_ANTE" | SHAPE_ADD_DANGLING -> "SHAPE_ADD_DANGLING"
+    | SHAPE_UNFOLD -> "SHAPE_UNFOLD" | SHAPE_PARAM_DANGLING -> "SHAPE_PARAM_DANGLING" | SHAPE_SIMPLIFY -> "SHAPE_SIMPLIFY" | SHAPE_MERGE -> "SHAPE_MERGE" | SHAPE_TRANS_TO_VIEW -> "SHAPE_TRANS_TO_VIEW" | SHAPE_DERIVE_PRE -> "SHAPE_DERIVE_PRE" | SHAPE_DERIVE_POST -> "SHAPE_DERIVE_POST" | SHAPE_DERIVE_VIEW -> "SHAPE_DERIVE_VIEW"
+    | SHAPE_EXTN_VIEW -> "SHAPE_EXTN_VIEW" | SHAPE_NORMALIZE -> "SHAPE_NORMALIZE" | DATA_MARK_REC -> "DATA_MARK_REC" | PRED_ELIM_HEAD -> "PRED_ELIM_HEAD" | PRED_ELIM_TAIL -> "PRED_ELIM_TAIL" | PRED_UNIFY_DISJ -> "PRED_UNIFY_DISJ" | PRED_SPEC -> "PRED_SPEC" | PRED_SPLIT -> "PRED_SPLIT"
+    | PRED_NORM_SEG -> "PRED_NORM_SEG" | PRED_NORM_DISJ -> "PRED_NORM_DISJ" | PRED_ELIM_USELESS -> "PRED_ELIM_USELESS" | PRED_REUSE -> "PRED_REUSE" | PRED_REUSE_SUBS -> "PRED_REUSE_SUBS" | PRED_UNFOLD -> "PRED_UNFOLD" | REL_INFER -> "REL_INFER" | DTIME -> "DTIME"
+    | ELSE_TT -> "ELSE_TT" | EMPTY -> "EMPTY" | ENSURES -> "ENSURES" | ENSURES_EXACT -> "ENSURES_EXACT" | ENSURES_INEXACT -> "ENSURES_INEXACT" | ENUM -> "ENUM" | EXISTS -> "EXISTS" | EXPECT_INFER -> "EXPECT_INFER"
+    | EXTENDS -> "EXTENDS" | FALSE -> "FALSE" | FLOAT -> "FLOAT" | FORALL -> "FORALL" | FUNC -> "FUNC" | HP -> "HP" | HPPOST -> "HPPOST" | HTRUE -> "HTRUE"
+    | IF -> "IF" | IN_T -> "IN_T" | INT -> "INT" | INFINT_TYPE -> "INFINT_TYPE" | INTERSECT -> "INTERSECT" | INV -> "INV" | INLINE -> "INLINE" | INV_EXACT -> "INV_EXACT"
+    | INV_SAT -> "INV_SAT" | BG -> "BG" | ANN_KEY -> "ANN_KEY" | LET -> "LET" | MAX -> "MAX" | MIN -> "MIN" | NEW -> "NEW" | NOTIN -> "NOTIN"
+    | NULL -> "NULL" | OFF -> "OFF" | ON -> "ON" | ORWORD -> "ORWORD" | ANDWORD -> "ANDWORD" | PRED -> "PRED" | PRED_PRIM -> "PRED_PRIM" | DPRINT -> "DPRINT"
+    | PRED_EXT -> "PRED_EXT" | PRINT -> "PRINT" | PRINT_LEMMAS -> "PRINT_LEMMAS" | CMP -> "CMP" | HIP_INCLUDE -> "HIP_INCLUDE" | PASS_REF -> "PASS_REF" | PASS_REF2 -> "PASS_REF2" | REL -> "REL"
+    | REQUIRES -> "REQUIRES" | RETURN -> "RETURN" | SPLIT -> "SPLIT" | SUBSET -> "SUBSET" | STATIC -> "STATIC" | THEN -> "THEN" | TO -> "TO" | TRUE -> "TRUE"
+    | LEXVAR -> "LEXVAR" | TEMPL -> "TEMPL" | TERM -> "TERM" | LOOP -> "LOOP" | MAYLOOP -> "MAYLOOP" | TERM_INFER -> "TERM_INFER" | TREL_ASSUME -> "TREL_ASSUME" | INFER_AT_EFA -> "INFER_AT_EFA"
+    | INFER_AT_DFA -> "INFER_AT_DFA" | INFER_AT_CLASSIC -> "INFER_AT_CLASSIC" | INFER_AT_PAR -> "INFER_AT_PAR" | INFER_AT_ERRMUST -> "INFER_AT_ERRMUST" | INFER_AT_ERRMUST_ONLY -> "INFER_AT_ERRMUST_ONLY" | INFER_AT_ERRMAY -> "INFER_AT_ERRMAY" | INFER_AT_DE_EXC -> "INFER_AT_DE_EXC" | INFER_AT_PREMUST -> "INFER_AT_PREMUST"
+    | INFER_AT_VER_POST -> "INFER_AT_VER_POST" | INFER_AT_TERM -> "INFER_AT_TERM" | INFER_AT_TERM_WO_POST -> "INFER_AT_TERM_WO_POST" | INFER_AT_FIELD_IMM -> "INFER_AT_FIELD_IMM" | INFER_AT_PRE -> "INFER_AT_PRE" | INFER_AT_POST -> "INFER_AT_POST" | INFER_AT_IMM -> "INFER_AT_IMM" | INFER_AT_SHAPE -> "INFER_AT_SHAPE"
+    | INFER_AT_SHAPE_PRE -> "INFER_AT_SHAPE_PRE" | INFER_AT_SHAPE_POST -> "INFER_AT_SHAPE_POST" | INFER_AT_SHAPE_PRE_POST -> "INFER_AT_SHAPE_PRE_POST" | INFER_AT_ERROR -> "INFER_AT_ERROR" | INFER_AT_FLOW -> "INFER_AT_FLOW" | INFER_AT_PURE_FIELD -> "INFER_AT_PURE_FIELD" | INFER_AT_SIZE -> "INFER_AT_SIZE" | INFER_ANA_NI -> "INFER_ANA_NI"
+    | INFER_AT_ARR_AS_VAR -> "INFER_AT_ARR_AS_VAR" | INFER_IMM_PRE -> "INFER_IMM_PRE" | INFER_IMM_POST -> "INFER_IMM_POST" | UTPRE -> "UTPRE" | UTPOST -> "UTPOST" | UIPRE -> "UIPRE" | UIPOST -> "UIPOST" | UNFOLD -> "UNFOLD"
+    | UNION -> "UNION" | VOID -> "VOID" | WHILE -> "WHILE" | CARET -> "CARET" | DOTDOT -> "DOTDOT" | ATPOS -> "ATPOS" | ACCS -> "ACCS" | AND -> "AND"
+    | ANDSTAR -> "ANDSTAR" | ANDAND -> "ANDAND" | UNIONSTAR -> "UNIONSTAR" | STARMINUS -> "STARMINUS" | AT -> "AT" | ATATSQ -> "ATATSQ" | ATAT -> "ATAT" | LEND -> "LEND"
+    | IMM -> "IMM" | MUT -> "MUT" | MAT -> "MAT" | DERV -> "DERV" | SPLIT1Ann -> "SPLIT1Ann" | SPLIT2Ann -> "SPLIT2Ann" | CBRACE -> "CBRACE" | CLIST -> "CLIST"
+    | COLON -> "COLON" | COLONCOLON -> "COLONCOLON" | COLONCOLONCOLON -> "COLONCOLONCOLON" | COMMA -> "COMMA" | CPAREN -> "CPAREN" | CSQUARE -> "CSQUARE" | DOLLAR -> "DOLLAR" | TEMPLATE -> "TEMPLATE"
+    | TEMPL_SOLVE -> "TEMPL_SOLVE" | NI -> "NI" | RO -> "RO" | DOT -> "DOT" | DOUBLEQUOTE -> "DOUBLEQUOTE" | EQ -> "EQ" | EQEQ -> "EQEQ" | RIGHTARROW -> "RIGHTARROW"
+    | EQUIV -> "EQUIV" | GT -> "GT" | GTE -> "GTE" | HASH -> "HASH" | REL_GUARD -> "REL_GUARD" | HEAD -> "HEAD" | INLIST -> "INLIST" | LEFTARROW -> "LEFTARROW"
+    | LENGTH -> "LENGTH" | LT -> "LT" | LTE -> "LTE" | MINUS -> "MINUS" | MEM -> "MEM" | MEME -> "MEME" | NEQ -> "NEQ" | NOT -> "NOT"
+    | NOTINLIST -> "NOTINLIST" | OBRACE -> "OBRACE" | OLIST -> "OLIST" | OPAREN -> "OPAREN" | OP_ADD_ASSIGN -> "OP_ADD_ASSIGN" | OP_DEC -> "OP_DEC" | OP_DIV_ASSIGN -> "OP_DIV_ASSIGN" | OP_INC -> "OP_INC"
+    | OP_MOD_ASSIGN -> "OP_MOD_ASSIGN" | OP_MULT_ASSIGN -> "OP_MULT_ASSIGN" | OP_SUB_ASSIGN -> "OP_SUB_ASSIGN" | OR -> "OR" | OROR -> "OROR" | PERM -> "PERM" | DERIVE -> "DERIVE" | EQV -> "EQV"
+    | CONSTR -> "CONSTR" | OSQUARE -> "OSQUARE" | REVERSE -> "REVERSE" | SET -> "SET" | TAIL -> "TAIL" | PERCENT -> "PERCENT" | PMACRO -> "PMACRO" | PZERO -> "PZERO"
+    | PFULL -> "PFULL" | PVALUE -> "PVALUE" | PLEND -> "PLEND" | PFRAC -> "PFRAC" | SPLITANN -> "SPLITANN" | TUP2 -> "TUP2" | PLUS -> "PLUS" | PRIME -> "PRIME"
+    | SEMICOLON -> "SEMICOLON" | SAT -> "SAT" | SPEC -> "SPEC" | STAR -> "STAR" | DIV -> "DIV" | GLOBAL -> "GLOBAL" | VARIANCE -> "VARIANCE" | ESCAPE -> "ESCAPE"
+    | HPRED -> "HPRED" | REFINES -> "REFINES" | JOIN -> "JOIN" | WITH -> "WITH" | COMBINE -> "COMBINE" | FINALIZE -> "FINALIZE" | TRY -> "TRY" | CATCH -> "CATCH"
+    | FINALLY -> "FINALLY" | THROWS -> "THROWS" | RAISE -> "RAISE" | INFER -> "INFER" | INFER_EXACT -> "INFER_EXACT" | INFER_INEXACT -> "INFER_INEXACT" | SUBANN -> "SUBANN" | XPRE -> "XPRE"
+    | PRE -> "PRE" | XPOST -> "XPOST" | POST -> "POST" | INVLOCK -> "INVLOCK" | LOGICAL -> "LOGICAL" | INFINITY -> "INFINITY" | NEGINFINITY -> "NEGINFINITY" | VALIDATE -> "VALIDATE"
+    | VALID -> "VALID" | SSAT -> "SSAT" | SUNSAT -> "SUNSAT" | FAIL -> "FAIL" | FAIL_MUST -> "FAIL_MUST" | FAIL_MAY -> "FAIL_MAY" | XPURE -> "XPURE" | PAR -> "PAR"
+    | tok -> failwith ("SleekC5Lexer: unhandled token " ^ Token.to_string tok)
+
+  let token_pattern (tok : sleek_token) : string * string =
+    match tok with
+      IDENTIFIER s -> ("IDENTIFIER", s)
+    | INT_LITER (_, s) -> ("INT_LITER", s)
+    | FLOAT_LIT (_, s) -> ("FLOAT_LIT", s)
+    | FRAC_LIT (_, s) -> ("FRAC_LIT", s)
+    | CHAR_LIT (_, s) -> ("CHAR_LIT", s)
+    | STRING (_, s) -> ("STRING", s)
+    | EOF -> ("EOI", "")
+    | RES s -> ("RES", s)
+    | SELFT s -> ("SELFT", s)
+    | THIS s -> ("THIS", s)
+    | FLOW s -> ("FLOW", s)
+    | PCONST _ -> ("PCONST", "")
+    | JAVA s -> ("JAVA", s)
+    | ARGOPTION s -> ("ARGOPTION", s)
+    | LEMMA TLEM_TEST -> ("LEMMA", "TLEM_TEST")
+    | LEMMA TLEM_PROP -> ("LEMMA", "TLEM_PROP")
+    | LEMMA TLEM_SPLIT -> ("LEMMA", "TLEM_SPLIT")
+    | LEMMA TLEM_TEST_NEW -> ("LEMMA", "TLEM_TEST_NEW")
+    | LEMMA TLEM -> ("LEMMA", "TLEM")
+    | LEMMA TLEM_UNSAFE -> ("LEMMA", "TLEM_UNSAFE")
+    | LEMMA TLEM_INFER -> ("LEMMA", "TLEM_INFER")
+    | LEMMA TLEM_INFER_PRED -> ("LEMMA", "TLEM_INFER_PRED")
+    | LEMMA TLEM_SAFE -> ("LEMMA", "TLEM_SAFE")
+    | tok -> (constructor_name tok, "")
+
+  let tok_func strm : (string * string) Stream.t * Plexing.Locations.t =
+    let locs = Plexing.Locations.create () in
+    let paired = SleekLexer.mk () Loc.ghost strm in
+    let idx = ref 0 in
+    let eoi = ref false in
+    let toks =
+      Stream.from (fun n ->
+        if !eoi then None
+        else
+          match Stream.peek paired with
+          | Some (tok, l) ->
+              Stream.junk paired;
+              Plexing.Locations.add locs !idx l;
+              incr idx;
+              Some (token_pattern tok)
+          | None ->
+              (* camlp5 grammars expect the LEXER to emit a real EOI token *)
+              eoi := true;
+              Some ("EOI", "")) in
+    (toks, locs)
+
+  let lexer : (string * string) Plexing.lexer =
+    { tok_func = tok_func;
+      tok_using = (fun _ -> ());
+      tok_removing = (fun _ -> ());
+      tok_match = Plexing.default_match;
+      tok_text = (fun (con, prm) -> if con = "" then "\"" ^ prm ^ "\"" else con);
+      tok_comm = (None : Ploc.t list option);
+      kwds = Hashtbl.create 17 }
+end
+
+module SHGram = struct
+  let g = Grammar.gcreate SleekC5Lexer.lexer
+  module Entry = struct
+    let create name = Grammar.Entry.create g name
+    let of_parser name f = Grammar.Entry.of_parser g name f
+  end
+end
+
+let shgram_parse_str e s = Grammar.Entry.parse e (Stream.of_string s)
 
 (* some variables and functions decide which parser will be used *)
 let parser_name = (* ref "unknown" *) ref "default"
@@ -86,6 +203,15 @@ let sv_of_id t =
   if String.contains t '\'' then (* Remove the primed in the identifier *)
     (Str.global_replace (Str.regexp "[']") "" t, Primed)
   else (t, Unprimed)
+
+(* camlp4->camlp5: LEMMA payload arrives as its variant name string *)
+let lemma_kind_of_string = function
+  | "TLEM_TEST" -> TLEM_TEST | "TLEM_PROP" -> TLEM_PROP
+  | "TLEM_SPLIT" -> TLEM_SPLIT | "TLEM_TEST_NEW" -> TLEM_TEST_NEW
+  | "TLEM" -> TLEM | "TLEM_UNSAFE" -> TLEM_UNSAFE
+  | "TLEM_INFER" -> TLEM_INFER | "TLEM_INFER_PRED" -> TLEM_INFER_PRED
+  | "TLEM_SAFE" -> TLEM_SAFE
+  | s -> failwith ("lemma_kind_of_string: " ^ s)
 
 let convert_lem_kind (l: lemma_kind_t) =
     match l with
@@ -185,9 +311,9 @@ let get_pos x =
 
 (* compute the position by adding the location return by camlp4 with starting_offset *)
 let get_pos_camlp4 l x =
-  let sp = Camlp4.PreCast.Loc.start_pos l in
-  let ep = Camlp4.PreCast.Loc.stop_pos l in
-  let mp = Camlp4.PreCast.Loc.start_pos (Camlp4.PreCast.Loc.shift x l) in
+  let sp = Loc.start_pos l in
+  let ep = Loc.stop_pos l in
+  let mp = Loc.start_pos (Loc.shift x l) in
   if (!is_cparser_mode) then (
     let new_sp = {sp with Lexing.pos_lnum = sp.Lexing.pos_lnum + !cparser_base_loc.line_num - 1;
                           Lexing.pos_bol = sp.Lexing.pos_bol + !cparser_base_loc.byte_num - 1;
@@ -464,119 +590,119 @@ let peek_try =
  SHGram.Entry.of_parser "peek_try"
     (fun strm ->
        match Stream.npeek 2 strm with
-         | [_;IN_T,_]  -> ()
-         | [_;NOTIN,_] -> ()
-	 | [GT,_; CBRACE,_] -> raise Stream.Failure (*vp*)
-         | [SEMICOLON,_; CBRACE,_] -> raise Stream.Failure
-         | [OPAREN,_; EXISTS,_ ] -> raise Stream.Failure
-         | [GT,_;STAR,_] -> raise Stream.Failure
-         | [GT,_;STARMINUS,_] -> raise Stream.Failure
-         | [GT,_;INV,_] -> raise Stream.Failure
-         | [GT,_;INV_EXACT,_] -> raise Stream.Failure
-         | [GT,_;INV_SAT,_] -> raise Stream.Failure
-         | [GT,_;AND,_] -> raise Stream.Failure
-         | [GT,_;ANDSTAR,_] -> raise Stream.Failure
-         | [GT,_;UNIONSTAR,_] -> raise Stream.Failure
-         | [GT,_;ANDAND,_] -> raise Stream.Failure
-         | [GT,_;OR,_] -> raise Stream.Failure
-         | [GT,_;ORWORD,_] -> raise Stream.Failure
-         | [GT,_;DOT,_] -> raise Stream.Failure
-         | [GT,_;DERIVE,_] -> raise Stream.Failure
-         | [GT,_;EQV,_] -> raise Stream.Failure
-	     | [GT,_;CONSTR,_] -> raise Stream.Failure
-         | [GT,_;LEFTARROW,_] -> raise Stream.Failure
-         | [GT,_;RIGHTARROW,_] -> raise Stream.Failure
-         | [GT,_;EQUIV,_] -> raise Stream.Failure
-         | [GT,_;CPAREN,_] -> raise Stream.Failure
-         | [GT,_;SEMICOLON,_]-> raise Stream.Failure
-         | [GT,_;ENSURES,_]-> raise Stream.Failure
-         | [GT,_;ENSURES_EXACT,_]-> raise Stream.Failure
-         | [GT,_;ENSURES_INEXACT,_]-> raise Stream.Failure
-         | [GT,_;IMM,_] -> raise Stream.Failure
-         | [GT,_;ACCS,_] -> raise Stream.Failure
-         | [GT,_;AT,_] -> raise Stream.Failure
-         | [GT,_;MUT,_] -> raise Stream.Failure
-		 | [GT,_;MAT,_] -> raise Stream.Failure
-         | [GT,_;DERV,_] -> raise Stream.Failure
-         | [GT,_;SPLIT1Ann,_] -> raise Stream.Failure
-         | [GT,_;SPLIT2Ann,_] -> raise Stream.Failure
-         | [GT,_;LEND,_] -> raise Stream.Failure
-         | [GT,_;CASE,_] -> raise Stream.Failure
-         | [GT,_;VARIANCE,_] -> raise Stream.Failure
-         | [GT,_;_] -> ()
-         | [SEMICOLON,_;_] -> ()
+         | [_; ("IN_T", _)]  -> ()
+         | [_; ("NOTIN", _)] -> ()
+	 | [("GT", _); ("CBRACE", _)] -> raise Stream.Failure (*vp*)
+         | [("SEMICOLON", _); ("CBRACE", _)] -> raise Stream.Failure
+         | [("OPAREN", _); ("EXISTS", _)] -> raise Stream.Failure
+         | [("GT", _); ("STAR", _)] -> raise Stream.Failure
+         | [("GT", _); ("STARMINUS", _)] -> raise Stream.Failure
+         | [("GT", _); ("INV", _)] -> raise Stream.Failure
+         | [("GT", _); ("INV_EXACT", _)] -> raise Stream.Failure
+         | [("GT", _); ("INV_SAT", _)] -> raise Stream.Failure
+         | [("GT", _); ("AND", _)] -> raise Stream.Failure
+         | [("GT", _); ("ANDSTAR", _)] -> raise Stream.Failure
+         | [("GT", _); ("UNIONSTAR", _)] -> raise Stream.Failure
+         | [("GT", _); ("ANDAND", _)] -> raise Stream.Failure
+         | [("GT", _); ("OR", _)] -> raise Stream.Failure
+         | [("GT", _); ("ORWORD", _)] -> raise Stream.Failure
+         | [("GT", _); ("DOT", _)] -> raise Stream.Failure
+         | [("GT", _); ("DERIVE", _)] -> raise Stream.Failure
+         | [("GT", _); ("EQV", _)] -> raise Stream.Failure
+	     | [("GT", _); ("CONSTR", _)] -> raise Stream.Failure
+         | [("GT", _); ("LEFTARROW", _)] -> raise Stream.Failure
+         | [("GT", _); ("RIGHTARROW", _)] -> raise Stream.Failure
+         | [("GT", _); ("EQUIV", _)] -> raise Stream.Failure
+         | [("GT", _); ("CPAREN", _)] -> raise Stream.Failure
+         | [("GT", _); ("SEMICOLON", _)]-> raise Stream.Failure
+         | [("GT", _); ("ENSURES", _)]-> raise Stream.Failure
+         | [("GT", _); ("ENSURES_EXACT", _)]-> raise Stream.Failure
+         | [("GT", _); ("ENSURES_INEXACT", _)]-> raise Stream.Failure
+         | [("GT", _); ("IMM", _)] -> raise Stream.Failure
+         | [("GT", _); ("ACCS", _)] -> raise Stream.Failure
+         | [("GT", _); ("AT", _)] -> raise Stream.Failure
+         | [("GT", _); ("MUT", _)] -> raise Stream.Failure
+		 | [("GT", _); ("MAT", _)] -> raise Stream.Failure
+         | [("GT", _); ("DERV", _)] -> raise Stream.Failure
+         | [("GT", _); ("SPLIT1Ann", _)] -> raise Stream.Failure
+         | [("GT", _); ("SPLIT2Ann", _)] -> raise Stream.Failure
+         | [("GT", _); ("LEND", _)] -> raise Stream.Failure
+         | [("GT", _); ("CASE", _)] -> raise Stream.Failure
+         | [("GT", _); ("VARIANCE", _)] -> raise Stream.Failure
+         | [("GT", _); _] -> ()
+         | [("SEMICOLON", _); _] -> ()
          | _ -> raise Stream.Failure  )
 
  let peek_try_st =
  SHGram.Entry.of_parser "peek_try_st"
      (fun strm ->
        match Stream.npeek 2 strm with
-          | [_; OP_DEC,_] -> ()
+          | [_; ("OP_DEC", _)] -> ()
           | _ -> raise Stream.Failure)
 
  let peek_try_st_in =
  SHGram.Entry.of_parser "peek_try_st_in"
      (fun strm ->
        match Stream.npeek 2 strm with
-          | [_; OP_INC,_] -> ()
+          | [_; ("OP_INC", _)] -> ()
           | _ -> raise Stream.Failure)
 
  let peek_try_st_qi =
  SHGram.Entry.of_parser "peek_try_st_qi"
      (fun strm ->
        match Stream.npeek 2 strm with
-          | [_; DOT,_] -> ()
+          | [_; ("DOT", _)] -> ()
           | _ -> raise Stream.Failure)
 
  let peek_invocation =
  SHGram.Entry.of_parser "peek_invocation"
      (fun strm ->
        match Stream.npeek 5 strm with
-          | [_; OPAREN,_;_;_;_] -> ()
-          | [_; OSQUARE,_; _; CSQUARE, _ ; OPAREN,_] -> ()
+          | [_; ("OPAREN", _); _; _; _] -> ()
+          | [_; ("OSQUARE", _); _; ("CSQUARE", _); ("OPAREN", _)] -> ()
           | _ -> raise Stream.Failure)
 
  let peek_member_name =
  SHGram.Entry.of_parser "peek_member_name"
      (fun strm ->
        match Stream.npeek 2 strm with
-          | [IDENTIFIER n,_;DOT,_] -> raise Stream.Failure
+          | [("IDENTIFIER", n); ("DOT", _)] -> raise Stream.Failure
           | _ -> ())
 
  let peek_exp_st =
  SHGram.Entry.of_parser "peek_exp_st"
      (fun strm ->
        match Stream.npeek 1 strm with
-          | [DPRINT,_] -> raise Stream.Failure
+          | [("DPRINT", _)] -> raise Stream.Failure
           | _ -> ())
 
  let peek_try_declarest =
  SHGram.Entry.of_parser "peek_try_declarest"
      (fun strm ->
        match Stream.npeek 2 strm with
-          | [_;EQ,_] -> raise Stream.Failure
-          | [CONST,_;_] -> ()
-          | [INT,_;IDENTIFIER n,_] -> ()
-          | [FLOAT,_;IDENTIFIER n,_] -> ()
-          | [BOOL,_;IDENTIFIER n,_] -> ()
-          | [IDENTIFIER n,_;IDENTIFIER id,_] -> ()
-          | [INT,_;OSQUARE,_] -> ()
-          (* | [INFINT_TYPE,_;OSQUARE,_] -> () *)
-          | [FLOAT,_;OSQUARE,_] -> ()
-          | [BOOL,_;OSQUARE,_] -> ()
+          | [_; ("EQ", _)] -> raise Stream.Failure
+          | [("CONST", _); _] -> ()
+          | [("INT", _); ("IDENTIFIER", n)] -> ()
+          | [("FLOAT", _); ("IDENTIFIER", n)] -> ()
+          | [("BOOL", _); ("IDENTIFIER", n)] -> ()
+          | [("IDENTIFIER", n); ("IDENTIFIER", id)] -> ()
+          | [("INT", _); ("OSQUARE", _)] -> ()
+          (* | [("INFINT_TYPE", _); ("OSQUARE", _)] -> () *)
+          | [("FLOAT", _); ("OSQUARE", _)] -> ()
+          | [("BOOL", _); ("OSQUARE", _)] -> ()
           (* For pointer*)
-          | [INT,_;STAR,_] -> ()
-          | [VOID,_;STAR,_] -> ()
-          | [FLOAT,_;STAR,_] -> ()
-          | [BOOL,_;STAR,_] -> ()
-          | [IDENTIFIER n,_;STAR,_] -> ()
+          | [("INT", _); ("STAR", _)] -> ()
+          | [("VOID", _); ("STAR", _)] -> ()
+          | [("FLOAT", _); ("STAR", _)] -> ()
+          | [("BOOL", _); ("STAR", _)] -> ()
+          | [("IDENTIFIER", n); ("STAR", _)] -> ()
           |  _ -> raise Stream.Failure)
 
 let peek_print =
 SHGram.Entry.of_parser "peek_print"
 	(fun strm ->
 		match Stream.npeek 3 strm with
-		| [i,_;j,_;k,_]-> print_string((Token.to_string i)^" "^(Token.to_string j)^" "^(Token.to_string k)^"\n");()
+		| [i; j; k]-> print_string((snd i)^" "^(snd j)^" "^(snd k)^"\n");()
 		| _ -> raise Stream.Failure)
 
 (*This is quite similar to peek_and_pure*)
@@ -584,62 +710,62 @@ SHGram.Entry.of_parser "peek_print"
    SHGram.Entry.of_parser "peek_and"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [AND,_;FLOW i,_;_] -> raise Stream.Failure
-             | [AND,_;OSQUARE,_;STRING _,_] -> raise Stream.Failure
+             | [("AND", _); ("FLOW", i); _] -> raise Stream.Failure
+             | [("AND", _); ("OSQUARE", _); ("STRING", _)] -> raise Stream.Failure
              | _ -> ())
 
  let peek_pure =
    SHGram.Entry.of_parser "peek_pure"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [FORALL,_;OPAREN,_;_] -> ()
-             | [EXISTS,_;OPAREN,_;_] -> ()
-             | [UNION,_;OPAREN,_;_] -> ()
-             | [IDENTIFIER id,_;OPAREN,_;_] -> ()
-             | [_;COLONCOLON,_;_] -> raise Stream.Failure
-             | [_;OPAREN,_;_] -> raise Stream.Failure
-             | [_;PRIME,_;COLONCOLON,_] -> raise Stream.Failure
-             | [OPAREN,_;_;COLONCOLON,_] -> raise Stream.Failure
+             | [("FORALL", _); ("OPAREN", _); _] -> ()
+             | [("EXISTS", _); ("OPAREN", _); _] -> ()
+             | [("UNION", _); ("OPAREN", _); _] -> ()
+             | [("IDENTIFIER", id); ("OPAREN", _); _] -> ()
+             | [_; ("COLONCOLON", _); _] -> raise Stream.Failure
+             | [_; ("OPAREN", _); _] -> raise Stream.Failure
+             | [_; ("PRIME", _); ("COLONCOLON", _)] -> raise Stream.Failure
+             | [("OPAREN", _); _; ("COLONCOLON", _)] -> raise Stream.Failure
              | _ -> ())
 
  let peek_pure_out =
    SHGram.Entry.of_parser "peek_pure_out"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [FORALL,_;OPAREN,_;_] -> ()
-             | [EXISTS,_;OPAREN,_;_] -> ()
-             | [UNION,_;OPAREN,_;_] -> ()
-	     (* | [XPURE,_;OPAREN,_;_] -> () *)
-             | [IDENTIFIER id,_;OPAREN,_;_] ->  if hp_names # mem id then raise Stream.Failure else ()
-             | [_;COLONCOLON,_;_] -> raise Stream.Failure
-             | [_;PRIME,_;COLONCOLON,_] -> raise Stream.Failure
-             | [OPAREN,_;_;COLONCOLON,_] -> raise Stream.Failure
-             | [OSQUARE,_;_;COLONCOLON,_] -> raise Stream.Failure
-             | [OSQUARE,_;DOUBLEQUOTE,_;_]-> raise Stream.Failure
-             (* | [i,_;j,_;k,_]-> print_string("start here: i:" ^ (Token.to_string i)^" j:"^(Token.to_string j)^" k:"^(Token.to_string k)^" end here \n");() *)
+             | [("FORALL", _); ("OPAREN", _); _] -> ()
+             | [("EXISTS", _); ("OPAREN", _); _] -> ()
+             | [("UNION", _); ("OPAREN", _); _] -> ()
+	     (* | [("XPURE", _); ("OPAREN", _); _] -> () *)
+             | [("IDENTIFIER", id); ("OPAREN", _); _] ->  if hp_names # mem id then raise Stream.Failure else ()
+             | [_; ("COLONCOLON", _); _] -> raise Stream.Failure
+             | [_; ("PRIME", _); ("COLONCOLON", _)] -> raise Stream.Failure
+             | [("OPAREN", _); _; ("COLONCOLON", _)] -> raise Stream.Failure
+             | [("OSQUARE", _); _; ("COLONCOLON", _)] -> raise Stream.Failure
+             | [("OSQUARE", _); ("DOUBLEQUOTE", _); _]-> raise Stream.Failure
+             (* | [i; j; k]-> print_string("start here: i:" ^ (Token.to_string i)^" j:"^(Token.to_string j)^" k:"^(Token.to_string k)^" end here \n");() *)
              | _ -> ())
 
  let peek_typecast =
    SHGram.Entry.of_parser "peek_typecast"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [OPAREN,_;VOID,_;CPAREN, _] -> ()
-             | [OPAREN,_;INT,_;CPAREN, _] -> ()
-             | [OPAREN,_;FLOAT,_;CPAREN, _] -> ()
-             | [OPAREN,_;INFINT_TYPE,_;CPAREN, _] -> ()
-             | [OPAREN,_;BOOL,_;CPAREN, _] -> ()
-             | [OPAREN,_;BAG,_;CPAREN, _] -> ()
-             | [OPAREN,_;IDENTIFIER id,_;CPAREN, _] -> ()
-             | [OPAREN,_;REL,_; _] -> ()
-             | [OPAREN,_;_;OSQUARE,_] -> ()                   (* array type cast *)
-             | [OPAREN,_;_;STAR,_] -> ()                      (* pointer type cast *)
+             | [("OPAREN", _); ("VOID", _); ("CPAREN", _)] -> ()
+             | [("OPAREN", _); ("INT", _); ("CPAREN", _)] -> ()
+             | [("OPAREN", _); ("FLOAT", _); ("CPAREN", _)] -> ()
+             | [("OPAREN", _); ("INFINT_TYPE", _); ("CPAREN", _)] -> ()
+             | [("OPAREN", _); ("BOOL", _); ("CPAREN", _)] -> ()
+             | [("OPAREN", _); ("BAG", _); ("CPAREN", _)] -> ()
+             | [("OPAREN", _); ("IDENTIFIER", id); ("CPAREN", _)] -> ()
+             | [("OPAREN", _); ("REL", _); _] -> ()
+             | [("OPAREN", _); _; ("OSQUARE", _)] -> ()                   (* array type cast *)
+             | [("OPAREN", _); _; ("STAR", _)] -> ()                      (* pointer type cast *)
              | _ -> raise Stream.Failure)
 
 let peek_dc =
    SHGram.Entry.of_parser "peek_dc"
        (fun strm ->
            match Stream.npeek 2 strm with
-             | [OPAREN,_;EXISTS,_] -> ()
+             | [("OPAREN", _); ("EXISTS", _)] -> ()
              | _ -> raise Stream.Failure)
 
 (*This seems similar to peek_and*)
@@ -647,159 +773,159 @@ let peek_dc =
    SHGram.Entry.of_parser "peek_and_pure"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [AND,_;FLOW i,_;_] -> raise Stream.Failure
-             | [AND,_;OSQUARE,_;STRING _,_] -> raise Stream.Failure
+             | [("AND", _); ("FLOW", i); _] -> raise Stream.Failure
+             | [("AND", _); ("OSQUARE", _); ("STRING", _)] -> raise Stream.Failure
              | _ -> ())
 
  let peek_view_decl =
    SHGram.Entry.of_parser "peek_heap_args"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [PRED,_;IDENTIFIER n,_;LT,_] ->  ()
-             | [IDENTIFIER n,_;LT,_;_] ->  ()
-             (* | [IDENTIFIER n,_;OBRACE,_] ->  () (\*This is for prim_view_decl*\) *)
+             | [("PRED", _); ("IDENTIFIER", n); ("LT", _)] ->  ()
+             | [("IDENTIFIER", n); ("LT", _); _] ->  ()
+             (* | [("IDENTIFIER", n); ("OBRACE", _)] ->  () (\*This is for prim_view_decl*\) *)
              | _ -> raise Stream.Failure)
 
  let peek_heap_args =
    SHGram.Entry.of_parser "peek_heap_args"
        (fun strm ->
            match Stream.npeek 2 strm with
-             | [IDENTIFIER n,_;EQ,_] ->  ()
+             | [("IDENTIFIER", n); ("EQ", _)] ->  ()
              | _ -> raise Stream.Failure)
 
 let peek_hash_thread =
    SHGram.Entry.of_parser "peek_hash_thread"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [_;_;COMMA,_] ->  raise Stream.Failure
-             | [_;_;GT,_] ->  raise Stream.Failure
+             | [_; _; ("COMMA", _)] ->  raise Stream.Failure
+             | [_; _; ("GT", _)] ->  raise Stream.Failure
              | _ -> ())
 
  let peek_extended =
    SHGram.Entry.of_parser "peek_extended"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [OSQUARE,_;_;ORWORD,_] -> ()
+             | [("OSQUARE", _); _; ("ORWORD", _)] -> ()
              | _ -> raise Stream.Failure)
 
  let peek_div_op =
    SHGram.Entry.of_parser "peek_div_op"
        (fun strm ->
            match Stream.npeek 3 strm with
-             (* | [_;_;DIV,_] -> let () = print_endline "peek_div_op1" in () *)
-             | [_;DIV,_;_] -> (* let () = print_endline "peek_div_op2" in *)()
+             (* | [_; _; ("DIV", _)] -> let () = print_endline "peek_div_op1" in () *)
+             | [_; ("DIV", _); _] -> (* let () = print_endline "peek_div_op2" in *)()
              | ls -> (* let () = print_endline "peek_div_op3" in *) raise Stream.Failure)
 
  let peek_cexp_list =
    SHGram.Entry.of_parser "peek_cexp_list"
        (fun strm ->
            match Stream.npeek 6 strm with
-             | [_;COMMA,_;_;GTE,_;_;_] -> ()
-             | [_;COMMA,_;_;AND,_;_;_] -> ()
-             | [_;COMMA,_;_;COMMA,_;_;SEMICOLON,_] -> ()
+             | [_; ("COMMA", _); _; ("GTE", _); _; _] -> ()
+             | [_; ("COMMA", _); _; ("AND", _); _; _] -> ()
+             | [_; ("COMMA", _); _; ("COMMA", _); _; ("SEMICOLON", _)] -> ()
              | _ -> raise Stream.Failure)
 
  let peek_heap =
    SHGram.Entry.of_parser "peek_heap"
        (fun strm ->
            match Stream.npeek 3 strm with
-             |[_;COLONCOLON,_;_] -> ()
-             |[_;PRIME,_;COLONCOLON,_] -> ()
-             |[EMPTY,_;_;_] -> ()
-             |[_;EMPTY,_;_] -> ()
-             |[_;_;EMPTY,_] -> ()
-             |[HTRUE,_;_;_] -> ()
-             |[_;HTRUE,_;_] -> ()
-             |[_;_;HTRUE,_] -> ()
+             |[_; ("COLONCOLON", _); _] -> ()
+             |[_; ("PRIME", _); ("COLONCOLON", _)] -> ()
+             |[("EMPTY", _); _; _] -> ()
+             |[_; ("EMPTY", _); _] -> ()
+             |[_; _; ("EMPTY", _)] -> ()
+             |[("HTRUE", _); _; _] -> ()
+             |[_; ("HTRUE", _); _] -> ()
+             |[_; _; ("HTRUE", _)] -> ()
              | _ -> raise Stream.Failure)
 
 let peek_star =
    SHGram.Entry.of_parser "peek_star"
        (fun strm ->
            match Stream.npeek 3 strm with
-             | [AND,_;IDENTIFIER id,_; COLONCOLON,_] -> raise Stream.Failure
-             | [STAR,_;OPAREN,_;_] -> raise Stream.Failure
-             | [STAR,_;PFULL,_;_] -> raise Stream.Failure
-             | [STAR,_;PLEND,_;_] -> raise Stream.Failure
-             | [STAR,_;PVALUE,_;_] -> raise Stream.Failure
-             | [STAR,_;PFRAC,_;_] -> raise Stream.Failure
-             | [STAR,_;PZERO,_;_] -> raise Stream.Failure
+             | [("AND", _); ("IDENTIFIER", id); ("COLONCOLON", _)] -> raise Stream.Failure
+             | [("STAR", _); ("OPAREN", _); _] -> raise Stream.Failure
+             | [("STAR", _); ("PFULL", _); _] -> raise Stream.Failure
+             | [("STAR", _); ("PLEND", _); _] -> raise Stream.Failure
+             | [("STAR", _); ("PVALUE", _); _] -> raise Stream.Failure
+             | [("STAR", _); ("PFRAC", _); _] -> raise Stream.Failure
+             | [("STAR", _); ("PZERO", _); _] -> raise Stream.Failure
              | _ -> ())
 
 let peek_heap_and =
    SHGram.Entry.of_parser "peek_heap_and"
        (fun strm ->
            match Stream.npeek 4 strm with
-             |[AND,_;OPAREN ,_; IDENTIFIER id,_; COLONCOLON,_] -> ()
-             |[AND,_;IDENTIFIER id,_; COLONCOLON,_; _,_] -> ()
-             |[AND,_;SELFT t,_; COLONCOLON,_; _,_] -> ()
-             |[AND,_;THIS t,_; COLONCOLON,_; _,_] -> ()
-             |[AND,_;RES t,_; COLONCOLON,_; _,_] -> ()
+             |[("AND", _); ("OPAREN", _); ("IDENTIFIER", id); ("COLONCOLON", _)] -> ()
+             |[("AND", _); ("IDENTIFIER", id); ("COLONCOLON", _); _] -> ()
+             |[("AND", _); ("SELFT", t); ("COLONCOLON", _); _] -> ()
+             |[("AND", _); ("THIS", t); ("COLONCOLON", _); _] -> ()
+             |[("AND", _); ("RES", t); ("COLONCOLON", _); _] -> ()
              | _ -> raise Stream.Failure)
 
 let peek_heap_andstar =
    SHGram.Entry.of_parser "peek_heap_andstar"
        (fun strm ->
            match Stream.npeek 4 strm with
-             |[ANDSTAR,_;OPAREN ,_; IDENTIFIER id,_; COLONCOLON,_] -> ()
-             |[ANDSTAR,_;IDENTIFIER id,_; COLONCOLON,_; _,_] -> ()
-             |[ANDSTAR,_;SELFT t,_; COLONCOLON,_; _,_] -> ()
-             |[ANDSTAR,_;THIS t,_; COLONCOLON,_; _,_] -> ()
-             |[ANDSTAR,_;RES t,_; COLONCOLON,_; _,_] -> ()
+             |[("ANDSTAR", _); ("OPAREN", _); ("IDENTIFIER", id); ("COLONCOLON", _)] -> ()
+             |[("ANDSTAR", _); ("IDENTIFIER", id); ("COLONCOLON", _); _] -> ()
+             |[("ANDSTAR", _); ("SELFT", t); ("COLONCOLON", _); _] -> ()
+             |[("ANDSTAR", _); ("THIS", t); ("COLONCOLON", _); _] -> ()
+             |[("ANDSTAR", _); ("RES", t); ("COLONCOLON", _); _] -> ()
              | _ -> raise Stream.Failure)
 
 let peek_heap_unionstar =
    SHGram.Entry.of_parser "peek_heap_unionstar"
        (fun strm ->
            match Stream.npeek 4 strm with
-             |[UNIONSTAR,_;OPAREN ,_; IDENTIFIER id,_; COLONCOLON,_] -> ()
-             |[UNIONSTAR,_;IDENTIFIER id,_; COLONCOLON,_; _,_] -> ()
-             |[UNIONSTAR,_;SELFT t,_; COLONCOLON,_; _,_] -> ()
-             |[UNIONSTAR,_;THIS t,_; COLONCOLON,_; _,_] -> ()
-             |[UNIONSTAR,_;RES t,_; COLONCOLON,_; _,_] -> ()
+             |[("UNIONSTAR", _); ("OPAREN", _); ("IDENTIFIER", id); ("COLONCOLON", _)] -> ()
+             |[("UNIONSTAR", _); ("IDENTIFIER", id); ("COLONCOLON", _); _] -> ()
+             |[("UNIONSTAR", _); ("SELFT", t); ("COLONCOLON", _); _] -> ()
+             |[("UNIONSTAR", _); ("THIS", t); ("COLONCOLON", _); _] -> ()
+             |[("UNIONSTAR", _); ("RES", t); ("COLONCOLON", _); _] -> ()
              | _ -> raise Stream.Failure)
 
 let peek_heap_starminus =
    SHGram.Entry.of_parser "peek_heap_starminus"
        (fun strm ->
            match Stream.npeek 4 strm with
-             |[STARMINUS,_;OPAREN ,_; IDENTIFIER id,_; COLONCOLON,_] -> ()
-             |[STARMINUS,_;IDENTIFIER id,_; COLONCOLON,_; _,_] -> ()
-             |[STARMINUS,_;SELFT t,_; COLONCOLON,_; _,_] -> ()
-             |[STARMINUS,_;THIS t,_; COLONCOLON,_; _,_] -> ()
-             |[STARMINUS,_;RES t,_; COLONCOLON,_; _,_] -> ()
+             |[("STARMINUS", _); ("OPAREN", _); ("IDENTIFIER", id); ("COLONCOLON", _)] -> ()
+             |[("STARMINUS", _); ("IDENTIFIER", id); ("COLONCOLON", _); _] -> ()
+             |[("STARMINUS", _); ("SELFT", t); ("COLONCOLON", _); _] -> ()
+             |[("STARMINUS", _); ("THIS", t); ("COLONCOLON", _); _] -> ()
+             |[("STARMINUS", _); ("RES", t); ("COLONCOLON", _); _] -> ()
              | _ -> raise Stream.Failure)
 
 let peek_array_type =
    SHGram.Entry.of_parser "peek_array_type"
        (fun strm ->
            match Stream.npeek 2 strm with
-             |[_;OSQUARE,_] -> (* An Hoa*) (* let () = print_endline "Array found!" in *) ()
-             (* |[_;OSQUARE,_;COMMA,_] -> (\* An Hoa*\) (\* let () = print_endline "Array found!" in *\) () *)
+             |[_; ("OSQUARE", _)] -> (* An Hoa*) (* let () = print_endline "Array found!" in *) ()
+             (* |[_; ("OSQUARE", _); ("COMMA", _)] -> (\* An Hoa*\) (\* let () = print_endline "Array found!" in *\) () *)
              | _ -> raise Stream.Failure)
 
 let peek_pointer_type =
    SHGram.Entry.of_parser "peek_pointer_type"
        (fun strm ->
            match Stream.npeek 2 strm with
-             |[_;STAR,_] -> (* let () = print_endline "Pointer found!" in *) ()
+             |[_; ("STAR", _)] -> (* let () = print_endline "Pointer found!" in *) ()
              | _ -> raise Stream.Failure)
 
 let peek_obrace_par =
   SHGram.Entry.of_parser "peek_obrace_par"
     (fun strm ->
       match Stream.npeek 2 strm with
-      | [OBRACE,_;CASE,_] -> raise Stream.Failure
+      | [("OBRACE", _); ("CASE", _)] -> raise Stream.Failure
       | _ -> ())
 
 let peek_relassume =
   SHGram.Entry.of_parser "peek_relassume"
     (fun strm ->
       match Stream.npeek 1 strm with
-      | [IDENTIFIER "RA",_] -> raise Stream.Failure
+      | [("IDENTIFIER", "RA")] -> raise Stream.Failure
       | _ -> ())
 
-let get_heap_id_info (cid: ident * primed) (heap_id : (ident * int * int * Camlp4.PreCast.Loc.t)) =
+let get_heap_id_info (cid: ident * primed) (heap_id : (ident * int * int * Loc.t)) =
   let (base_heap_id, ref_level, deref_level, l) = heap_id in
   let s = ref base_heap_id in
   for i = 1 to ref_level do
@@ -918,61 +1044,510 @@ let stmt_list_to_block t pos =
       exp_block_local_vars = [];
       exp_block_pos = pos; }
 
-(* let arg_option = SHGram.Entry.mk "arg_option" *)
-let hip_with_option = SHGram.Entry.mk "hip_with_option"
-let sprog = SHGram.Entry.mk "sprog"
-let hprog = SHGram.Entry.mk "hprog"
-let hproc = SHGram.Entry.mk "hproc"
-let sprog_int = SHGram.Entry.mk "sprog_int"
-let opt_spec_list_file = SHGram.Entry.mk "opt_spec_list_file"
-let opt_spec_list = SHGram.Entry.mk "opt_spec_list"
-let statement = SHGram.Entry.mk "statement"
-let cp_file = SHGram.Entry.mk "cp_file"
+(* let arg_option = SHGram.Entry.create "arg_option" *)
+let hip_with_option = SHGram.Entry.create "hip_with_option"
+let sprog = SHGram.Entry.create "sprog"
+let hprog = SHGram.Entry.create "hprog"
+let hproc = SHGram.Entry.create "hproc"
+let sprog_int = SHGram.Entry.create "sprog_int"
+let opt_spec_list_file = SHGram.Entry.create "opt_spec_list_file"
+let opt_spec_list = SHGram.Entry.create "opt_spec_list"
+let statement = SHGram.Entry.create "statement"
+let cp_file = SHGram.Entry.create "cp_file"
 
-EXTEND SHGram
-  GLOBAL:  hip_with_option sprog hprog hproc sprog_int opt_spec_list_file opt_spec_list statement cp_file;
-  sprog:[[ t = command_list; `EOF -> t ]];
-  sprog_int:[[ t = command; `EOF -> t ]];
-  hprog:[[ t = hprogn; `EOF ->  t ]];
-  hproc:[[ t = proc_decl; `EOF -> t]];
-  cp_file:[[ t = cp_list; `EOF ->  t ]];
+let arg_option = SHGram.Entry.create "arg_option"
+let non_empty_arg_list = SHGram.Entry.create "non_empty_arg_list"
+let macro = SHGram.Entry.create "macro"
+let command_list = SHGram.Entry.create "command_list"
+let command = SHGram.Entry.create "command"
+let non_empty_command_dot = SHGram.Entry.create "non_empty_command_dot"
+let expect_infer_term = SHGram.Entry.create "expect_infer_term"
+let expect_infer_relassume = SHGram.Entry.create "expect_infer_relassume"
+let expect_infer = SHGram.Entry.create "expect_infer"
+let non_empty_command = SHGram.Entry.create "non_empty_command"
+let pure_inv = SHGram.Entry.create "pure_inv"
+let opt_pure_inv = SHGram.Entry.create "opt_pure_inv"
+let data_decl = SHGram.Entry.create "data_decl"
+let template_data_decl = SHGram.Entry.create "template_data_decl"
+let with_typed_var = SHGram.Entry.create "with_typed_var"
+let data_header = SHGram.Entry.create "data_header"
+let template_data_header = SHGram.Entry.create "template_data_header"
+let data_body = SHGram.Entry.create "data_body"
+let field_ann = SHGram.Entry.create "field_ann"
+let field_anns = SHGram.Entry.create "field_anns"
+let field_list2 = SHGram.Entry.create "field_list2"
+let barrier_decl = SHGram.Entry.create "barrier_decl"
+let barrier_constr = SHGram.Entry.create "barrier_constr"
+let b_trans = SHGram.Entry.create "b_trans"
+let derv_view = SHGram.Entry.create "derv_view"
+let prop_extn = SHGram.Entry.create "prop_extn"
+let view_decl = SHGram.Entry.create "view_decl"
+let prim_view_decl = SHGram.Entry.create "prim_view_decl"
+let view_decl_ext = SHGram.Entry.create "view_decl_ext"
+let opt_inv_lock = SHGram.Entry.create "opt_inv_lock"
+let inv_lock = SHGram.Entry.create "inv_lock"
+let opt_baga_inv = SHGram.Entry.create "opt_baga_inv"
+let opt_baga_under_inv = SHGram.Entry.create "opt_baga_under_inv"
+let baga_invs = SHGram.Entry.create "baga_invs"
+let baga_under_invs = SHGram.Entry.create "baga_under_invs"
+let opt_inv = SHGram.Entry.create "opt_inv"
+let opt_mem_perm_set = SHGram.Entry.create "opt_mem_perm_set"
+let mem_perm_set = SHGram.Entry.create "mem_perm_set"
+let mem_perm_layout = SHGram.Entry.create "mem_perm_layout"
+let pure_guard = SHGram.Entry.create "pure_guard"
+let ann_list = SHGram.Entry.create "ann_list"
+let cexp_ann = SHGram.Entry.create "cexp_ann"
+let opt_derv = SHGram.Entry.create "opt_derv"
+let opt_split = SHGram.Entry.create "opt_split"
+let derv = SHGram.Entry.create "derv"
+let split = SHGram.Entry.create "split"
+let inv = SHGram.Entry.create "inv"
+let baga_formula = SHGram.Entry.create "baga_formula"
+let baga_inv = SHGram.Entry.create "baga_inv"
+let opt_infer_post = SHGram.Entry.create "opt_infer_post"
+let infer_post = SHGram.Entry.create "infer_post"
+let opt_infer_xpost = SHGram.Entry.create "opt_infer_xpost"
+let infer_xpost = SHGram.Entry.create "infer_xpost"
+let opt_transpec = SHGram.Entry.create "opt_transpec"
+let transpec = SHGram.Entry.create "transpec"
+let ann_label = SHGram.Entry.create "ann_label"
+let ann_heap = SHGram.Entry.create "ann_heap"
+let ann_heap_list = SHGram.Entry.create "ann_heap_list"
+let opt_branches = SHGram.Entry.create "opt_branches"
+let branches = SHGram.Entry.create "branches"
+let one_string = SHGram.Entry.create "one_string"
+let one_string_w_ann = SHGram.Entry.create "one_string_w_ann"
+let string_w_ann_list = SHGram.Entry.create "string_w_ann_list"
+let opt_string_w_ann_list = SHGram.Entry.create "opt_string_w_ann_list"
+let one_branch = SHGram.Entry.create "one_branch"
+let opt_branch = SHGram.Entry.create "opt_branch"
+let branch = SHGram.Entry.create "branch"
+let view_header = SHGram.Entry.create "view_header"
+let id_type_list_opt = SHGram.Entry.create "id_type_list_opt"
+let rflow_form_list_opt = SHGram.Entry.create "rflow_form_list_opt"
+let rflow_kind = SHGram.Entry.create "rflow_kind"
+let rflow_form = SHGram.Entry.create "rflow_form"
+let formula_ann = SHGram.Entry.create "formula_ann"
+let ho_id = SHGram.Entry.create "ho_id"
+let id_ann = SHGram.Entry.create "id_ann"
+let id_ann_list_opt = SHGram.Entry.create "id_ann_list_opt"
+let opt_brace_vars = SHGram.Entry.create "opt_brace_vars"
+let rflow_form_list = SHGram.Entry.create "rflow_form_list"
+let view_header_ext = SHGram.Entry.create "view_header_ext"
+let cid = SHGram.Entry.create "cid"
+let cid_or_pair = SHGram.Entry.create "cid_or_pair"
+let view_body = SHGram.Entry.create "view_body"
+let opt_heap_arg_list = SHGram.Entry.create "opt_heap_arg_list"
+let opt_heap_arg_list2 = SHGram.Entry.create "opt_heap_arg_list2"
+let opt_heap_data_arg_list = SHGram.Entry.create "opt_heap_data_arg_list"
+let opt_heap_data_arg_list2 = SHGram.Entry.create "opt_heap_data_arg_list2"
+let heap_arg2 = SHGram.Entry.create "heap_arg2"
+let heap_arg2_data = SHGram.Entry.create "heap_arg2_data"
+let opt_cid_list = SHGram.Entry.create "opt_cid_list"
+let cid_list = SHGram.Entry.create "cid_list"
+let opt_ann_cid_list = SHGram.Entry.create "opt_ann_cid_list"
+let c_typ = SHGram.Entry.create "c_typ"
+let cid_typ = SHGram.Entry.create "cid_typ"
+let ann_cid = SHGram.Entry.create "ann_cid"
+let opt_ann_list = SHGram.Entry.create "opt_ann_list"
+let p_vp_ann = SHGram.Entry.create "p_vp_ann"
+let ann = SHGram.Entry.create "ann"
+let sq_clist = SHGram.Entry.create "sq_clist"
+let formulas = SHGram.Entry.create "formulas"
+let extended_l = SHGram.Entry.create "extended_l"
+let extended_l2 = SHGram.Entry.create "extended_l2"
+let extended_constr_grp = SHGram.Entry.create "extended_constr_grp"
+let extended_constr_grp2 = SHGram.Entry.create "extended_constr_grp2"
+let then_extended = SHGram.Entry.create "then_extended"
+let extended_constr = SHGram.Entry.create "extended_constr"
+let extended_constr2 = SHGram.Entry.create "extended_constr2"
+let impl_list = SHGram.Entry.create "impl_list"
+let impl = SHGram.Entry.create "impl"
+let disjunctive_constr = SHGram.Entry.create "disjunctive_constr"
+let core_constr_and = SHGram.Entry.create "core_constr_and"
+let core_constr_conjunctions = SHGram.Entry.create "core_constr_conjunctions"
+let and_core_constr = SHGram.Entry.create "and_core_constr"
+let core_constr = SHGram.Entry.create "core_constr"
+let opt_vperm_constr = SHGram.Entry.create "opt_vperm_constr"
+let star_vperm_constr = SHGram.Entry.create "star_vperm_constr"
+let vperm_constr = SHGram.Entry.create "vperm_constr"
+let single_vperm_constr = SHGram.Entry.create "single_vperm_constr"
+let opt_flow_constraints = SHGram.Entry.create "opt_flow_constraints"
+let flow_constraints = SHGram.Entry.create "flow_constraints"
+let opt_formula_label = SHGram.Entry.create "opt_formula_label"
+let opt_label = SHGram.Entry.create "opt_label"
+let label = SHGram.Entry.create "label"
+let pure_label = SHGram.Entry.create "pure_label"
+let formula_label = SHGram.Entry.create "formula_label"
+let opt_heap_constr = SHGram.Entry.create "opt_heap_constr"
+let heap_constr = SHGram.Entry.create "heap_constr"
+let heap_rd = SHGram.Entry.create "heap_rd"
+let heap_rw = SHGram.Entry.create "heap_rw"
+let heap_wr = SHGram.Entry.create "heap_wr"
+let heap_id = SHGram.Entry.create "heap_id"
+let simple_heap_constr_imm = SHGram.Entry.create "simple_heap_constr_imm"
+let thread_args = SHGram.Entry.create "thread_args"
+let non_thread_args1 = SHGram.Entry.create "non_thread_args1"
+let non_thread_args2 = SHGram.Entry.create "non_thread_args2"
+let simple_heap_constr = SHGram.Entry.create "simple_heap_constr"
+let opt_perm = SHGram.Entry.create "opt_perm"
+let perm = SHGram.Entry.create "perm"
+let perm_aux = SHGram.Entry.create "perm_aux"
+let opt_general_h_args = SHGram.Entry.create "opt_general_h_args"
+let opt_data_h_args = SHGram.Entry.create "opt_data_h_args"
+let general_h_args = SHGram.Entry.create "general_h_args"
+let data_h_args = SHGram.Entry.create "data_h_args"
+let opt_delayed_constr = SHGram.Entry.create "opt_delayed_constr"
+let delayed_constr = SHGram.Entry.create "delayed_constr"
+let opt_pure_constr = SHGram.Entry.create "opt_pure_constr"
+let and_pure_constr = SHGram.Entry.create "and_pure_constr"
+let pure_constr = SHGram.Entry.create "pure_constr"
+let ann_term = SHGram.Entry.create "ann_term"
+let cexp = SHGram.Entry.create "cexp"
+let cexp_data_p = SHGram.Entry.create "cexp_data_p"
+let slicing_label = SHGram.Entry.create "slicing_label"
+let exl_pure = SHGram.Entry.create "exl_pure"
+let cexp_w = SHGram.Entry.create "cexp_w"
+let tree_const = SHGram.Entry.create "tree_const"
+let opt_comma_list = SHGram.Entry.create "opt_comma_list"
+let opt_comma = SHGram.Entry.create "opt_comma"
+let opt_measures_seq = SHGram.Entry.create "opt_measures_seq"
+let measures_seq = SHGram.Entry.create "measures_seq"
+let opt_measures_seq_sqr = SHGram.Entry.create "opt_measures_seq_sqr"
+let measures_seq_sqr = SHGram.Entry.create "measures_seq_sqr"
+let opt_cexp_list = SHGram.Entry.create "opt_cexp_list"
+let checknorm_cmd = SHGram.Entry.create "checknorm_cmd"
+let checkeq_cmd = SHGram.Entry.create "checkeq_cmd"
+let opt_list_meta_constr = SHGram.Entry.create "opt_list_meta_constr"
+let checkentail_cmd = SHGram.Entry.create "checkentail_cmd"
+let checksat_cmd = SHGram.Entry.create "checksat_cmd"
+let checknondet_cmd = SHGram.Entry.create "checknondet_cmd"
+let templ_solve_cmd = SHGram.Entry.create "templ_solve_cmd"
+let term_infer_cmd = SHGram.Entry.create "term_infer_cmd"
+let term_assume_cmd = SHGram.Entry.create "term_assume_cmd"
+let ls_rel_ass = SHGram.Entry.create "ls_rel_ass"
+let rel_ass = SHGram.Entry.create "rel_ass"
+let validate_entail_state = SHGram.Entry.create "validate_entail_state"
+let validate_list_context = SHGram.Entry.create "validate_list_context"
+let validate_result = SHGram.Entry.create "validate_result"
+let validate_cmd_pair = SHGram.Entry.create "validate_cmd_pair"
+let validate_cmd = SHGram.Entry.create "validate_cmd"
+let cond_path = SHGram.Entry.create "cond_path"
+let relassume_cmd = SHGram.Entry.create "relassume_cmd"
+let derv_pred = SHGram.Entry.create "derv_pred"
+let reldefn_cmd = SHGram.Entry.create "reldefn_cmd"
+let decl_dang_cmd = SHGram.Entry.create "decl_dang_cmd"
+let decl_unknown_cmd = SHGram.Entry.create "decl_unknown_cmd"
+let shapeinfer_cmd = SHGram.Entry.create "shapeinfer_cmd"
+let rel_infer_cmd = SHGram.Entry.create "rel_infer_cmd"
+let shapedivide_cmd = SHGram.Entry.create "shapedivide_cmd"
+let shapeconquer_cmd = SHGram.Entry.create "shapeconquer_cmd"
+let shapelfp_cmd = SHGram.Entry.create "shapelfp_cmd"
+let shaperec_cmd = SHGram.Entry.create "shaperec_cmd"
+let shapepost_obl_cmd = SHGram.Entry.create "shapepost_obl_cmd"
+let shape_sconseq_cmd = SHGram.Entry.create "shape_sconseq_cmd"
+let shape_sante_cmd = SHGram.Entry.create "shape_sante_cmd"
+let pred_split_cmd = SHGram.Entry.create "pred_split_cmd"
+let pred_norm_seg_cmd = SHGram.Entry.create "pred_norm_seg_cmd"
+let pred_norm_disj_cmd = SHGram.Entry.create "pred_norm_disj_cmd"
+let simplify_cmd = SHGram.Entry.create "simplify_cmd"
+let hull_cmd = SHGram.Entry.create "hull_cmd"
+let pairwise_cmd = SHGram.Entry.create "pairwise_cmd"
+let shapeinfer_proper_cmd = SHGram.Entry.create "shapeinfer_proper_cmd"
+let shapesplit_base_cmd = SHGram.Entry.create "shapesplit_base_cmd"
+let shapeElim_cmd = SHGram.Entry.create "shapeElim_cmd"
+let shapeReuseSubs_cmd = SHGram.Entry.create "shapeReuseSubs_cmd"
+let predUnfold_cmd = SHGram.Entry.create "predUnfold_cmd"
+let shapeReuse_cmd = SHGram.Entry.create "shapeReuse_cmd"
+let shapeExtract_cmd = SHGram.Entry.create "shapeExtract_cmd"
+let shape_selective_id_list = SHGram.Entry.create "shape_selective_id_list"
+let shape_selective_id_star_list = SHGram.Entry.create "shape_selective_id_star_list"
+let selective_id_list_bracket = SHGram.Entry.create "selective_id_list_bracket"
+let qualifier_selective_id_list_bracket = SHGram.Entry.create "qualifier_selective_id_list_bracket"
+let selective_id_star_list_bracket = SHGram.Entry.create "selective_id_star_list_bracket"
+let data_mark_rec_cmd = SHGram.Entry.create "data_mark_rec_cmd"
+let shape_add_dangling_cmd = SHGram.Entry.create "shape_add_dangling_cmd"
+let shape_unfold_cmd = SHGram.Entry.create "shape_unfold_cmd"
+let shape_param_dangling_cmd = SHGram.Entry.create "shape_param_dangling_cmd"
+let shape_simplify_cmd = SHGram.Entry.create "shape_simplify_cmd"
+let shape_merge_cmd = SHGram.Entry.create "shape_merge_cmd"
+let shape_trans_to_view_cmd = SHGram.Entry.create "shape_trans_to_view_cmd"
+let shape_derive_pre_cmd = SHGram.Entry.create "shape_derive_pre_cmd"
+let shape_derive_post_cmd = SHGram.Entry.create "shape_derive_post_cmd"
+let shape_derive_view_cmd = SHGram.Entry.create "shape_derive_view_cmd"
+let shape_extn_view_cmd = SHGram.Entry.create "shape_extn_view_cmd"
+let shape_normalize_cmd = SHGram.Entry.create "shape_normalize_cmd"
+let pred_elim_head_cmd = SHGram.Entry.create "pred_elim_head_cmd"
+let pred_elim_tail_cmd = SHGram.Entry.create "pred_elim_tail_cmd"
+let pred_unify_disj_cmd = SHGram.Entry.create "pred_unify_disj_cmd"
+let infer_type = SHGram.Entry.create "infer_type"
+let infer_id = SHGram.Entry.create "infer_id"
+let infer_extn_prop = SHGram.Entry.create "infer_extn_prop"
+let infer_extn_for_id = SHGram.Entry.create "infer_extn_for_id"
+let infer_type_list = SHGram.Entry.create "infer_type_list"
+let infer_cmd = SHGram.Entry.create "infer_cmd"
+let captureresidue_cmd = SHGram.Entry.create "captureresidue_cmd"
+let compose_cmd = SHGram.Entry.create "compose_cmd"
+let print_cmd = SHGram.Entry.create "print_cmd"
+let cmp_cmd = SHGram.Entry.create "cmp_cmd"
+let time_cmd = SHGram.Entry.create "time_cmd"
+let let_decl = SHGram.Entry.create "let_decl"
+let extended_meta_constr = SHGram.Entry.create "extended_meta_constr"
+let meta_constr = SHGram.Entry.create "meta_constr"
+let coercion_decl = SHGram.Entry.create "coercion_decl"
+let coercion_decl_list = SHGram.Entry.create "coercion_decl_list"
+let infer_coercion_decl = SHGram.Entry.create "infer_coercion_decl"
+let coerc_decl_aux = SHGram.Entry.create "coerc_decl_aux"
+let coercion_direction = SHGram.Entry.create "coercion_direction"
+let opt_name = SHGram.Entry.create "opt_name"
+let name = SHGram.Entry.create "name"
+let typ = SHGram.Entry.create "typ"
+let non_array_type = SHGram.Entry.create "non_array_type"
+let pointer_type = SHGram.Entry.create "pointer_type"
+let star_list = SHGram.Entry.create "star_list"
+let array_type = SHGram.Entry.create "array_type"
+let rank_specifier = SHGram.Entry.create "rank_specifier"
+let comma_list = SHGram.Entry.create "comma_list"
+let id_list_opt = SHGram.Entry.create "id_list_opt"
+let int_list = SHGram.Entry.create "int_list"
+let list_int_list = SHGram.Entry.create "list_int_list"
+let id_star_list = SHGram.Entry.create "id_star_list"
+let id_list = SHGram.Entry.create "id_list"
+let id_list_w_brace = SHGram.Entry.create "id_list_w_brace"
+let id = SHGram.Entry.create "id"
+let triv_star = SHGram.Entry.create "triv_star"
+let id_star = SHGram.Entry.create "id_star"
+let hopred_decl = SHGram.Entry.create "hopred_decl"
+let shape = SHGram.Entry.create "shape"
+let split_combine = SHGram.Entry.create "split_combine"
+let ext_form = SHGram.Entry.create "ext_form"
+let ho_fct_header = SHGram.Entry.create "ho_fct_header"
+let ho_fct_def = SHGram.Entry.create "ho_fct_def"
+let ho_fct_def_list = SHGram.Entry.create "ho_fct_def_list"
+let hpred_header = SHGram.Entry.create "hpred_header"
+let typed_arg = SHGram.Entry.create "typed_arg"
+let opt_typed_arg_list = SHGram.Entry.create "opt_typed_arg_list"
+let type_var = SHGram.Entry.create "type_var"
+let type_var_list = SHGram.Entry.create "type_var_list"
+let opt_type_var_list = SHGram.Entry.create "opt_type_var_list"
+let fct_arg_list = SHGram.Entry.create "fct_arg_list"
+let fct_list = SHGram.Entry.create "fct_list"
+let opt_fct_list = SHGram.Entry.create "opt_fct_list"
+let func_decl = SHGram.Entry.create "func_decl"
+let func_typed_id_list_opt = SHGram.Entry.create "func_typed_id_list_opt"
+let func_header = SHGram.Entry.create "func_header"
+let rel_decl = SHGram.Entry.create "rel_decl"
+let typed_id_list = SHGram.Entry.create "typed_id_list"
+let id_part_ann = SHGram.Entry.create "id_part_ann"
+let typed_id_inst_list = SHGram.Entry.create "typed_id_inst_list"
+let typed_id_list_opt = SHGram.Entry.create "typed_id_list_opt"
+let typed_id_inst_list_opt = SHGram.Entry.create "typed_id_inst_list_opt"
+let typed_default_id_list = SHGram.Entry.create "typed_default_id_list"
+let typed_default_id_list_opt = SHGram.Entry.create "typed_default_id_list_opt"
+let rel_header = SHGram.Entry.create "rel_header"
+let rel_header_view = SHGram.Entry.create "rel_header_view"
+let rel_body = SHGram.Entry.create "rel_body"
+let templ_decl = SHGram.Entry.create "templ_decl"
+let templ_body = SHGram.Entry.create "templ_body"
+let ut_fname = SHGram.Entry.create "ut_fname"
+let ut_decl = SHGram.Entry.create "ut_decl"
+let ui_decl = SHGram.Entry.create "ui_decl"
+let axiom_decl = SHGram.Entry.create "axiom_decl"
+let hp_decl = SHGram.Entry.create "hp_decl"
+let hprogn = SHGram.Entry.create "hprogn"
+let opt_decl_list = SHGram.Entry.create "opt_decl_list"
+let mdecl = SHGram.Entry.create "mdecl"
+let decl = SHGram.Entry.create "decl"
+let dir_path = SHGram.Entry.create "dir_path"
+let file_name = SHGram.Entry.create "file_name"
+let opt_pred = SHGram.Entry.create "opt_pred"
+let type_decl = SHGram.Entry.create "type_decl"
+let global_var_decl = SHGram.Entry.create "global_var_decl"
+let logical_var_decl = SHGram.Entry.create "logical_var_decl"
+let class_decl = SHGram.Entry.create "class_decl"
+let extends = SHGram.Entry.create "extends"
+let class_body = SHGram.Entry.create "class_body"
+let one_member = SHGram.Entry.create "one_member"
+let member_list = SHGram.Entry.create "member_list"
+let member = SHGram.Entry.create "member"
+let enum_decl = SHGram.Entry.create "enum_decl"
+let enum_header = SHGram.Entry.create "enum_header"
+let enum_body = SHGram.Entry.create "enum_body"
+let enum_list = SHGram.Entry.create "enum_list"
+let enumerator = SHGram.Entry.create "enumerator"
+let opt_sq_clist = SHGram.Entry.create "opt_sq_clist"
+let spec_list_file = SHGram.Entry.create "spec_list_file"
+let spec_list_only = SHGram.Entry.create "spec_list_only"
+let spec_list = SHGram.Entry.create "spec_list"
+let spec_list_outer = SHGram.Entry.create "spec_list_outer"
+let spec_list_grp = SHGram.Entry.create "spec_list_grp"
+let disj_or_extn_constr = SHGram.Entry.create "disj_or_extn_constr"
+let spec = SHGram.Entry.create "spec"
+let cid_list_w_itype = SHGram.Entry.create "cid_list_w_itype"
+let branch_list = SHGram.Entry.create "branch_list"
+let spec_branch = SHGram.Entry.create "spec_branch"
+let opt_throws = SHGram.Entry.create "opt_throws"
+let throws = SHGram.Entry.create "throws"
+let flag_arg = SHGram.Entry.create "flag_arg"
+let flag = SHGram.Entry.create "flag"
+let flag_list = SHGram.Entry.create "flag_list"
+let opt_flag_list = SHGram.Entry.create "opt_flag_list"
+let resource_param = SHGram.Entry.create "resource_param"
+let opt_resource_param = SHGram.Entry.create "opt_resource_param"
+let proc_decl = SHGram.Entry.create "proc_decl"
+let proc_header = SHGram.Entry.create "proc_header"
+let constructor_decl = SHGram.Entry.create "constructor_decl"
+let constructor_header = SHGram.Entry.create "constructor_header"
+let opt_formal_parameter_list = SHGram.Entry.create "opt_formal_parameter_list"
+let fixed_parameter = SHGram.Entry.create "fixed_parameter"
+let pass_t2 = SHGram.Entry.create "pass_t2"
+let pass_t = SHGram.Entry.create "pass_t"
+let proc_body = SHGram.Entry.create "proc_body"
+let block = SHGram.Entry.create "block"
+let statement_list = SHGram.Entry.create "statement_list"
+let declaration_statement = SHGram.Entry.create "declaration_statement"
+let local_variable_type = SHGram.Entry.create "local_variable_type"
+let local_variable_declaration = SHGram.Entry.create "local_variable_declaration"
+let local_constant_declaration = SHGram.Entry.create "local_constant_declaration"
+let variable_declarators = SHGram.Entry.create "variable_declarators"
+let variable_declarator = SHGram.Entry.create "variable_declarator"
+let variable_initializer = SHGram.Entry.create "variable_initializer"
+let constant_declarators = SHGram.Entry.create "constant_declarators"
+let constant_declarator = SHGram.Entry.create "constant_declarator"
+let labeled_valid_declaration_statement = SHGram.Entry.create "labeled_valid_declaration_statement"
+let valid_declaration_statement = SHGram.Entry.create "valid_declaration_statement"
+let empty_statement = SHGram.Entry.create "empty_statement"
+let unfold_statement = SHGram.Entry.create "unfold_statement"
+let barr_statement = SHGram.Entry.create "barr_statement"
+let assert_statement = SHGram.Entry.create "assert_statement"
+let debug_statement = SHGram.Entry.create "debug_statement"
+let time_statement = SHGram.Entry.create "time_statement"
+let dprint_statement = SHGram.Entry.create "dprint_statement"
+let bind_statement = SHGram.Entry.create "bind_statement"
+let bind_expression = SHGram.Entry.create "bind_expression"
+let java_statement = SHGram.Entry.create "java_statement"
+let expression_statement = SHGram.Entry.create "expression_statement"
+let selection_statement = SHGram.Entry.create "selection_statement"
+let embedded_statement = SHGram.Entry.create "embedded_statement"
+let if_statement = SHGram.Entry.create "if_statement"
+let par_statement = SHGram.Entry.create "par_statement"
+let vpid = SHGram.Entry.create "vpid"
+let opt_vpid_list = SHGram.Entry.create "opt_vpid_list"
+let vperm_var_list = SHGram.Entry.create "vperm_var_list"
+let vperm_var_list_opt = SHGram.Entry.create "vperm_var_list_opt"
+let par_case = SHGram.Entry.create "par_case"
+let par_case_list = SHGram.Entry.create "par_case_list"
+let iteration_statement = SHGram.Entry.create "iteration_statement"
+let while_statement = SHGram.Entry.create "while_statement"
+let jump_statement = SHGram.Entry.create "jump_statement"
+let break_statement = SHGram.Entry.create "break_statement"
+let continue_statement = SHGram.Entry.create "continue_statement"
+let return_statement = SHGram.Entry.create "return_statement"
+let raise_statement = SHGram.Entry.create "raise_statement"
+let try_statement = SHGram.Entry.create "try_statement"
+let opt_catch_list = SHGram.Entry.create "opt_catch_list"
+let catch_clause = SHGram.Entry.create "catch_clause"
+let opt_finally = SHGram.Entry.create "opt_finally"
+let finally_c = SHGram.Entry.create "finally_c"
+let opt_expression = SHGram.Entry.create "opt_expression"
+let object_creation_expression = SHGram.Entry.create "object_creation_expression"
+let object_or_delegate_creation_expression = SHGram.Entry.create "object_or_delegate_creation_expression"
+let new_expression = SHGram.Entry.create "new_expression"
+let opt_argument_list = SHGram.Entry.create "opt_argument_list"
+let argument_list = SHGram.Entry.create "argument_list"
+let argument = SHGram.Entry.create "argument"
+let expression = SHGram.Entry.create "expression"
+let constant_expression = SHGram.Entry.create "constant_expression"
+let boolean_expression = SHGram.Entry.create "boolean_expression"
+let assignment_expression = SHGram.Entry.create "assignment_expression"
+let conditional_expression = SHGram.Entry.create "conditional_expression"
+let conditional_or_expression = SHGram.Entry.create "conditional_or_expression"
+let conditional_and_expression = SHGram.Entry.create "conditional_and_expression"
+let inclusive_or_expression = SHGram.Entry.create "inclusive_or_expression"
+let exclusive_or_expression = SHGram.Entry.create "exclusive_or_expression"
+let and_expression = SHGram.Entry.create "and_expression"
+let equality_expression = SHGram.Entry.create "equality_expression"
+let relational_expression = SHGram.Entry.create "relational_expression"
+let shift_expression = SHGram.Entry.create "shift_expression"
+let additive_expression = SHGram.Entry.create "additive_expression"
+let multiplicative_expression = SHGram.Entry.create "multiplicative_expression"
+let prefixed_unary_expression = SHGram.Entry.create "prefixed_unary_expression"
+let pre_increment_expression = SHGram.Entry.create "pre_increment_expression"
+let pre_decrement_expression = SHGram.Entry.create "pre_decrement_expression"
+let post_increment_expression = SHGram.Entry.create "post_increment_expression"
+let post_decrement_expression = SHGram.Entry.create "post_decrement_expression"
+let unary_expression = SHGram.Entry.create "unary_expression"
+let unary_expression_not_plusminus = SHGram.Entry.create "unary_expression_not_plusminus"
+let postfix_expression = SHGram.Entry.create "postfix_expression"
+let cast_expression = SHGram.Entry.create "cast_expression"
+let ho_arg = SHGram.Entry.create "ho_arg"
+let opt_ho_arg = SHGram.Entry.create "opt_ho_arg"
+let invocation_expression = SHGram.Entry.create "invocation_expression"
+let opt_lock_info = SHGram.Entry.create "opt_lock_info"
+let lock_info = SHGram.Entry.create "lock_info"
+let qualified_identifier = SHGram.Entry.create "qualified_identifier"
+let literal = SHGram.Entry.create "literal"
+let real_literal = SHGram.Entry.create "real_literal"
+let integer_literal = SHGram.Entry.create "integer_literal"
+let boolean_literal = SHGram.Entry.create "boolean_literal"
+let primary_expression = SHGram.Entry.create "primary_expression"
+let parenthesized_expression = SHGram.Entry.create "parenthesized_expression"
+let primary_expression_no_parenthesis = SHGram.Entry.create "primary_expression_no_parenthesis"
+let primary_expression_no_array_no_parenthesis = SHGram.Entry.create "primary_expression_no_array_no_parenthesis"
+let arrayaccess_expression = SHGram.Entry.create "arrayaccess_expression"
+let cp_list = SHGram.Entry.create "cp_list"
+let opt_cp_list = SHGram.Entry.create "opt_cp_list"
+let cp_comps = SHGram.Entry.create "cp_comps"
+let cp_comp = SHGram.Entry.create "cp_comp"
+let test = SHGram.Entry.create "test"
+let test_list = SHGram.Entry.create "test_list"
+let test_ele = SHGram.Entry.create "test_ele"
+let constrs = SHGram.Entry.create "constrs"
+let constr = SHGram.Entry.create "constr"
+
+EXTEND
+  sprog:[[ t = command_list; EOI -> t ]];
+  sprog_int:[[ t = command; EOI -> t ]];
+  hprog:[[ t = hprogn; EOI ->  t ]];
+  hproc:[[ t = proc_decl; EOI -> t]];
+  cp_file:[[ t = cp_list; EOI ->  t ]];
 
 (* ZH: For Option *)
 arg_option: [[t = LIST0 non_empty_arg_list-> List.flatten t]];
 
 (* arg_list : [[ t = non_empty_arg_list -> t]]; *)
 
-non_empty_arg_list: [[ `ARGOPTION t -> let _ = print_endline "!!!!!non_empty_arg_list!" in [t]]];
+non_empty_arg_list: [[ t = ARGOPTION -> let _ = print_endline "!!!!!non_empty_arg_list!" in [t]]];
 
 hip_with_option: [[ opt =arg_option; h = hprog-> (opt,h)]];
 
-macro: [[`PMACRO; n=id; `EQEQ ; tc=tree_const -> if !Globals.perm=(Globals.Dperm) then Hashtbl.add !macros n tc else  report_error (get_pos 1) ("distinct share reasoning not enabled")]];
+macro: [[PMACRO; n=id; EQEQ ; tc=tree_const -> if !Globals.perm=(Globals.Dperm) then Hashtbl.add !macros n tc else  report_error (get_pos 1) ("distinct share reasoning not enabled")]];
 
 command_list: [[ t = LIST0 non_empty_command_dot -> t ]];
 
 command: [[ t=OPT non_empty_command_dot-> un_option t EmptyCmd]];
 
-non_empty_command_dot: [[t=non_empty_command; `DOT -> t]];
+non_empty_command_dot: [[t=non_empty_command; DOT -> t]];
 
 (* For R{..} and I{..} *)
 expect_infer_term: [[f = meta_constr -> f]];
 
 expect_infer_relassume:
-  [[ il2 = OPT cond_path; l=meta_constr; `CONSTR;r=meta_constr ->
+  [[ il2 = OPT cond_path; l=meta_constr; CONSTR;r=meta_constr ->
       (un_option il2 [], l, None,  r)
-   | il2 = OPT cond_path; l=meta_constr; `REL_GUARD; guard = meta_constr; `CONSTR;r=meta_constr ->
+   | il2 = OPT cond_path; l=meta_constr; REL_GUARD; guard = meta_constr; CONSTR;r=meta_constr ->
       (un_option il2 [], l, Some guard,  r)
   ]];
 
 expect_infer:
   [[
-    `EXPECT_INFER; ty=validate_result; peek_relassume; t=id; `OBRACE; f = OPT expect_infer_term; `CBRACE ->
+    EXPECT_INFER; ty=validate_result; peek_relassume; t=id; OBRACE; f = OPT expect_infer_term; CBRACE ->
        (match t with
           | "R" -> ExpectInfer (ty, V_Residue f)
           | "I" | "IE" | "IU" -> ExpectInfer (ty, V_Infer (t,f))
           | "RE" -> failwith "parser"
           | _ -> raise Stream.Failure)
-  | `EXPECT_INFER; ty=validate_result; t=id; `OBRACE; f = OPT expect_infer_relassume; `CBRACE ->
+  | EXPECT_INFER; ty=validate_result; t=id; OBRACE; f = OPT expect_infer_relassume; CBRACE ->
        (match t with
           | "RA" -> ExpectInfer (ty, V_RelAssume f)
           | _ -> failwith "not possible")
@@ -981,9 +1556,9 @@ expect_infer:
 non_empty_command:
     [[  t=data_decl           -> DataDef t
         | c=class_decl -> DataDef c
-      | `PRED;t= view_decl     -> PredDef t
-      | `PRED_EXT;t= view_decl_ext     -> PredDef t
-      | `PRED_PRIM;t=prim_view_decl     -> PredDef t
+      | PRED;t= view_decl     -> PredDef t
+      | PRED_EXT;t= view_decl_ext     -> PredDef t
+      | PRED_PRIM;t=prim_view_decl     -> PredDef t
       | t=barrier_decl        -> BarrierCheck t
       | t = func_decl         -> FuncDef t
       | t = rel_decl          -> RelDef t
@@ -1063,7 +1638,7 @@ non_empty_command:
       | t = expect_infer -> t
       | t=macro	-> EmptyCmd]];
 
-pure_inv: [[`INV; pf=pure_constr -> pf]];
+pure_inv: [[INV; pf=pure_constr -> pf]];
 
 opt_pure_inv: [[t=OPT pure_inv -> t ]];
 
@@ -1089,30 +1664,30 @@ template_data_decl:
             data_is_template = true;
             data_methods = [];} ]];
 
-with_typed_var: [[`OSQUARE; typ; `CSQUARE -> ()]];
+with_typed_var: [[OSQUARE; typ; CSQUARE -> ()]];
 
 data_header:
-    [[ `DATA; `IDENTIFIER t; OPT with_typed_var -> t ]];
+    [[ DATA; t = IDENTIFIER; OPT with_typed_var -> t ]];
 
 template_data_header:
-    [[ `TEMPL; `DATA; `IDENTIFIER t; OPT with_typed_var -> t ]];
+    [[ TEMPL; DATA; t = IDENTIFIER; OPT with_typed_var -> t ]];
 
 data_body:
-      [[`OBRACE; fl=field_list2;`SEMICOLON; `CBRACE -> fl
-      | `OBRACE; fl=field_list2; `CBRACE   ->  fl
-      | `OBRACE; `CBRACE                   -> []] ];
+      [[OBRACE; fl=field_list2;SEMICOLON; CBRACE -> fl
+      | OBRACE; fl=field_list2; CBRACE   ->  fl
+      | OBRACE; CBRACE                   -> []] ];
 
-(* field_list:[[ fl = LIST1 one_field SEP `SEMICOLON -> error_on_dups (fun n1 n2-> (snd (fst n1))==(snd (fst n2))) fl (get_pos_camlp4 _loc 1) *)
+(* field_list:[[ fl = LIST1 one_field SEP SEMICOLON -> error_on_dups (fun n1 n2-> (snd (fst n1))==(snd (fst n2))) fl (get_pos_camlp4 _loc 1) *)
 (*            ]];  *)
 
 (* field_ann: [[ *)
-(*      `REC -> Iast.REC *)
-(*   |  `VAL -> Iast.VAL *)
+(*      REC -> Iast.REC *)
+(*   |  VAL -> Iast.VAL *)
 (* ]]; *)
 
 field_ann: [[
-    `HASH;`IDENTIFIER id -> id
-  (* | `AT;`IDENTIFIER id -> id *)
+    HASH;id = IDENTIFIER -> id
+  (* | AT;id = IDENTIFIER -> id *)
 ]];
 
 field_anns: [[
@@ -1120,21 +1695,21 @@ field_anns: [[
 ]];
 
 field_list2:[[
-     t = typ; `IDENTIFIER n -> [((t,n),get_pos_camlp4 _loc 1,false, (gen_field_ann t) (* F_NO_ANN *))]
-  | t = typ; `IDENTIFIER n ; ann=field_anns -> [((t,n),get_pos_camlp4 _loc 1,false, ann)]
-  |  t = typ; `OSQUARE; t2=typ; `CSQUARE; `IDENTIFIER n -> [((t,n), get_pos_camlp4 _loc 1,false, (gen_field_ann t)(* F_NO_ANN *))]
-  |  t=typ; `IDENTIFIER n; peek_try; `SEMICOLON; fl = SELF ->(
+     t = typ; n = IDENTIFIER -> [((t,n),get_pos_camlp4 _loc 1,false, (gen_field_ann t) (* F_NO_ANN *))]
+  | t = typ; n = IDENTIFIER ; ann=field_anns -> [((t,n),get_pos_camlp4 _loc 1,false, ann)]
+  |  t = typ; OSQUARE; t2=typ; CSQUARE; n = IDENTIFIER -> [((t,n), get_pos_camlp4 _loc 1,false, (gen_field_ann t)(* F_NO_ANN *))]
+  |  t=typ; n = IDENTIFIER; peek_try; SEMICOLON; fl = SELF ->(
 	 if List.mem n (List.map get_field_name fl) then
 	   report_error (get_pos_camlp4 _loc 4) (n ^ " is duplicated")
 	 else
 	   ((t, n), get_pos_camlp4 _loc 3, false, (gen_field_ann t) (* F_NO_ANN *)) :: fl )
-  |  t=typ; `IDENTIFIER n; ann=field_anns ; peek_try; `SEMICOLON; fl = SELF ->(
+  |  t=typ; n = IDENTIFIER; ann=field_anns ; peek_try; SEMICOLON; fl = SELF ->(
 	 if List.mem n (List.map get_field_name fl) then
 	   report_error (get_pos_camlp4 _loc 4) (n ^ " is duplicated")
 	 else
            let ann = if ann=[] then (gen_field_ann t) else ann in
 	   ((t, n), get_pos_camlp4 _loc 3, false,ann) :: fl )
-  | t1= typ; `OSQUARE; t2=typ; `CSQUARE; `IDENTIFIER n; peek_try; `SEMICOLON; fl = SELF ->
+  | t1= typ; OSQUARE; t2=typ; CSQUARE; n = IDENTIFIER; peek_try; SEMICOLON; fl = SELF ->
 	(if List.mem n (List.map get_field_name fl) then
 	  report_error (get_pos_camlp4 _loc 4) (n ^ " is duplicated")
 	else
@@ -1142,48 +1717,48 @@ field_list2:[[
 ]
     (* An Hoa [22/08/2011] Inline fields extension*)
   | "inline fields" [
-	`INLINE; t = typ; `IDENTIFIER n -> [((t,n),get_pos_camlp4 _loc 1,true, (gen_field_ann t) (*F_NO_ANN*))]
-      | `INLINE; t = typ; `OSQUARE; t2=typ; `CSQUARE; `IDENTIFIER n -> [((t,n), get_pos_camlp4 _loc 1,true, [] (*F_NO_ANN*))]
-      | `INLINE; t=typ; `IDENTIFIER n; peek_try; `SEMICOLON; fl = SELF ->(
+	INLINE; t = typ; n = IDENTIFIER -> [((t,n),get_pos_camlp4 _loc 1,true, (gen_field_ann t) (*F_NO_ANN*))]
+      | INLINE; t = typ; OSQUARE; t2=typ; CSQUARE; n = IDENTIFIER -> [((t,n), get_pos_camlp4 _loc 1,true, [] (*F_NO_ANN*))]
+      | INLINE; t=typ; n = IDENTIFIER; peek_try; SEMICOLON; fl = SELF ->(
 	    if List.mem n (List.map get_field_name fl) then
 	      report_error (get_pos_camlp4 _loc 4) (n ^ " is duplicated")
 	    else
 	      ((t, n), get_pos_camlp4 _loc 3, true, (gen_field_ann t) (*F_NO_ANN*)) :: fl )
-      | `INLINE; t1= typ; `OSQUARE; t2=typ; `CSQUARE; `IDENTIFIER n; peek_try; `SEMICOLON; fl = SELF ->
+      | INLINE; t1= typ; OSQUARE; t2=typ; CSQUARE; n = IDENTIFIER; peek_try; SEMICOLON; fl = SELF ->
 	    (if List.mem n (List.map get_field_name fl) then
 	      report_error (get_pos_camlp4 _loc 4) (n ^ " is duplicated")
 	    else
 	      ((t1, n), get_pos_camlp4 _loc 3, true, (gen_field_ann t1) (*F_NO_ANN*)) :: fl )]];
 
 (* one_field:   *)
-(*   [[ t=typ; `IDENTIFIER n -> ((t, n), get_pos_camlp4 _loc 1) *)
-(*    | t=typ; `OSQUARE; t2=typ; `CSQUARE; `IDENTIFIER n -> ((t,n), get_pos_camlp4 _loc 1)  *)
+(*   [[ t=typ; n = IDENTIFIER -> ((t, n), get_pos_camlp4 _loc 1) *)
+(*    | t=typ; OSQUARE; t2=typ; CSQUARE; n = IDENTIFIER -> ((t,n), get_pos_camlp4 _loc 1)  *)
 (*    ]];  *)
 
  (********** Views **********)
 
 barrier_decl:
-	[[ `BARRIER; `IDENTIFIER n; `OSQUARE; thc=integer_literal; `CSQUARE; `LT; shv=LIST1 typed_id_list SEP `COMMA;`GT;`EQEQ; bc=barrier_constr ->
+	[[ BARRIER; n = IDENTIFIER; OSQUARE; thc=integer_literal; CSQUARE; LT; shv=LIST1 typed_id_list SEP COMMA;GT;EQEQ; bc=barrier_constr ->
 		{barrier_thc = thc; barrier_name = n; barrier_shared_vars = shv; barrier_tr_list =bc;}]];
 
 
 
-barrier_constr: [[`OSQUARE; t=LIST1 b_trans SEP `COMMA ; `CSQUARE-> t]];
+barrier_constr: [[OSQUARE; t=LIST1 b_trans SEP COMMA ; CSQUARE-> t]];
 
-b_trans : [[`OPAREN; fs= integer_literal; `COMMA; ts= integer_literal; `COMMA ;`OSQUARE;t=LIST1 spec_list SEP `COMMA;`CSQUARE; `CPAREN -> (fs,ts,t)]];
+b_trans : [[OPAREN; fs= integer_literal; COMMA; ts= integer_literal; COMMA ;OSQUARE;t=LIST1 spec_list SEP COMMA;CSQUARE; CPAREN -> (fs,ts,t)]];
 
 derv_view:
 [[
-   `IDENTIFIER vn;`LT;sl= id_list_opt; `GT -> (vn,sl)
+   vn = IDENTIFIER;LT;sl= id_list_opt; GT -> (vn,sl)
 ]];
 
 prop_extn:
 [[
-  `IDENTIFIER vn;`OSQUARE;props= id_list_opt;`CSQUARE;`LT;sl= id_list_opt;`GT -> (vn,props,sl)
+  vn = IDENTIFIER;OSQUARE;props= id_list_opt;CSQUARE;LT;sl= id_list_opt;GT -> (vn,props,sl)
 ]];
 
 view_decl:
-  [[ vh= view_header; `EQEQ; vb=view_body; oi= opt_inv; obi = opt_baga_inv; obui = opt_baga_under_inv; li= opt_inv_lock; mpb = opt_mem_perm_set
+  [[ vh= view_header; EQEQ; vb=view_body; oi= opt_inv; obi = opt_baga_inv; obui = opt_baga_under_inv; li= opt_inv_lock; mpb = opt_mem_perm_set
           (* let f = (fst vb) in *)
           ->  let (oi, oboi) = oi in
               { vh with view_formula = (fst vb);
@@ -1197,7 +1772,7 @@ view_decl:
               view_kind = View_NORM; (* TODO : *)
               view_inv_lock = li;
               try_case_inference = (snd vb) }
-    |  vh = view_header; `EQEQ; `EXTENDS; orig_v = derv_view; `WITH ; extn = prop_extn ->
+    |  vh = view_header; EQEQ; EXTENDS; orig_v = derv_view; WITH ; extn = prop_extn ->
       let vd = { vh with view_derv = true;
                view_derv_info = [(orig_v,extn)];
                view_kind = View_DERV;
@@ -1209,7 +1784,7 @@ view_decl:
               view_derv_from = Some (REGEX_LIST [(fst(orig_v),true)]); (* views for extension *)
               view_derv_extns = [extn]; (* features of expension *)
             }
-    |  vh = view_header; `EQEQ; `EXTENDS; orig_v = selective_id_star_list_bracket; `WITH ; extn = prop_extn ->
+    |  vh = view_header; EQEQ; EXTENDS; orig_v = selective_id_star_list_bracket; WITH ; extn = prop_extn ->
            { vh with view_derv = true;
                (* view_derv_info = [(orig_v,extn)]; *)
                view_kind = View_DERV;
@@ -1233,7 +1808,7 @@ prim_view_decl:
           view_inv_lock = li} ]];
 
 view_decl_ext:
-  [[ vh= view_header_ext; `EQEQ; vb= view_body; oi= opt_inv; obi = opt_baga_inv; obui = opt_baga_under_inv; li= opt_inv_lock
+  [[ vh= view_header_ext; EQEQ; vb= view_body; oi= opt_inv; obi = opt_baga_inv; obui = opt_baga_under_inv; li= opt_inv_lock
       -> let (oi, oboi) = oi in
           { vh with view_formula = (fst vb);
           view_invariant = oi;
@@ -1245,7 +1820,7 @@ view_decl_ext:
           try_case_inference = (snd vb) } ]];
 
 (* view_decl_spec:                                                                                                                                              *)
-(*   [[ vh= view_header_ext; `EQEQ; `SPEC; va=view_header_ext;`WITH; vb=view_body; oi= opt_inv; obi = opt_baga_inv; obui = opt_baga_under_inv; li= opt_inv_lock *)
+(*   [[ vh= view_header_ext; EQEQ; SPEC; va=view_header_ext;WITH; vb=view_body; oi= opt_inv; obi = opt_baga_inv; obui = opt_baga_under_inv; li= opt_inv_lock *)
 (*       ->                                                                                                                                                     *)
 (*       let compare_list_string cmp ls1 ls2=                                                                                                                   *)
 (*         let rec helper ls01 ls02=                                                                                                                            *)
@@ -1281,24 +1856,24 @@ view_decl_ext:
 opt_inv_lock: [[t=OPT inv_lock -> t]];
 
 inv_lock:
-    [[`INVLOCK; dc=disjunctive_constr -> (F.subst_stub_flow n_flow dc)]];
+    [[INVLOCK; dc=disjunctive_constr -> (F.subst_stub_flow n_flow dc)]];
 
 opt_baga_inv: [[t=OPT baga_invs -> t]];
 
 opt_baga_under_inv: [[t=OPT baga_under_invs -> t]];
 
 baga_invs:
-    [[`INV_EXACT; bil = LIST0 baga_inv SEP `OR -> bil]];
+    [[INV_EXACT; bil = LIST0 baga_inv SEP OR -> bil]];
 
 baga_under_invs:
-    [[`INV_SAT; bil = LIST0 baga_inv SEP `OR -> bil]];
+    [[INV_SAT; bil = LIST0 baga_inv SEP OR -> bil]];
 
 opt_inv: [[t=OPT inv -> un_option t ((P.mkTrue no_pos), None
     (* Some [([], P.mkTrue no_pos)] *))]];
 
 opt_mem_perm_set: [[t=OPT mem_perm_set -> t ]];
 
-mem_perm_set: [[ `MEM; e = cexp; `LEFTARROW; `OPAREN;  mpl = LIST0 mem_perm_layout SEP `SEMICOLON; `CPAREN
+mem_perm_set: [[ MEM; e = cexp; LEFTARROW; OPAREN;  mpl = LIST0 mem_perm_layout SEP SEMICOLON; CPAREN
 				-> let fal,g = List.split mpl in
 				   let fv,al = List.split fal in
 					{	F.mem_formula_exp = e;
@@ -1306,7 +1881,7 @@ mem_perm_set: [[ `MEM; e = cexp; `LEFTARROW; `OPAREN;  mpl = LIST0 mem_perm_layo
 					F.mem_formula_field_values = fv;
 					F.mem_formula_field_layout = al;
 					F.mem_formula_guards = g}
-		| `MEME; e = cexp; `LEFTARROW; `OPAREN; mpl = LIST0 mem_perm_layout SEP `SEMICOLON; `CPAREN
+		| MEME; e = cexp; LEFTARROW; OPAREN; mpl = LIST0 mem_perm_layout SEP SEMICOLON; CPAREN
 				-> let fal,g = List.split mpl in
 				   let fv,al = List.split fal in
 					{	F.mem_formula_exp = e;
@@ -1316,16 +1891,16 @@ mem_perm_set: [[ `MEM; e = cexp; `LEFTARROW; `OPAREN;  mpl = LIST0 mem_perm_layo
 					F.mem_formula_guards = g} ]];
 
 mem_perm_layout:[[
-`IDENTIFIER dn; `LT; annl = ann_list; `GT; guard = OPT pure_guard ->
+dn = IDENTIFIER; LT; annl = ann_list; GT; guard = OPT pure_guard ->
 let fv,annl = List.split annl in
 let perml = get_heap_ann_list annl in ((dn,fv),(dn,perml)),(un_option guard (P.mkTrue no_pos)) ]];
 
-pure_guard: [[ `AND; e = pure_constr -> e
+pure_guard: [[ AND; e = pure_constr -> e
 ]];
 
-ann_list:[[b = LIST0 cexp_ann SEP `COMMA -> b]];
+ann_list:[[b = LIST0 cexp_ann SEP COMMA -> b]];
 
-cexp_ann: [[ `INT_LITER (i,_) ; ah = ann_heap ->  (P.IConst(i,no_pos),ah)
+cexp_ann: [[ i = INT_LITER ; ah = ann_heap ->  (P.IConst(int_of_string i,no_pos),ah)
            | e = OPT cid ; ah = ann_heap ->
            let evar = (un_option e ("Anon_"^(fresh_trailer()),Unprimed) ) in (P.Var(evar,no_pos),ah)
           ]];
@@ -1334,19 +1909,19 @@ opt_derv: [[t=OPT derv -> un_option t false ]];
 
 opt_split: [[t=OPT split -> un_option t SPLIT0 ]];
 
-derv : [[ `DERV -> true ]];
+derv : [[ DERV -> true ]];
 
-split : [[ `SPLIT1Ann -> SPLIT1
-  | `SPLIT2Ann -> SPLIT2 ]];
+split : [[ SPLIT1Ann -> SPLIT1
+  | SPLIT2Ann -> SPLIT2 ]];
 
 inv:
-  [[`INV; pc=pure_constr; ob=opt_branches ->
+  [[INV; pc=pure_constr; ob=opt_branches ->
       let f = P.mkAnd pc ob (get_pos_camlp4 _loc 1) in
       (f, Some [([], f)])
-   |`INV; h=ho_fct_header ->
+   |INV; h=ho_fct_header ->
          let f = P.mkTrue no_pos in
          (f, Some [([], f)])
-   |`INV; bil = LIST0 baga_inv SEP `OR ->
+   |INV; bil = LIST0 baga_inv SEP OR ->
         let pf =  List.fold_left (fun pf0 (idl,pf2) ->
          let idl = List.filter (fun (_,p) -> p==None) idl in
          let idl = List.map fst idl in
@@ -1363,7 +1938,7 @@ baga_formula:
       | h=ho_fct_header -> (P.mkTrue no_pos)]];
 
 baga_inv:
-    [[`BG; `OPAREN; `OSQUARE; il = LIST0 cid_or_pair SEP `COMMA; `CSQUARE; `COMMA; p=baga_formula; `CPAREN ->
+    [[BG; OPAREN; OSQUARE; il = LIST0 cid_or_pair SEP COMMA; CSQUARE; COMMA; p=baga_formula; CPAREN ->
         let il = List.map (fun ((name,p),s)->
           let () = if p==Primed then print_endline_quiet "WARNING: primed variable disallowed" in
           (name,s)
@@ -1379,22 +1954,22 @@ opt_infer_post: [[t=OPT infer_post -> un_option t true ]];
 
 infer_post :
   [[
-   `PRE -> false
-   | `POST  -> true
+   PRE -> false
+   | POST  -> true
    ]];
 
 opt_infer_xpost: [[t=OPT infer_xpost -> un_option t None ]];
 
 infer_xpost :
   [[
-   `XPRE -> Some false
-   | `XPOST  -> Some true
+   XPRE -> Some false
+   | XPOST  -> Some true
   ]];
 
 opt_transpec: [[t=OPT transpec -> un_option t None ]];
 
 transpec:
-  [[ `OBRACE; `IDENTIFIER old_view_name; `LEFTARROW; `IDENTIFIER new_view_name; `CBRACE ->
+  [[ OBRACE; old_view_name = IDENTIFIER; LEFTARROW; new_view_name = IDENTIFIER; CBRACE ->
 (*    if not(view_names # mem old_view_name) then *)
 (*      report_error (get_pos_camlp4 _loc 1) ("Predicate " ^ old_view_name ^ " is not initialized.")*)
 (*    else if not(view_names # mem new_view_name) then *)
@@ -1406,47 +1981,47 @@ transpec:
 
 ann_label:
   [[
-     `SAT  -> Lbl.LA_Sat
-   | `IMM  -> Lbl.LA_Imply
+     SAT  -> Lbl.LA_Sat
+   | IMM  -> Lbl.LA_Imply
    ]];
 
 ann_heap:
   [[
-    `MUT -> Some (P.ConstAnn(Mutable))
-   | `IMM  -> Some (P.ConstAnn(Imm))
-   | `LEND -> Some (P.ConstAnn(Lend))
-   | `ACCS -> Some (P.ConstAnn(Accs))
-   | `AT; t=cid  -> Some (P.PolyAnn(t, get_pos_camlp4 _loc 1))
-   | `DERV -> None
+    MUT -> Some (P.ConstAnn(Mutable))
+   | IMM  -> Some (P.ConstAnn(Imm))
+   | LEND -> Some (P.ConstAnn(Lend))
+   | ACCS -> Some (P.ConstAnn(Accs))
+   | AT; t=cid  -> Some (P.PolyAnn(t, get_pos_camlp4 _loc 1))
+   | DERV -> None
    ]];
 
 ann_heap_list: [[ b=LIST0 ann_heap -> b ]];
 
 opt_branches:[[t=OPT branches -> un_option t (P.mkTrue no_pos)]];
 
-branches : [[`AND; `OSQUARE; b= LIST1 one_branch SEP `SEMICOLON ; `CSQUARE -> P.mkAndList_opt b ]];
+branches : [[AND; OSQUARE; b= LIST1 one_branch SEP SEMICOLON ; CSQUARE -> P.mkAndList_opt b ]];
 
-(* one_branch_single : [[ `STRING (_,id); `COLON; pc=pure_constr -> (LO.singleton id,pc)]]; *)
+(* one_branch_single : [[ id = STRING; COLON; pc=pure_constr -> (LO.singleton id,pc)]]; *)
 
-one_string: [[`STRING (_,id)-> id]];
+one_string: [[id = STRING-> id]];
 
 one_string_w_ann: [[  id = one_string; ann_lbl = OPT ann_label -> (id, un_option ann_lbl (Lbl.LA_Both) )]];
 
-string_w_ann_list: [[`COMMA; lbl_lst = LIST0 one_string_w_ann SEP `COMMA -> lbl_lst]];
+string_w_ann_list: [[COMMA; lbl_lst = LIST0 one_string_w_ann SEP COMMA -> lbl_lst]];
 
 opt_string_w_ann_list: [[lbl_lst = OPT string_w_ann_list -> un_option lbl_lst [] ]];
 
-(* one_branch : [[ lbl = LIST1 one_string SEP `COMMA ; `COLON; pc=pure_constr -> (LO.norm lbl,pc)]]; *)
-one_branch : [[ lbl = one_string; lblA = opt_string_w_ann_list ; `COLON; pc=pure_constr -> (LO.convert lbl lblA,pc)]];
+(* one_branch : [[ lbl = LIST1 one_string SEP COMMA ; COLON; pc=pure_constr -> (LO.norm lbl,pc)]]; *)
+one_branch : [[ lbl = one_string; lblA = opt_string_w_ann_list ; COLON; pc=pure_constr -> (LO.convert lbl lblA,pc)]];
 
 opt_branch:[[t=OPT branch -> un_option t LO.unlabelled]];
 
-branch: [[ `STRING (_,id);`COLON ->
+branch: [[ id = STRING;COLON ->
     if !Globals.remove_label_flag then  LO.unlabelled
     else LO.singleton id ]];
 
 view_header:
-  [[ `IDENTIFIER vn; opt1 = OPT opt_brace_vars; `LT; l= opt_ann_cid_list; `GT ->
+  [[ vn = IDENTIFIER; opt1 = OPT opt_brace_vars; LT; l= opt_ann_cid_list; GT ->
       let () = view_names # push vn in
       let mvs = get_mater_vars l in
       let cids, anns = List.split l in
@@ -1455,15 +2030,15 @@ view_header:
       Iast.mk_view_header vn opt1 cids mvs modes pos
 ]];
 
-id_type_list_opt: [[ t = LIST0 cid_typ SEP `COMMA -> t ]];
+id_type_list_opt: [[ t = LIST0 cid_typ SEP COMMA -> t ]];
 
-(* form_list_opt: [[ t = LIST0 disjunctive_constr SEP `COMMA -> t ]]; *)
+(* form_list_opt: [[ t = LIST0 disjunctive_constr SEP COMMA -> t ]]; *)
 
-rflow_form_list_opt: [[ t = LIST0 rflow_form SEP `COMMA -> t ]];
+rflow_form_list_opt: [[ t = LIST0 rflow_form SEP COMMA -> t ]];
 
 rflow_kind:
-  [[ `MINUS -> INFLOW
-   | `PLUS -> OUTFLOW
+  [[ MINUS -> INFLOW
+   | PLUS -> OUTFLOW
   ]];
 
 rflow_form:
@@ -1477,25 +2052,25 @@ rflow_form:
       (* | _ -> report_error (get_pos_camlp4 _loc 2) ("Non-Base formula is disalowed in resource flow") *)
   ]];
 
-formula_ann: [[ `SPLITANN -> HO_SPLIT ]];
+formula_ann: [[ SPLITANN -> HO_SPLIT ]];
 
-ho_id: [[ `PERCENT; `IDENTIFIER id -> id ]];
+ho_id: [[ PERCENT; id = IDENTIFIER -> id ]];
 
 id_ann:
   [[ hid = ho_id; t = OPT formula_ann -> (NEUTRAL, hid, (un_option t HO_NONE))
-   | `PLUS; hid = ho_id; t = OPT formula_ann -> (OUTFLOW, hid, (un_option t HO_NONE))
-   | `MINUS; hid = ho_id; t = OPT formula_ann -> (INFLOW,  hid, (un_option t HO_NONE))
+   | PLUS; hid = ho_id; t = OPT formula_ann -> (OUTFLOW, hid, (un_option t HO_NONE))
+   | MINUS; hid = ho_id; t = OPT formula_ann -> (INFLOW,  hid, (un_option t HO_NONE))
   ]];
 
-id_ann_list_opt :[[b = LIST0 id_ann SEP `COMMA -> b]];
+id_ann_list_opt :[[b = LIST0 id_ann SEP COMMA -> b]];
 
-opt_brace_vars : [[ `OBRACE; sl = id_ann_list_opt; `CBRACE -> sl ]];
+opt_brace_vars : [[ OBRACE; sl = id_ann_list_opt; CBRACE -> sl ]];
 
-rflow_form_list : [[ `OBRACE; sl = rflow_form_list_opt; `CBRACE ->
+rflow_form_list : [[ OBRACE; sl = rflow_form_list_opt; CBRACE ->
     List.map (fun ff -> {ff with F.rflow_base = F.subst_stub_flow n_flow ff.F.rflow_base}) sl ]];
 
 view_header_ext:
-    [[ `IDENTIFIER vn;`OSQUARE;sl= id_type_list_opt (*id_list*) ;`CSQUARE; `LT; l= opt_ann_cid_list; `GT ->
+    [[ vn = IDENTIFIER;OSQUARE;sl= id_type_list_opt (*id_list*) ;CSQUARE; LT; l= opt_ann_cid_list; GT ->
       let cids, anns = List.split l in
       let cids_t, br_labels = List.split cids in
 	  let has_labels = List.exists (fun c-> not (LO.is_unlabelled c)) br_labels in
@@ -1542,19 +2117,19 @@ view_header_ext:
 (** An Hoa : Modify the rules to capture the extensional identifiers **)
 cid:
   [[
-     (* `IDENTIFIER t; `PRIME	 	-> (* print_string ("primed id:"^t^"\n"); *) (t, Primed) *)
-   `IDENTIFIER t	-> if String.contains t '\'' then (* Remove the primed in the identifier *)
+     (* t = IDENTIFIER; PRIME	 	-> (* print_string ("primed id:"^t^"\n"); *) (t, Primed) *)
+   t = IDENTIFIER	-> if String.contains t '\'' then (* Remove the primed in the identifier *)
 		 (Str.global_replace (Str.regexp "[']") "" t,Primed)
 	   else (t,Unprimed)
-    | `RES _                 	->  (res_name, Unprimed)
-    | `SELFT _               	->  (self, Unprimed)
-    | `NULL                     ->  (null_name, Unprimed)
-    | `THIS _         		->  (this, Unprimed)]];
+    | RES                 	->  (res_name, Unprimed)
+    | SELFT               	->  (self, Unprimed)
+    | NULL                     ->  (null_name, Unprimed)
+    | THIS         		->  (this, Unprimed)]];
 
 
 cid_or_pair:
   [[
-    `OPAREN; e1=cexp_w ; `COMMA;  e2= cexp_w; `CPAREN ->
+    OPAREN; e1=cexp_w ; COMMA;  e2= cexp_w; CPAREN ->
     let pe1 = get_pure_exp e1 no_pos in
     let pe2 = get_pure_exp e2 no_pos in
     (("_",Unprimed),(Some(pe1,pe2)))
@@ -1564,42 +2139,42 @@ cid_or_pair:
 
 (** An Hoa : Access extension. For example: in "x.node.value", ".node.value" is the idext **)
 (* idext:
-	[[ `DOT; `IDENTIFIER t 				-> "." ^ t
-	| `DOT; `IDENTIFIER t; u=idext 		-> "." ^ t ^ u]]; *)
+	[[ DOT; t = IDENTIFIER 				-> "." ^ t
+	| DOT; t = IDENTIFIER; u=idext 		-> "." ^ t ^ u]]; *)
 
 view_body:
   [[ t = formulas -> ((F.subst_stub_flow_struc top_flow (fst t)),(snd t))
-   | `FINALIZE; t = split_combine -> (F.mkEFalseF (),false)
+   | FINALIZE; t = split_combine -> (F.mkEFalseF (),false)
   ]];
 
 
 (********** Constraints **********)
 
-opt_heap_arg_list: [[t=LIST1 cexp SEP `COMMA -> t]];
+opt_heap_arg_list: [[t=LIST1 cexp SEP COMMA -> t]];
 
-opt_heap_arg_list2:[[t=LIST1 heap_arg2 SEP `COMMA -> error_on_dups (fun n1 n2-> (fst n1)==(fst n2)) t (get_pos_camlp4 _loc 1)]];
+opt_heap_arg_list2:[[t=LIST1 heap_arg2 SEP COMMA -> error_on_dups (fun n1 n2-> (fst n1)==(fst n2)) t (get_pos_camlp4 _loc 1)]];
 
-opt_heap_data_arg_list: [[t=LIST1 cexp_data_p SEP `COMMA -> t]];
+opt_heap_data_arg_list: [[t=LIST1 cexp_data_p SEP COMMA -> t]];
 
-opt_heap_data_arg_list2:[[t=LIST1 heap_arg2_data SEP `COMMA -> error_on_dups (fun n1 n2-> (fst n1) == (fst n2)) t (get_pos_camlp4 _loc 1)]];
+opt_heap_data_arg_list2:[[t=LIST1 heap_arg2_data SEP COMMA -> error_on_dups (fun n1 n2-> (fst n1) == (fst n2)) t (get_pos_camlp4 _loc 1)]];
 
-heap_arg2: [[ peek_heap_args; `IDENTIFIER id ; `EQ;  e=cexp -> (id,e)]];
+heap_arg2: [[ peek_heap_args; id = IDENTIFIER ; EQ;  e=cexp -> (id,e)]];
 
-heap_arg2_data: [[ peek_heap_args; `IDENTIFIER id ; `EQ;  e = cexp_data_p -> (id,e)]];
+heap_arg2_data: [[ peek_heap_args; id = IDENTIFIER ; EQ;  e = cexp_data_p -> (id,e)]];
 
-opt_cid_list: [[t=LIST0 cid SEP `COMMA -> error_on_dups (fun n1 n2-> (fst n1)==(fst n2)) t (get_pos_camlp4 _loc 1)]];
+opt_cid_list: [[t=LIST0 cid SEP COMMA -> error_on_dups (fun n1 n2-> (fst n1)==(fst n2)) t (get_pos_camlp4 _loc 1)]];
 
-cid_list: [[t=LIST1 cid SEP `COMMA -> error_on_dups (fun n1 n2-> (fst n1)==(fst n2)) t (get_pos_camlp4 _loc 1)]];
+cid_list: [[t=LIST1 cid SEP COMMA -> error_on_dups (fun n1 n2-> (fst n1)==(fst n2)) t (get_pos_camlp4 _loc 1)]];
 
 (* annotated cid list *)
-opt_ann_cid_list: [[t=LIST0 ann_cid SEP `COMMA -> t]];
+opt_ann_cid_list: [[t=LIST0 ann_cid SEP COMMA -> t]];
 
 c_typ:
- [[ `COLON; t= typ -> t
+ [[ COLON; t= typ -> t
  ]];
 
 cid_typ:
-  [[ `IDENTIFIER id ; t=OPT c_typ ->
+  [[ id = IDENTIFIER ; t=OPT c_typ ->
       let ut = un_option t UNK in
       let _ =
         (* WN : code below uses side-effects and may also result in relational name clashes *)
@@ -1622,53 +2197,53 @@ ann_cid:[[ ob= opt_branch; c = cid_typ; al=opt_ann_list ->((c, ob), al)]];
 opt_ann_list: [[t=LIST0 ann -> t]];
 
 p_vp_ann:
-  [[ `PZERO -> VP_Zero
-   | `PFULL -> VP_Full
-   | `PVALUE -> VP_Value
-   | `PLEND -> VP_Lend
-   | `PFRAC;`OPAREN; `INT_LITER(i1,_); `DIV;  `INT_LITER(i2,_)
-         (* `FRAC _LIT (f,s) *);`CPAREN-> VP_Frac (Frac.make i1 i2)
-   (* | `AT; `FRAC_LIT (f, _) -> VP_Frac f *)
-   (* | `PREF -> VP_Ref *)
+  [[ PZERO -> VP_Zero
+   | PFULL -> VP_Full
+   | PVALUE -> VP_Value
+   | PLEND -> VP_Lend
+   | PFRAC;OPAREN; i1 = INT_LITER; DIV;  i2 = INT_LITER
+         (* FRAC _LIT (f,s) *);CPAREN-> VP_Frac (Frac.make (int_of_string i1) (int_of_string i2))
+   (* | AT; f = FRAC_LIT -> VP_Frac f *)
+   (* | PREF -> VP_Ref *)
   ]];
 
 ann:
-  [[ `AT; `IDENTIFIER id -> begin
+  [[ AT; id = IDENTIFIER -> begin
       if id = "out" then AnnMode ModeOut
       else report_error (get_pos_camlp4 _loc 2) ("unrecognized mode: " ^ id) end
-   | `AT ; `IN_T       -> AnnMode ModeIn
-   | `MAT -> AnnMater  ]];
+   | AT ; IN_T       -> AnnMode ModeIn
+   | MAT -> AnnMater  ]];
 
-sq_clist: [[`OSQUARE; l= opt_cid_list; `CSQUARE -> l ]];
+sq_clist: [[OSQUARE; l= opt_cid_list; CSQUARE -> l ]];
 
 formulas:
   [[ ec= extended_l     ->(ec,false)
 	 | dc=disjunctive_constr  -> ((F.formula_to_struc_formula dc),true)]];
 
 extended_l:
-  [[ peek_extended; `OSQUARE; h=extended_constr_grp ; `ORWORD; t=LIST1 extended_constr_grp SEP `ORWORD; `CSQUARE ->
+  [[ peek_extended; OSQUARE; h=extended_constr_grp ; ORWORD; t=LIST1 extended_constr_grp SEP ORWORD; CSQUARE ->
      label_struc_groups (h::t)
    | h=extended_constr_grp -> label_struc_groups [h]]];
 
 extended_l2:
-  [[ peek_extended; `OSQUARE; h=extended_constr_grp2 ; `ORWORD; t=LIST1 extended_constr_grp2 SEP `ORWORD; `CSQUARE ->
+  [[ peek_extended; OSQUARE; h=extended_constr_grp2 ; ORWORD; t=LIST1 extended_constr_grp2 SEP ORWORD; CSQUARE ->
      label_struc_groups (h::t)
    | h=extended_constr_grp2 -> label_struc_groups [h]]];
 
 extended_constr_grp:
    [[ c=extended_constr -> [(Lbl.empty_spec_label_def,c)]
-    | `IDENTIFIER id; `COLON; `OSQUARE; t = LIST0 extended_constr SEP `ORWORD; `CSQUARE -> List.map (fun c-> (LO2.singleton id,c)) t]];
+    | id = IDENTIFIER; COLON; OSQUARE; t = LIST0 extended_constr SEP ORWORD; CSQUARE -> List.map (fun c-> (LO2.singleton id,c)) t]];
 
 extended_constr_grp2:
    [[ c=extended_constr2 -> [(Lbl.empty_spec_label_def,c)]
-    | `IDENTIFIER id; `COLON; `OSQUARE; t = LIST0 extended_constr2 SEP `ORWORD; `CSQUARE -> List.map (fun c-> (LO2.singleton id,c)) t]];
+    | id = IDENTIFIER; COLON; OSQUARE; t = LIST0 extended_constr2 SEP ORWORD; CSQUARE -> List.map (fun c-> (LO2.singleton id,c)) t]];
 
-(* then_extended : [[ `THEN; il = extended_l -> il ]]; *)
+(* then_extended : [[ THEN; il = extended_l -> il ]]; *)
 
 then_extended : [[ il = extended_l -> il ]];
 
 extended_constr:
-	[[ `CASE; `OBRACE; il= impl_list; `CBRACE ->
+	[[ CASE; OBRACE; il= impl_list; CBRACE ->
       F.ECase {
           F.formula_case_branches = il;
           F.formula_case_pos = (get_pos_camlp4 _loc 3) }
@@ -1679,19 +2254,19 @@ extended_constr2:
 
 impl_list:[[t=LIST1 impl -> t]];
 
-impl: [[ pc=pure_constr; `LEFTARROW; ec=extended_l; `SEMICOLON ->
+impl: [[ pc=pure_constr; LEFTARROW; ec=extended_l; SEMICOLON ->
 			if(List.length (Ipure.look_for_anonymous_pure_formula pc))>0 then report_error (get_pos_camlp4 _loc 1) ("anonymous variables in case guard are disalowed")
 		  else (pc,ec)]];
 
 (* seem _loc 2 is empty *)
 disjunctive_constr:
   [ "disj_or" LEFTA
-    [ dc=SELF; `ORWORD; oc=SELF -> F.mkOr dc oc (get_pos_camlp4 _loc 1)]
-  | [ dc=SELF; `ANDWORD; oc=SELF -> dc]
-  | [peek_dc; `OPAREN;  dc=SELF; `CPAREN -> dc]
+    [ dc=SELF; ORWORD; oc=SELF -> F.mkOr dc oc (get_pos_camlp4 _loc 1)]
+  | [ dc=SELF; ANDWORD; oc=SELF -> dc]
+  | [peek_dc; OPAREN;  dc=SELF; CPAREN -> dc]
   | "disj_base"
     [ cc=core_constr_and -> cc
-    | `EXISTS; ocl= cid_list; `COLON; cc= core_constr_and ->
+    | EXISTS; ocl= cid_list; COLON; cc= core_constr_and ->
 	  (match cc with
       | F.Base ({
           F.formula_base_heap = h;
@@ -1705,20 +2280,20 @@ disjunctive_constr:
   ];
 
 core_constr_and : [[
-    f1 = core_constr; `ANDWORD; ls=core_constr_conjunctions ->
+    f1 = core_constr; ANDWORD; ls=core_constr_conjunctions ->
       let main = F.add_formula_and ls f1 in
       main
   | f1 = core_constr -> f1
 ]];
 
 core_constr_conjunctions: [ "core_constr_and" LEFTA
-                   [ f1 = SELF; `ANDWORD; f2 = SELF -> f1@f2]
+                   [ f1 = SELF; ANDWORD; f2 = SELF -> f1@f2]
                    | [f1 = and_core_constr -> [f1]]
                   ];
 
 and_core_constr:
   [
-    [ dl = pure_constr; `CONSTR; f = core_constr  ->
+    [ dl = pure_constr; CONSTR; f = core_constr  ->
       let h,p,_,fl,_ = F.split_components f in
       let pos = (get_pos_camlp4 _loc 2) in
       F.mkOneFormula h p dl None pos
@@ -1742,101 +2317,101 @@ emp|htrue?*) (P.mkAnd pc fb pos) vp fc [] pos
 
 opt_vperm_constr: [[ vp = OPT star_vperm_constr -> un_option vp VP.empty_vperm_sets ]];
 
-star_vperm_constr: [[ `STAR; vp = vperm_constr -> vp ]];
+star_vperm_constr: [[ STAR; vp = vperm_constr -> vp ]];
 
 vperm_constr:
-  [[ vp = SELF; `STAR; vc = single_vperm_constr ->
+  [[ vp = SELF; STAR; vc = single_vperm_constr ->
       VP.merge_vperm_sets [vp; vc]
    | vc = single_vperm_constr -> vc
   ]];
 
 single_vperm_constr:
-  [[ ann = p_vp_ann ; `OSQUARE; ls = id_list; `CSQUARE ->
+  [[ ann = p_vp_ann ; OSQUARE; ls = id_list; CSQUARE ->
       let ls = List.map sv_of_id ls in
       VP.create_vperm_sets ann ls
   ]];
 
 opt_flow_constraints: [[t=OPT flow_constraints -> un_option t stub_flow]];
 
-flow_constraints: [[ `AND; `FLOW _; `IDENTIFIER id -> id]];
+flow_constraints: [[ AND; FLOW; id = IDENTIFIER -> id]];
 
 opt_formula_label: [[t=OPT formula_label -> un_option t None]];
 
 opt_label: [[t= OPT label->un_option t ""]];
 
-label : [[  `STRING (_,id);  `COLON -> id ]];
+label : [[  id = STRING;  COLON -> id ]];
 
-(* label_w_ann : [[  `STRING (_,id); ann_lbl = OPT ann_label; `COLON -> (id, un_option ann_lbl (Lbl.LA_Both)) ]]; *)
+(* label_w_ann : [[  id = STRING; ann_lbl = OPT ann_label; COLON -> (id, un_option ann_lbl (Lbl.LA_Both)) ]]; *)
 
 (* opt_pure_label :[[t=Opure_label -> un_option t (fresh_branch_point_id "")]]; *)
 
-pure_label : [[ `DOUBLEQUOTE; `IDENTIFIER id; `DOUBLEQUOTE; `COLON -> fresh_branch_point_id id]];
+pure_label : [[ DOUBLEQUOTE; id = IDENTIFIER; DOUBLEQUOTE; COLON -> fresh_branch_point_id id]];
 
-formula_label: [[ `AT; `STRING (_,id) ->(fresh_branch_point_id id)]];
+formula_label: [[ AT; id = STRING ->(fresh_branch_point_id id)]];
 
 opt_heap_constr: [[ t = heap_constr -> t]];
 
 (* heap_constr: *)
-(*   [[    hrd=SELF; `STAR; hrw=SELF -> F.mkStar hrd hrw (get_pos_camlp4 _loc 2)]  *)
+(*   [[    hrd=SELF; STAR; hrw=SELF -> F.mkStar hrd hrw (get_pos_camlp4 _loc 2)]  *)
 (* (\*      |[ shc = simple_heap_constr -> shc]  *\) *)
-(*      |[ c=cid; `COLONCOLON; `IDENTIFIER id; simple2; hal=opt_heap_arg_list; `GT; ofl = opt_formula_label ->   *)
+(*      |[ c=cid; COLONCOLON; id = IDENTIFIER; simple2; hal=opt_heap_arg_list; GT; ofl = opt_formula_label ->   *)
 (*                     F.mkHeapNode c id false false false false hal ofl (get_pos_camlp4 _loc 2)  *)
 (*   ]];  *)
 
 heap_constr:
-  [[ `OPAREN; hrd=heap_rd; `CPAREN; `SEMICOLON; hrw=heap_rw -> F.mkPhase hrd hrw (get_pos_camlp4 _loc 2)
-   | `OPAREN; hrd=heap_rd; `CPAREN                          -> F.mkPhase hrd F.HEmp (get_pos_camlp4 _loc 2)
+  [[ OPAREN; hrd=heap_rd; CPAREN; SEMICOLON; hrw=heap_rw -> F.mkPhase hrd hrw (get_pos_camlp4 _loc 2)
+   | OPAREN; hrd=heap_rd; CPAREN                          -> F.mkPhase hrd F.HEmp (get_pos_camlp4 _loc 2)
    | hrw = heap_rw                                          -> F.mkPhase F.HEmp hrw (get_pos_camlp4 _loc 2)]];
 
 heap_rd:
-  [[ shi= simple_heap_constr_imm; `STAR; hrd=SELF -> F.mkStar shi hrd (get_pos_camlp4 _loc 2)
-   | shi=simple_heap_constr_imm; `AND; hrd=SELF  -> F.mkConj shi hrd (get_pos_camlp4 _loc 2)
+  [[ shi= simple_heap_constr_imm; STAR; hrd=SELF -> F.mkStar shi hrd (get_pos_camlp4 _loc 2)
+   | shi=simple_heap_constr_imm; AND; hrd=SELF  -> F.mkConj shi hrd (get_pos_camlp4 _loc 2)
    | shi=simple_heap_constr_imm                  -> shi]];
 
 
 heap_rw:
-  [[ hrd=heap_wr; `STAR; `OPAREN; hc=heap_constr; `CPAREN -> F.mkStar hrd hc (get_pos_camlp4 _loc 2)
-   | hrd=heap_wr; peek_heap_starminus; `STARMINUS; `OPAREN; hc=heap_constr; `CPAREN -> F.mkStarMinus hc hrd (get_pos_camlp4 _loc 2)
-   | shc=heap_wr; peek_heap_and; `AND; `OPAREN; wr = heap_constr; `CPAREN -> F.mkConjConj shc wr (get_pos_camlp4 _loc 2)
-   | shc=heap_wr; peek_heap_andstar; `ANDSTAR; `OPAREN; wr = heap_constr; `CPAREN -> F.mkConjStar shc wr (get_pos_camlp4 _loc 2)
-   | shc=heap_wr; peek_heap_unionstar; `UNIONSTAR; `OPAREN; wr = heap_constr; `CPAREN -> F.mkConj shc wr (get_pos_camlp4 _loc 2)
-   | shc=heap_wr; peek_heap_starminus; `STARMINUS; wr = simple_heap_constr -> F.mkStarMinus wr shc (get_pos_camlp4 _loc 2)
-   | shc=heap_wr; peek_heap_and; `AND; wr = simple_heap_constr -> F.mkConjConj shc wr (get_pos_camlp4 _loc 2)
-   | shc=heap_wr; peek_heap_andstar; `ANDSTAR; wr = simple_heap_constr -> F.mkConjStar shc wr (get_pos_camlp4 _loc 2)
-   | shc=heap_wr; peek_heap_unionstar; `UNIONSTAR; wr = simple_heap_constr -> F.mkConj shc wr (get_pos_camlp4 _loc 2)
+  [[ hrd=heap_wr; STAR; OPAREN; hc=heap_constr; CPAREN -> F.mkStar hrd hc (get_pos_camlp4 _loc 2)
+   | hrd=heap_wr; peek_heap_starminus; STARMINUS; OPAREN; hc=heap_constr; CPAREN -> F.mkStarMinus hc hrd (get_pos_camlp4 _loc 2)
+   | shc=heap_wr; peek_heap_and; AND; OPAREN; wr = heap_constr; CPAREN -> F.mkConjConj shc wr (get_pos_camlp4 _loc 2)
+   | shc=heap_wr; peek_heap_andstar; ANDSTAR; OPAREN; wr = heap_constr; CPAREN -> F.mkConjStar shc wr (get_pos_camlp4 _loc 2)
+   | shc=heap_wr; peek_heap_unionstar; UNIONSTAR; OPAREN; wr = heap_constr; CPAREN -> F.mkConj shc wr (get_pos_camlp4 _loc 2)
+   | shc=heap_wr; peek_heap_starminus; STARMINUS; wr = simple_heap_constr -> F.mkStarMinus wr shc (get_pos_camlp4 _loc 2)
+   | shc=heap_wr; peek_heap_and; AND; wr = simple_heap_constr -> F.mkConjConj shc wr (get_pos_camlp4 _loc 2)
+   | shc=heap_wr; peek_heap_andstar; ANDSTAR; wr = simple_heap_constr -> F.mkConjStar shc wr (get_pos_camlp4 _loc 2)
+   | shc=heap_wr; peek_heap_unionstar; UNIONSTAR; wr = simple_heap_constr -> F.mkConj shc wr (get_pos_camlp4 _loc 2)
    | hwr=heap_wr                                          -> F.mkPhase F.HEmp hwr (get_pos_camlp4 _loc 2)]];
 
 heap_wr:
   [[
-     shc=SELF; peek_star; `STAR; hw= simple_heap_constr    -> F.mkStar shc hw (get_pos_camlp4 _loc 2)
+     shc=SELF; peek_star; STAR; hw= simple_heap_constr    -> F.mkStar shc hw (get_pos_camlp4 _loc 2)
    | shc=simple_heap_constr        -> shc
-   (* | shi=simple_heap_constr_imm; `STAR;  hw=SELF -> F.mkStar shi hw (get_pos_camlp4 _loc 2) *)
-   (* | shi=simple_heap_constr_imm; `STAR; `OPAREN; hc=heap_constr; `CPAREN  -> F.mkStar shi hc (get_pos_camlp4 _loc 2) *)
+   (* | shi=simple_heap_constr_imm; STAR;  hw=SELF -> F.mkStar shi hw (get_pos_camlp4 _loc 2) *)
+   (* | shi=simple_heap_constr_imm; STAR; OPAREN; hc=heap_constr; CPAREN  -> F.mkStar shi hc (get_pos_camlp4 _loc 2) *)
   ]];
 
 (* simple2:  [[ t= opt_type_var_list -> ()]]; *)
 
 heap_id:
   [[
-     `IDENTIFIER id -> (id, 0, 0, _loc)
+     id = IDENTIFIER -> (id, 0, 0, _loc)
    (* definitions below is for cparser *)
-   | `VOID; `STAR -> ("void", 1, 0, _loc)
-   | `INT; `STAR -> ("int", 1, 0, _loc)
-   | `FLOAT; `STAR -> ("float", 1, 0, _loc)
-   | `BOOL; `STAR -> ("bool", 1, 0, _loc)
-   | `IDENTIFIER id; `STAR -> (id, 1, 0, _loc)
-   | `VOID; `CARET -> ("void", 0, 1, _loc)
-   | `INT; `CARET -> ("int", 0, 1, _loc)
-   | `FLOAT; `CARET -> ("float", 0, 1, _loc)
-   | `BOOL; `CARET -> ("bool", 0, 1, _loc)
-   | `IDENTIFIER id; `CARET -> (id, 0, 1, _loc)
-   | hid = heap_id; `STAR ->
+   | VOID; STAR -> ("void", 1, 0, _loc)
+   | INT; STAR -> ("int", 1, 0, _loc)
+   | FLOAT; STAR -> ("float", 1, 0, _loc)
+   | BOOL; STAR -> ("bool", 1, 0, _loc)
+   | id = IDENTIFIER; STAR -> (id, 1, 0, _loc)
+   | VOID; CARET -> ("void", 0, 1, _loc)
+   | INT; CARET -> ("int", 0, 1, _loc)
+   | FLOAT; CARET -> ("float", 0, 1, _loc)
+   | BOOL; CARET -> ("bool", 0, 1, _loc)
+   | id = IDENTIFIER; CARET -> (id, 0, 1, _loc)
+   | hid = heap_id; STAR ->
        let (h, s, c, l) = hid in
        if (c > 0) then
          report_error (get_pos_camlp4 _loc 1) "invalid heap_id string"
        else
          (h, s+1, c, l)
-   | hid = heap_id; `CARET ->
+   | hid = heap_id; CARET ->
        let (h, s, c, l) = hid in
        (h, s, c+1, l)
   ]];
@@ -1844,7 +2419,7 @@ heap_id:
 (*LDK: frac for fractional permission*)
 (* TODO:HO *)
 simple_heap_constr_imm:
-  [[ peek_heap; c=cid; `COLONCOLON; hid = heap_id; opt1 = OPT rflow_form_list; frac = opt_perm; `LT; hl= opt_data_h_args; `GT; annl = ann_heap_list; dr= opt_derv; split= opt_split; ofl= opt_formula_label ->
+  [[ peek_heap; c=cid; COLONCOLON; hid = heap_id; opt1 = OPT rflow_form_list; frac = opt_perm; LT; hl= opt_data_h_args; GT; annl = ann_heap_list; dr= opt_derv; split= opt_split; ofl= opt_formula_label ->
        let imm_opt = get_heap_ann annl in
        let frac = if (Perm.allow_perm ()) then frac else empty_iperm () in
        let (c, hid, deref) = get_heap_id_info c hid in
@@ -1865,29 +2440,29 @@ simple_heap_constr_imm:
     separate the parsing args of heap/data node for backtracking
 *)
 thread_args:
-   [[peek_hash_thread;(* `TOPAREN *)`LT; `HASH ; dl = opt_delayed_constr; rsr = disjunctive_constr; (* `TCPAREN *) `HASH; `GT -> (dl,rsr) ]];
+   [[peek_hash_thread;(* TOPAREN *)LT; HASH ; dl = opt_delayed_constr; rsr = disjunctive_constr; (* TCPAREN *) HASH; GT -> (dl,rsr) ]];
 
 non_thread_args1:
   [[
-    `LT; hl= opt_general_h_args; `GT -> hl
+    LT; hl= opt_general_h_args; GT -> hl
   ]];
 
 non_thread_args2:
   [[
-    `LT; hl= opt_data_h_args; `GT -> hl
+    LT; hl= opt_data_h_args; GT -> hl
   ]];
 
 (*LDK: add frac for fractional permission*)
 simple_heap_constr:
-    [[ peek_heap; c=cid; `COLONCOLON;  hid = heap_id; opt1 = OPT rflow_form_list ; (* simple2 ; *) frac= opt_perm;
- (*  peek_hash_thread;(* `TOPAREN *)`LT; `HASH ; dl = opt_delayed_constr; rsr = disjunctive_constr; (* `TCPAREN *) `HASH; `GT ; *)
+    [[ peek_heap; c=cid; COLONCOLON;  hid = heap_id; opt1 = OPT rflow_form_list ; (* simple2 ; *) frac= opt_perm;
+ (*  peek_hash_thread;(* TOPAREN *)LT; HASH ; dl = opt_delayed_constr; rsr = disjunctive_constr; (* TCPAREN *) HASH; GT ; *)
     a=thread_args;
  ofl = opt_formula_label ->
      (*For threads as resource*)
      let (dl,rsr) = a in
      let (c, hid, deref) = get_heap_id_info c hid in
      F.mkThreadNode c hid (F.subst_stub_flow n_flow rsr) dl frac ofl (get_pos_camlp4 _loc 2)
-   | peek_heap; c=cid; `COLONCOLON; hid = heap_id; opt1 = OPT rflow_form_list (* simple2 *); frac= opt_perm; (*`LT; hl= opt_general_h_args; `GT;*)
+   | peek_heap; c=cid; COLONCOLON; hid = heap_id; opt1 = OPT rflow_form_list (* simple2 *); frac= opt_perm; (*LT; hl= opt_general_h_args; GT;*)
      hl = non_thread_args1;
      annl = ann_heap_list; dr=opt_derv; split= opt_split; ofl= opt_formula_label -> (
        (*ignore permission if applicable*)
@@ -1902,8 +2477,8 @@ simple_heap_constr:
        | ([],t) -> F.mkHeapNode2 c hid ho_args deref dr split imm_opt false false false frac t [] ofl (get_pos_camlp4 _loc 2)
        | (t,_)  -> F.mkHeapNode c hid ho_args deref dr split imm_opt false false false frac t [] ofl (get_pos_camlp4 _loc 2)
      )
-   | peek_heap; c=cid; `COLONCOLON; hid = heap_id; opt1 = OPT rflow_form_list (* simple2 *); frac= opt_perm;
-     (* `LT; hl= opt_data_h_args; `GT;*)
+   | peek_heap; c=cid; COLONCOLON; hid = heap_id; opt1 = OPT rflow_form_list (* simple2 *); frac= opt_perm;
+     (* LT; hl= opt_data_h_args; GT;*)
      hl = non_thread_args2;
      annl = ann_heap_list; dr=opt_derv; split= opt_split; ofl= opt_formula_label -> (
         (*ignore permission if applicable*)
@@ -1922,8 +2497,8 @@ simple_heap_constr:
             let t1, t2 = List.split t in
             F.mkHeapNode c hid ho_args deref dr split imm_opt false false false frac t1 t2 ofl (get_pos_camlp4 _loc 2)
      )
-   | peek_heap; c=cid; `COLONCOLON; hid = heap_id; opt1 = OPT rflow_form_list (* simple2 *); frac= opt_perm;
-     (* `LT; hal=opt_general_h_args; `GT; *)
+   | peek_heap; c=cid; COLONCOLON; hid = heap_id; opt1 = OPT rflow_form_list (* simple2 *); frac= opt_perm;
+     (* LT; hal=opt_general_h_args; GT; *)
      hal = non_thread_args1;
      dr=opt_derv; split= opt_split; ofl = opt_formula_label -> (
        let (c, hid, deref) = get_heap_id_info c hid in
@@ -1943,8 +2518,8 @@ simple_heap_constr:
        F.mkHeapNode ("",Primed) "" [] 0 false (*dr*) SPLIT0 (P.ConstAnn(Mutable)) false false false frac [] [] None  (get_pos_camlp4 _loc 1)
      )
      (* An Hoa : Abbreviated syntax. We translate into an empty type "" which will be filled up later. *)
-   | peek_heap; c=cid; `COLONCOLON;  opt1 = OPT rflow_form_list (* simple2*) ; frac= opt_perm;
-         (* `LT; hl= opt_general_h_args; `GT;*)
+   | peek_heap; c=cid; COLONCOLON;  opt1 = OPT rflow_form_list (* simple2*) ; frac= opt_perm;
+         (* LT; hl= opt_general_h_args; GT;*)
          hl = non_thread_args1;
          annl = ann_heap_list; dr=opt_derv; split= opt_split; ofl= opt_formula_label -> (
        let frac = if (Perm.allow_perm ()) then frac else empty_iperm () in
@@ -1954,7 +2529,7 @@ simple_heap_constr:
        | ([],t) -> F.mkHeapNode2 c generic_pointer_type_name ho_args 0 dr split imm_opt false false false frac t [] ofl (get_pos_camlp4 _loc 2)
        | (t,_)  -> F.mkHeapNode c generic_pointer_type_name ho_args 0 dr split imm_opt false false false frac t [] ofl (get_pos_camlp4 _loc 2)
      )
-   | peek_heap; c=cid; `COLONCOLON; opt1 = OPT rflow_form_list  (*simple2*); frac= opt_perm; (* `LT; hal=opt_general_h_args; `GT; *)
+   | peek_heap; c=cid; COLONCOLON; opt1 = OPT rflow_form_list  (*simple2*); frac= opt_perm; (* LT; hal=opt_general_h_args; GT; *)
          hal = non_thread_args1;
          dr=opt_derv; split= opt_split; ofl = opt_formula_label -> (
        let ho_args = un_option opt1 [] in
@@ -1964,8 +2539,8 @@ simple_heap_constr:
        | (t,_)  -> F.mkHeapNode c generic_pointer_type_name ho_args  0 dr split (P.ConstAnn(Mutable)) false false false frac t [] ofl (get_pos_camlp4 _loc 2)
      )
      (* High-order variables, e.g. %P*)
-   | `PERCENT; `IDENTIFIER id -> F.HVar (id,[])
-   | `IDENTIFIER id; `OPAREN; cl = opt_cexp_list; `CPAREN ->
+   | PERCENT; id = IDENTIFIER -> F.HVar (id,[])
+   | id = IDENTIFIER; OPAREN; cl = opt_cexp_list; CPAREN ->
      let pos = get_pos_camlp4 _loc 2 in
      if hp_names # mem id then
        if !Globals.hrel_as_view_flag then
@@ -1976,30 +2551,30 @@ simple_heap_constr:
            (* F.HRel(id, cl, (get_pos_camlp4 _loc 2)) *)
          (*P.BForm ((P.RelForm (id, cl, get_pos_camlp4 _loc 1), None), None))*)
      else report_error (get_pos 1) ("should be a heap pred, not pure a relation here")
-   | `HTRUE -> F.HTrue
-   | `EMPTY -> F.HEmp
+   | HTRUE -> F.HTrue
+   | EMPTY -> F.HEmp
   ]];
 
 (* (* HO Resource variables' annotation *)  *)
-(* rflow_ann: [[ `IN_RFLOW | `OUT_RFLOW ]]; *)
+(* rflow_ann: [[ IN_RFLOW | OUT_RFLOW ]]; *)
 
 (*LDK: parse optional fractional permission, default = 1.0*)
 opt_perm: [[t = OPT perm -> t ]];
 
 perm: [[
-    `OPAREN; t = perm_aux; `CPAREN -> t
+    OPAREN; t = perm_aux; CPAREN -> t
 ]];
 
 (*LDK: for fractionl permission, we expect cexp*)
 perm_aux: [[
     peek_div_op;
     (* peek_print; *)
-    t1 = integer_literal ; `DIV ; t2 = integer_literal ->
+    t1 = integer_literal ; DIV ; t2 = integer_literal ->
      (* let () = x_binfo_hp pr_id "hello campl4" no_pos in *)
        Ipure.Div (Ipure.IConst(t1,get_pos_camlp4 _loc 2),
        Ipure.IConst(t2,get_pos_camlp4 _loc 4),get_pos_camlp4 _loc 3)
   | (* peek_print; *)
-    t = LIST1 cexp SEP `COMMA ->
+    t = LIST1 cexp SEP COMMA ->
           begin
           match !Globals.perm with
             | Bperm -> (*Bounded permissions have 3 parameters*)
@@ -2023,7 +2598,7 @@ opt_data_h_args: [[t = OPT data_h_args -> un_option t ([],[])]];
 (*general_h_args:
   [
   [ i = cexp ; t=opt_heap_arg_list -> (i::t,[])]
-  |[ `IDENTIFIER id ; `EQ; i=cexp ; t=opt_heap_arg_list2 -> ([],(id,i)::t)]
+  |[ id = IDENTIFIER ; EQ; i=cexp ; t=opt_heap_arg_list2 -> ([],(id,i)::t)]
   ];*)
 
 general_h_args:
@@ -2036,16 +2611,16 @@ data_h_args:
 
 opt_delayed_constr:[[t = OPT delayed_constr -> un_option t (P.mkTrue no_pos) ]];
 
-delayed_constr:[[t = pure_constr; `CONSTR -> t ]];
+delayed_constr:[[t = pure_constr; CONSTR -> t ]];
 
 opt_pure_constr:[[t=OPT and_pure_constr -> un_option t (P.mkTrue no_pos)]];
 
-and_pure_constr: [[ peek_and_pure; `AND; t= pure_constr ->t]];
+and_pure_constr: [[ peek_and_pure; AND; t= pure_constr ->t]];
 
 (* pure_constr_w_brace:                            *)
-(*   [[ `OBRACE; c = pure_constr; `CBRACE -> c ]]; *)
+(*   [[ OBRACE; c = pure_constr; CBRACE -> c ]]; *)
 
-(* pure_constr_t: [[ `OSQUARE; t= pure_constr; `CSQUARE ->t  *)
+(* pure_constr_t: [[ OSQUARE; t= pure_constr; CSQUARE ->t  *)
 (*                   | t= pure_constr ->t *)
 (* ]]; *)
 
@@ -2061,30 +2636,30 @@ pure_constr:
   ]];
 
 (* termu_id:                                                                       *)
-(*   [[ `AT; `IDENTIFIER fn -> (fn, 0, P.mkTrue no_pos)                            *)
-(*    | `AT; elem = termu_elem -> let (i, c) = elem in ("", i, c)                  *)
-(*    | `AT; `IDENTIFIER fn; elem = termu_elem -> let (i, c) = elem in (fn, i, c)  *)
+(*   [[ AT; fn = IDENTIFIER -> (fn, 0, P.mkTrue no_pos)                            *)
+(*    | AT; elem = termu_elem -> let (i, c) = elem in ("", i, c)                  *)
+(*    | AT; fn = IDENTIFIER; elem = termu_elem -> let (i, c) = elem in (fn, i, c)  *)
 (*   ]];                                                                           *)
 
 (* termu_elem:                                                                     *)
-(*   [[ `OBRACE; `INT_LITER (i,_); `CBRACE -> (i, P.mkTrue no_pos)                 *)
-(*    | `OBRACE; c = pure_constr; `CBRACE -> (0, c)                                *)
-(*    | `OBRACE; `INT_LITER (i,_); `COMMA; c = pure_constr; `CBRACE -> (i, c)      *)
+(*   [[ OBRACE; i = INT_LITER; CBRACE -> (i, P.mkTrue no_pos)                 *)
+(*    | OBRACE; c = pure_constr; CBRACE -> (0, c)                                *)
+(*    | OBRACE; i = INT_LITER; COMMA; c = pure_constr; CBRACE -> (i, c)      *)
 (*   ]];                                                                           *)
 
 (* termu_args:                                                                     *)
-(*   [[ `OPAREN; t=LIST0 cexp SEP `COMMA; `CPAREN -> t ]];                         *)
+(*   [[ OPAREN; t=LIST0 cexp SEP COMMA; CPAREN -> t ]];                         *)
 
 ann_term:
-    [[  `TERM -> P.Term
-      | `LOOP -> P.Loop
-      | `MAYLOOP -> P.MayLoop
-      (* | `TERMU; tid = OPT termu_id; targs = termu_args ->                 *)
+    [[  TERM -> P.Term
+      | LOOP -> P.Loop
+      | MAYLOOP -> P.MayLoop
+      (* | TERMU; tid = OPT termu_id; targs = termu_args ->                 *)
       (*     let pos = get_pos_camlp4 _loc 1 in                              *)
       (*     let (fn, id, c) = un_option tid ("", 0, P.mkTrue no_pos) in     *)
       (*     P.TermU ({ P.tu_id = id; P.tu_sid = ""; P.tu_fname = fn;        *)
       (*                P.tu_args = targs; P.tu_cond = c; P.tu_pos = pos; }) *)
-      (* | `TERMR; tid = OPT termu_id; targs = termu_args ->                 *)
+      (* | TERMR; tid = OPT termu_id; targs = termu_args ->                 *)
       (*     let pos = get_pos_camlp4 _loc 1 in                              *)
       (*     let (fn, id, c) = un_option tid ("", 0, P.mkTrue no_pos) in     *)
       (*     P.TermR ({ P.tu_id = id; P.tu_sid = ""; P.tu_fname = fn;        *)
@@ -2107,11 +2682,11 @@ cexp_data_p:
 
 (*opt_slicing_label: [[ t = OPT slicing_label -> un_option t false ]];*)
 
-slicing_label: [[ `DOLLAR -> true ]];
+slicing_label: [[ DOLLAR -> true ]];
 
 (*Unified specification for locks and waitlevel [ p1 # p2 ] *)
 (*This is just syntactic sugar for p1 & p2 *)
-exl_pure : [[  pc1=cexp_w; `HASH; pc2=cexp_w -> apply_pure_form2 (fun c1 c2-> P.mkAnd c1 c2 (get_pos_camlp4 _loc 2)) pc1 pc2 ]];
+exl_pure : [[  pc1=cexp_w; HASH; pc2=cexp_w -> apply_pure_form2 (fun c1 c2-> P.mkAnd c1 c2 (get_pos_camlp4 _loc 2)) pc1 pc2 ]];
 
 cexp_w:
   [ "pure_lbl"
@@ -2119,19 +2694,19 @@ cexp_w:
   | "slicing_label"
     [ sl=slicing_label; f=SELF -> set_slicing_utils_pure_double f sl ]
   | "AndList"
-	[`ANDLIST;`OPAREN;t= LIST1 one_branch SEP `SEMICOLON ;`CPAREN ->
+	[ANDLIST;OPAREN;t= LIST1 one_branch SEP SEMICOLON ;CPAREN ->
             Pure_f(P.mkAndList_opt t)(*to be used only for sleek testing*)]
   | "pure_or" RIGHTA
-    [ pc1=SELF; `OR; pc2=SELF ->apply_pure_form2 (fun c1 c2-> P.mkOr c1 c2 None (get_pos_camlp4 _loc 2)) pc1 pc2]
+    [ pc1=SELF; OR; pc2=SELF ->apply_pure_form2 (fun c1 c2-> P.mkOr c1 c2 None (get_pos_camlp4 _loc 2)) pc1 pc2]
   | "pure_and" RIGHTA
-    [ pc1=SELF; peek_and; `AND; pc2=SELF -> apply_pure_form2 (fun c1 c2-> P.mkAnd c1 c2 (get_pos_camlp4 _loc 2)) pc1 pc2]
+    [ pc1=SELF; peek_and; AND; pc2=SELF -> apply_pure_form2 (fun c1 c2-> P.mkAnd c1 c2 (get_pos_camlp4 _loc 2)) pc1 pc2]
   | "pure_exclusive" RIGHTA
-    [ `OSQUARE; t=exl_pure; `CSQUARE -> t]
+    [ OSQUARE; t=exl_pure; CSQUARE -> t]
   |"bconstrp" RIGHTA
-    [ lc=SELF; `NEQ; cl=SELF ->
+    [ lc=SELF; NEQ; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2 -> P.mkNeq c1 c2 (get_pos_camlp4 _loc 2)) lc cl in
         set_slicing_utils_pure_double f (if !opt_ineq (* && (is_ineq_linking_constraint lc cl) *) then true else false)
-    | lc=SELF; `EQ;   cl=SELF  -> begin
+    | lc=SELF; EQ;   cl=SELF  -> begin
           (* let () = print_endline "xxxx" in *)
           (* let () = DD.info_hprint (add_str "lc" string_of_pure_double) lc no_pos in *)
           (* let () = DD.info_hprint (add_str "cl" string_of_pure_double) cl no_pos in *)
@@ -2140,51 +2715,51 @@ cexp_w:
     end
     ]
   | "bconstr"
-    [ lc=SELF; `LTE; cl=SELF ->
+    [ lc=SELF; LTE; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2-> P.mkLte c1 c2 (get_pos_camlp4 _loc 2)) lc cl in
         set_slicing_utils_pure_double f false
-    | lc=SELF; `LT; cl=SELF ->
+    | lc=SELF; LT; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2-> P.mkLt c1 c2 (get_pos_camlp4 _loc 2)) lc cl in
         set_slicing_utils_pure_double f false
-    | lc=SELF; `SUBANN; cl=SELF ->
+    | lc=SELF; SUBANN; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2-> P.mkSubAnn c1 c2 (get_pos_camlp4 _loc 2)) lc cl in
         set_slicing_utils_pure_double f false
-    | lc=SELF; peek_try; `GT; cl=SELF ->
+    | lc=SELF; peek_try; GT; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2-> P.mkGt c1 c2 (get_pos_camlp4 _loc 2)) lc cl in
         set_slicing_utils_pure_double f false
-    | lc=SELF; `GTE; cl=SELF ->
+    | lc=SELF; GTE; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2-> P.mkGte c1 c2 (get_pos_camlp4 _loc 2)) lc cl in
         set_slicing_utils_pure_double f false
-    | lc=SELF; `IN_T;   cl=SELF ->
+    | lc=SELF; IN_T;   cl=SELF ->
         let cid, pos = match lc with
           | Pure_c (P.Var (t, l)) -> (t, l)
           | Pure_c (P.Null l) -> ((null_name, Unprimed), l)
           | _ -> report_error (get_pos_camlp4 _loc 1) "expected cid" in
         let f = cexp_to_pure1 (fun c2 -> P.BagIn (cid,c2,pos)) cl in
         set_slicing_utils_pure_double f false
-    | lc=SELF(*cid*); `NOTIN;  cl=SELF ->
+    | lc=SELF(*cid*); NOTIN;  cl=SELF ->
         let cid, pos = match lc with
           | Pure_c (P.Var (t, l)) -> (t, l)
           | Pure_c (P.Null l) -> ((null_name,Unprimed), l)
           | _ -> report_error (get_pos_camlp4 _loc 1) "expected cid" in
         let f = cexp_to_pure1 (fun c2 -> P.BagNotIn(cid,c2,pos)) cl in
         set_slicing_utils_pure_double f false
-    | lc=SELF; `SUBSET; cl=SELF ->
+    | lc=SELF; SUBSET; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2-> P.BagSub (c1, c2, (get_pos_camlp4 _loc 2))) lc cl in
         set_slicing_utils_pure_double f false
-    | `BAGMAX; `OPAREN; c1=cid; `COMMA; c2=cid; `CPAREN ->
+    | BAGMAX; OPAREN; c1=cid; COMMA; c2=cid; CPAREN ->
         let f = Pure_f (P.BForm ((P.BagMax (c1, c2, (get_pos_camlp4 _loc 2)), None), None)) in
         set_slicing_utils_pure_double f false
-    | `BAGMIN; `OPAREN; c1=cid; `COMMA; c2=cid; `CPAREN ->
+    | BAGMIN; OPAREN; c1=cid; COMMA; c2=cid; CPAREN ->
         let f = Pure_f (P.BForm ((P.BagMin (c1, c2, (get_pos_camlp4 _loc 2)), None), None))  in
         set_slicing_utils_pure_double f false
-    | lc=SELF; `INLIST; cl=SELF ->
+    | lc=SELF; INLIST; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2-> P.ListIn (c1, c2, (get_pos_camlp4 _loc 2))) lc cl in
         set_slicing_utils_pure_double f false
-    | lc=SELF; `NOTINLIST; cl=SELF ->
+    | lc=SELF; NOTINLIST; cl=SELF ->
         let f = cexp_to_pure2 (fun c1 c2-> P.ListNotIn (c1, c2, (get_pos_camlp4 _loc 2))) lc cl in
         set_slicing_utils_pure_double f false
-    (* | ct=p_vp_ann ; `OSQUARE; ls= id_list; `CSQUARE ->                                       *)
+    (* | ct=p_vp_ann ; OSQUARE; ls= id_list; CSQUARE ->                                       *)
     (*     let func t =                                                                         *)
     (*       if  String.contains t '\'' then                                                    *)
     (*         (* Remove the primed in the identifier *)                                        *)
@@ -2194,10 +2769,10 @@ cexp_w:
     (*     let ls = List.map func ls in                                                         *)
     (*     let f = cexp_list_to_pure (fun ls -> P.VarPerm(ct,ls,(get_pos_camlp4 _loc 1))) ls in *)
     (*     set_slicing_utils_pure_double f false                                                *)
-    | `ALLN; `OPAREN; lc=SELF; `COMMA; cl=SELF; `CPAREN ->
+    | ALLN; OPAREN; lc=SELF; COMMA; cl=SELF; CPAREN ->
         let f = cexp_to_pure2 (fun c1 c2-> P.ListAllN (c1, c2, (get_pos_camlp4 _loc 2))) lc cl  in
         set_slicing_utils_pure_double f false
-    | `PERM; `OPAREN; lc=SELF; `COMMA; cl=SELF; `CPAREN ->
+    | PERM; OPAREN; lc=SELF; COMMA; cl=SELF; CPAREN ->
         let f = cexp_to_pure2 (fun c1 c2-> P.ListPerm (c1, c2, (get_pos_camlp4 _loc 2))) lc cl in
         set_slicing_utils_pure_double f false
     | t_ann=ann_term; ls1=opt_measures_seq_sqr; ls2=opt_measures_seq ->
@@ -2205,44 +2780,44 @@ cexp_w:
         set_slicing_utils_pure_double f false
     ]
   | "pure_paren"
-    [ peek_pure; `OPAREN; dc=SELF; `CPAREN -> dc ]
+    [ peek_pure; OPAREN; dc=SELF; CPAREN -> dc ]
   | "type_casting"
-    [ peek_typecast; `OPAREN; t = typ; `CPAREN; c = SELF ->
+    [ peek_typecast; OPAREN; t = typ; CPAREN; c = SELF ->
         apply_cexp_form1 (fun c -> P.mkTypeCast t c (get_pos_camlp4 _loc 1)) c
     ]
   (* constraint expressions *)
   | "gen"
-    [ `OBRACE; c= opt_cexp_list; `CBRACE -> Pure_c (P.Bag (c, get_pos_camlp4 _loc 1))
-    | `UNION; `OPAREN; c=opt_cexp_list; `CPAREN -> Pure_c (P.BagUnion (c, get_pos_camlp4 _loc 1))
-    | `INTERSECT; `OPAREN; c=opt_cexp_list; `CPAREN -> Pure_c (P.BagIntersect (c, get_pos_camlp4 _loc 1))
-    | `DIFF; `OPAREN; c1=SELF; `COMMA; c2=SELF; `CPAREN -> apply_cexp_form2 (fun c1 c2-> P.BagDiff (c1, c2, get_pos_camlp4 _loc 1) ) c1 c2
-    | `OLIST; c1 = opt_cexp_list; `CLIST -> Pure_c (P.List (c1, get_pos_camlp4 _loc 1))
-    |  c1=SELF; `COLONCOLONCOLON; c2=SELF -> apply_cexp_form2 (fun c1 c2-> P.ListCons (c1, c2, get_pos_camlp4 _loc 2)) c1 c2
-    | `TAIL; `OPAREN; c1=SELF; `CPAREN -> apply_cexp_form1 (fun c1-> P.ListTail (c1, get_pos_camlp4 _loc 1)) c1
-    | `APPEND; `OPAREN; c1= opt_cexp_list; `CPAREN -> Pure_c (P.ListAppend (c1, get_pos_camlp4 _loc 1))
-    | `HEAD; `OPAREN; c=SELF; `CPAREN -> apply_cexp_form1 (fun c -> P.ListHead (c, get_pos_camlp4 _loc 1)) c
-    | `LENGTH; `OPAREN; c=SELF; `CPAREN -> apply_cexp_form1 (fun c -> P.ListLength (c, get_pos_camlp4 _loc 1)) c
-    | `REVERSE; `OPAREN; c1=SELF; `CPAREN -> apply_cexp_form1 (fun c1-> P.ListReverse (c1, get_pos_camlp4 _loc 1)) c1
+    [ OBRACE; c= opt_cexp_list; CBRACE -> Pure_c (P.Bag (c, get_pos_camlp4 _loc 1))
+    | UNION; OPAREN; c=opt_cexp_list; CPAREN -> Pure_c (P.BagUnion (c, get_pos_camlp4 _loc 1))
+    | INTERSECT; OPAREN; c=opt_cexp_list; CPAREN -> Pure_c (P.BagIntersect (c, get_pos_camlp4 _loc 1))
+    | DIFF; OPAREN; c1=SELF; COMMA; c2=SELF; CPAREN -> apply_cexp_form2 (fun c1 c2-> P.BagDiff (c1, c2, get_pos_camlp4 _loc 1) ) c1 c2
+    | OLIST; c1 = opt_cexp_list; CLIST -> Pure_c (P.List (c1, get_pos_camlp4 _loc 1))
+    |  c1=SELF; COLONCOLONCOLON; c2=SELF -> apply_cexp_form2 (fun c1 c2-> P.ListCons (c1, c2, get_pos_camlp4 _loc 2)) c1 c2
+    | TAIL; OPAREN; c1=SELF; CPAREN -> apply_cexp_form1 (fun c1-> P.ListTail (c1, get_pos_camlp4 _loc 1)) c1
+    | APPEND; OPAREN; c1= opt_cexp_list; CPAREN -> Pure_c (P.ListAppend (c1, get_pos_camlp4 _loc 1))
+    | HEAD; OPAREN; c=SELF; CPAREN -> apply_cexp_form1 (fun c -> P.ListHead (c, get_pos_camlp4 _loc 1)) c
+    | LENGTH; OPAREN; c=SELF; CPAREN -> apply_cexp_form1 (fun c -> P.ListLength (c, get_pos_camlp4 _loc 1)) c
+    | REVERSE; OPAREN; c1=SELF; CPAREN -> apply_cexp_form1 (fun c1-> P.ListReverse (c1, get_pos_camlp4 _loc 1)) c1
     ]
   | "addit"
-    [ c1=SELF ; `PLUS; c2=SELF -> apply_cexp_form2 (fun c1 c2-> P.mkAdd c1 c2 (get_pos_camlp4 _loc 2)) c1 c2
-    | c1=SELF ; `MINUS; c2=SELF -> apply_cexp_form2 (fun c1 c2-> P.mkSubtract c1 c2 (get_pos_camlp4 _loc 2)) c1 c2
+    [ c1=SELF ; PLUS; c2=SELF -> apply_cexp_form2 (fun c1 c2-> P.mkAdd c1 c2 (get_pos_camlp4 _loc 2)) c1 c2
+    | c1=SELF ; MINUS; c2=SELF -> apply_cexp_form2 (fun c1 c2-> P.mkSubtract c1 c2 (get_pos_camlp4 _loc 2)) c1 c2
     ]
   | "mul"
-    [ t1=SELF ; `STAR; t2=SELF ->
+    [ t1=SELF ; STAR; t2=SELF ->
         apply_cexp_form2 (fun c1 c2-> P.mkMult c1 c2 (get_pos_camlp4 _loc 2)) t1 t2
-    | t1=SELF ; `DIV ; t2=SELF -> apply_cexp_form2 (fun c1 c2-> P.mkDiv c1 c2 (get_pos_camlp4 _loc 2)) t1 t2
+    | t1=SELF ; DIV ; t2=SELF -> apply_cexp_form2 (fun c1 c2-> P.mkDiv c1 c2 (get_pos_camlp4 _loc 2)) t1 t2
     ]
-  | [`MINUS; c=SELF -> apply_cexp_form1 (fun c-> P.mkSubtract (P.IConst (0, get_pos_camlp4 _loc 1)) c (get_pos_camlp4 _loc 1)) c]
+  | [MINUS; c=SELF -> apply_cexp_form1 (fun c-> P.mkSubtract (P.IConst (0, get_pos_camlp4 _loc 1)) c (get_pos_camlp4 _loc 1)) c]
   | "ann_exp"
-    [e=SELF ; `COLON; ty=typ -> apply_cexp_form1 (fun c-> P.mkAnnExp c ty (get_pos_camlp4 _loc 1)) e]
+    [e=SELF ; COLON; ty=typ -> apply_cexp_form1 (fun c-> P.mkAnnExp c ty (get_pos_camlp4 _loc 1)) e]
   | "una"
-    [ `NULL -> Pure_c (P.Null (get_pos_camlp4 _loc 1))
-    | `HASH ->
+    [ NULL -> Pure_c (P.Null (get_pos_camlp4 _loc 1))
+    | HASH ->
         (* let () = hash_count := !hash_count + 1 in  *)
         (* Pure_c (P.Var (("#" ^ (string_of_int !hash_count),Unprimed),(get_pos_camlp4 _loc 1))) *)
         mk_purec_absent (P.Var (("Anon"^fresh_trailer(),Unprimed),(get_pos_camlp4 _loc 1)))
-    | `IDENTIFIER id1;`OPAREN; `IDENTIFIER id; `OPAREN; cl = id_list; `CPAREN ; `CPAREN ->
+    | id1 = IDENTIFIER;OPAREN; id = IDENTIFIER; OPAREN; cl = id_list; CPAREN ; CPAREN ->
       if hp_names # mem id then
         if !Globals.hrel_as_view_flag then
           (* report_error (get_pos 1) "hrel_as_view : to be implemented (2)" *)
@@ -2255,7 +2830,7 @@ cexp_w:
           else  print_endline_quiet ("WARNING2 : parsing problem "^id^" is neither a ranking function nor a relation nor a heap predicate (in rel_names)") ;
           Pure_f(P.BForm ((P.mkXPure id cl (get_pos_camlp4 _loc 1), None), None))
         end
-    | `IDENTIFIER id; `OPAREN; cl = opt_cexp_list; `CPAREN ->
+    | id = IDENTIFIER; OPAREN; cl = opt_cexp_list; CPAREN ->
       (* AnHoa: relation constraint, for instance, given the relation
        * s(a,b,c) == c = a + b.
        * After this definition, we can have the relation constraint like
@@ -2303,454 +2878,454 @@ cexp_w:
         else
           Pure_c (P.Var (t, get_pos_camlp4 _loc 1))
     | t = cid; ann0 = LIST1 ann_heap -> Pure_t ((P.Var (t, get_pos_camlp4 _loc 1)), (get_heap_ann_opt ann0 ))
-    | `IMM -> Pure_c (P.AConst(Imm, get_pos_camlp4 _loc 1))
-    | `MUT -> Pure_c (P.AConst(Mutable, get_pos_camlp4 _loc 1))
-    | `LEND -> Pure_c (P.AConst(Lend, get_pos_camlp4 _loc 1))
-    | `ACCS -> Pure_c (P.AConst(Accs, get_pos_camlp4 _loc 1))
-    | `AT;t=tree_const -> if !Globals.perm=Dperm then Pure_c (P.Tsconst(t,get_pos_camlp4 _loc 1)) else report_error (get_pos 1) ("distinct share reasoning not enabled")
-    | `ATAT;t=id  ->
+    | IMM -> Pure_c (P.AConst(Imm, get_pos_camlp4 _loc 1))
+    | MUT -> Pure_c (P.AConst(Mutable, get_pos_camlp4 _loc 1))
+    | LEND -> Pure_c (P.AConst(Lend, get_pos_camlp4 _loc 1))
+    | ACCS -> Pure_c (P.AConst(Accs, get_pos_camlp4 _loc 1))
+    | AT;t=tree_const -> if !Globals.perm=Dperm then Pure_c (P.Tsconst(t,get_pos_camlp4 _loc 1)) else report_error (get_pos 1) ("distinct share reasoning not enabled")
+    | ATAT;t=id  ->
         let t = try Hashtbl.find !macros t with _ -> (print_string ("warning, undefined macro "^t); Ts.top) in
         Pure_c (P.Tsconst(t,get_pos_camlp4 _loc 1))
-    | `INT_LITER (i,_) ; ann0 = LIST1 ann_heap ->
-        Pure_t((P.IConst (i, get_pos_camlp4 _loc 1)) ,(get_heap_ann_opt ann0 ))
-    | `INFINITY ->
+    | i = INT_LITER ; ann0 = LIST1 ann_heap ->
+        Pure_t((P.IConst (int_of_string i, get_pos_camlp4 _loc 1)) ,(get_heap_ann_opt ann0 ))
+    | INFINITY ->
         Pure_c (P.InfConst(constinfinity,get_pos_camlp4 _loc 1))
-    | `NEGINFINITY ->
+    | NEGINFINITY ->
         Pure_c (P.NegInfConst(constinfinity,get_pos_camlp4 _loc 1))
-    | `FLOAT_LIT (f,_) ; ann0 = LIST1 ann_heap ->
-        Pure_t((P.FConst (f, get_pos_camlp4 _loc 1)), (get_heap_ann_opt ann0 ))
-    | `INT_LITER (i,_) -> Pure_c (P.IConst (i, get_pos_camlp4 _loc 1))
-    | `FLOAT_LIT (f,_) -> Pure_c (P.FConst (f, get_pos_camlp4 _loc 1))
-    | `TUP2; `OPAREN; c1=SELF; `COMMA; c2=SELF; `CPAREN ->
+    | f = FLOAT_LIT ; ann0 = LIST1 ann_heap ->
+        Pure_t((P.FConst (float_of_string f, get_pos_camlp4 _loc 1)), (get_heap_ann_opt ann0 ))
+    | i = INT_LITER -> Pure_c (P.IConst (int_of_string i, get_pos_camlp4 _loc 1))
+    | f = FLOAT_LIT -> Pure_c (P.FConst (float_of_string f, get_pos_camlp4 _loc 1))
+    | TUP2; OPAREN; c1=SELF; COMMA; c2=SELF; CPAREN ->
           apply_cexp_form2 (fun c1 c2-> (P.Tup2 ((c1,c2), get_pos_camlp4 _loc 1))) c1 c2
-    | `OPAREN; t=SELF; `CPAREN -> t
-    | i=cid; `OSQUARE; c = LIST1 cexp SEP `COMMA; `CSQUARE ->
+    | OPAREN; t=SELF; CPAREN -> t
+    | i=cid; OSQUARE; c = LIST1 cexp SEP COMMA; CSQUARE ->
         Pure_c (P.ArrayAt (i, c, get_pos_camlp4 _loc 1))
-    | `MAX; `OPAREN; c1=SELF; `COMMA; c2=SELF; `CPAREN ->
+    | MAX; OPAREN; c1=SELF; COMMA; c2=SELF; CPAREN ->
         apply_cexp_form2 (fun c1 c2-> P.mkMax c1 c2 (get_pos_camlp4 _loc 1)) c1 c2
-    | `MIN; `OPAREN; c1=SELF; `COMMA; c2=SELF; `CPAREN ->
+    | MIN; OPAREN; c1=SELF; COMMA; c2=SELF; CPAREN ->
         apply_cexp_form2 (fun c1 c2-> P.mkMin c1 c2 (get_pos_camlp4 _loc 1)) c1 c2
     ]
   | "pure_base"
-    [ `TRUE -> Pure_f (P.mkTrue (get_pos_camlp4 _loc 1))
-    | `FALSE -> Pure_f (P.mkFalse (get_pos_camlp4 _loc 1))
-    | `EXISTS; `OPAREN; ocl=opt_cid_list; `COLON; pc = SELF; `CPAREN ->
+    [ TRUE -> Pure_f (P.mkTrue (get_pos_camlp4 _loc 1))
+    | FALSE -> Pure_f (P.mkFalse (get_pos_camlp4 _loc 1))
+    | EXISTS; OPAREN; ocl=opt_cid_list; COLON; pc = SELF; CPAREN ->
         apply_pure_form1 (fun c-> List.fold_left (fun f v ->P.mkExists [v] f None (get_pos_camlp4 _loc 1)) c ocl) pc
-    | `FORALL; `OPAREN; ocl=opt_cid_list; `COLON; pc=SELF; `CPAREN ->
+    | FORALL; OPAREN; ocl=opt_cid_list; COLON; pc=SELF; CPAREN ->
         apply_pure_form1 (fun c-> List.fold_left (fun f v-> P.mkForall [v] f None (get_pos_camlp4 _loc 1)) c ocl) pc
     | t=cid -> Pure_f (P.BForm ((P.mkBVar t (get_pos_camlp4 _loc 1), None), None ))
-    | `NOT; `OPAREN; c=pure_constr; `CPAREN -> Pure_f (P.mkNot c None (get_pos_camlp4 _loc 1))
-    | `NOT; t=cid -> Pure_f (P.mkNot (P.BForm ((P.mkBVar t (get_pos_camlp4 _loc 2), None), None )) None (get_pos_camlp4 _loc 1))
+    | NOT; OPAREN; c=pure_constr; CPAREN -> Pure_f (P.mkNot c None (get_pos_camlp4 _loc 1))
+    | NOT; t=cid -> Pure_f (P.mkNot (P.BForm ((P.mkBVar t (get_pos_camlp4 _loc 2), None), None )) None (get_pos_camlp4 _loc 1))
     ]
   ];
 
 
 tree_const:[[
-	 `OPAREN;`COMMA;`CPAREN->Ts.bot
-	| `HASH -> Ts.top
-	|`OPAREN;l=tree_const; `COMMA;`CPAREN-> Ts.mkNode l Ts.bot
-	|`OPAREN;`COMMA; r=tree_const; `CPAREN-> Ts.mkNode Ts.bot r
-	|`OPAREN;l=tree_const;`COMMA; r=tree_const; `CPAREN-> Ts.mkNode l r
+	 OPAREN;COMMA;CPAREN->Ts.bot
+	| HASH -> Ts.top
+	|OPAREN;l=tree_const; COMMA;CPAREN-> Ts.mkNode l Ts.bot
+	|OPAREN;COMMA; r=tree_const; CPAREN-> Ts.mkNode Ts.bot r
+	|OPAREN;l=tree_const;COMMA; r=tree_const; CPAREN-> Ts.mkNode l r
 ]];
 
 (* [[ *)
 (*     il=OPT measures2 -> un_option il [] *)
 (* ]]; *)
 
-(* opt_measures:[[ `OPAREN; t=LIST0 cexp SEP `COMMA ;`CPAREN -> t]]; *)
+(* opt_measures:[[ OPAREN; t=LIST0 cexp SEP COMMA ;CPAREN -> t]]; *)
 
-(* opt_measures:[[t=LIST0 cexp SEP `COMMA -> t]];  *)
+(* opt_measures:[[t=LIST0 cexp SEP COMMA -> t]];  *)
 
-opt_comma_list:[[t = LIST0 opt_comma SEP `COMMA -> t
+opt_comma_list:[[t = LIST0 opt_comma SEP COMMA -> t
 ]];
 
 opt_comma:[[t = cid ->  P.Var (t, get_pos_camlp4 _loc 1)
-  | `INT_LITER (i,_) ->  P.IConst (i, get_pos_camlp4 _loc 1)
-  | `FLOAT_LIT (f,_)  -> P.FConst (f, get_pos_camlp4 _loc 1)
+  | i = INT_LITER ->  P.IConst (int_of_string i, get_pos_camlp4 _loc 1)
+  | f = FLOAT_LIT  -> P.FConst (float_of_string f, get_pos_camlp4 _loc 1)
    ]];
 
 opt_measures_seq: [[ il = OPT measures_seq -> un_option il [] ]];
 
-measures_seq: [[`OBRACE; t=LIST0 cexp SEP `COMMA; `CBRACE -> t]];
+measures_seq: [[OBRACE; t=LIST0 cexp SEP COMMA; CBRACE -> t]];
 
 opt_measures_seq_sqr: [[ il = OPT measures_seq_sqr -> un_option il [] ]];
 
-measures_seq_sqr: [[`OSQUARE; t=LIST0 cexp SEP `COMMA; `CSQUARE -> t]];
+measures_seq_sqr: [[OSQUARE; t=LIST0 cexp SEP COMMA; CSQUARE -> t]];
 
-opt_cexp_list: [[t=LIST0 cexp SEP `COMMA -> t]];
+opt_cexp_list: [[t=LIST0 cexp SEP COMMA -> t]];
 
-(* cexp_list: [[t=LIST1 cexp SEP `COMMA -> t]]; *)
+(* cexp_list: [[t=LIST1 cexp SEP COMMA -> t]]; *)
 
 (********** Procedures and Coercion **********)
 
 checknorm_cmd:
-  [[ `CHECKNORM; b=meta_constr -> b ]];
+  [[ CHECKNORM; b=meta_constr -> b ]];
 
 checkeq_cmd:
-  [[ `CHECKEQ; `OSQUARE; il=OPT id_list; `CSQUARE; t=meta_constr; `EQV; b=meta_constr ->
+  [[ CHECKEQ; OSQUARE; il=OPT id_list; CSQUARE; t=meta_constr; EQV; b=meta_constr ->
     let il = un_option il [] in (il,t,b)
   ]];
 
-opt_list_meta_constr:[[t=LIST0 meta_constr SEP `SEMICOLON -> t]];
+opt_list_meta_constr:[[t=LIST0 meta_constr SEP SEMICOLON -> t]];
 
 checkentail_cmd:
-  [[ `CHECKENTAIL; t=meta_constr; `DERIVE; b=extended_meta_constr -> ([t], b, None)
-   | `CHECKENTAIL_EXACT; t=meta_constr; `DERIVE; b=extended_meta_constr -> ([t], b, Some true)
-   | `CHECKENTAIL_INEXACT; t=meta_constr; `DERIVE; b=extended_meta_constr -> ([t], b, Some false)
-   | `CHECKENTAIL; `OBRACE; t=opt_list_meta_constr ; `CBRACE ; `DERIVE; b=extended_meta_constr -> (t, b, None)
+  [[ CHECKENTAIL; t=meta_constr; DERIVE; b=extended_meta_constr -> ([t], b, None)
+   | CHECKENTAIL_EXACT; t=meta_constr; DERIVE; b=extended_meta_constr -> ([t], b, Some true)
+   | CHECKENTAIL_INEXACT; t=meta_constr; DERIVE; b=extended_meta_constr -> ([t], b, Some false)
+   | CHECKENTAIL; OBRACE; t=opt_list_meta_constr ; CBRACE ; DERIVE; b=extended_meta_constr -> (t, b, None)
   ]];
 
 checksat_cmd:
-  [[ `CHECKSAT; t=meta_constr -> t
+  [[ CHECKSAT; t=meta_constr -> t
   ]];
 
 checknondet_cmd:
   [[
-    `CHECK_NONDET; `OSQUARE; `IDENTIFIER v; `CSQUARE; f = meta_constr -> (v,f)
+    CHECK_NONDET; OSQUARE; v = IDENTIFIER; CSQUARE; f = meta_constr -> (v,f)
   ]];
 
 templ_solve_cmd:
-  [[ `TEMPL_SOLVE; il = OPT id_list_w_brace -> un_option il [] ]];
+  [[ TEMPL_SOLVE; il = OPT id_list_w_brace -> un_option il [] ]];
 
 term_infer_cmd:
-  [[ `TERM_INFER ]];
+  [[ TERM_INFER ]];
 
 term_assume_cmd:
-  [[ `TREL_ASSUME; t=meta_constr; `CONSTR; b=meta_constr -> (t, b) ]];
+  [[ TREL_ASSUME; t=meta_constr; CONSTR; b=meta_constr -> (t, b) ]];
 
-ls_rel_ass: [[`OSQUARE; t = LIST0 rel_ass SEP `SEMICOLON ;`CSQUARE-> t]];
+ls_rel_ass: [[OSQUARE; t = LIST0 rel_ass SEP SEMICOLON ;CSQUARE-> t]];
 
-rel_ass : [[ t=meta_constr; `CONSTR; b=meta_constr -> (t, b)]];
+rel_ass : [[ t=meta_constr; CONSTR; b=meta_constr -> (t, b)]];
 
 validate_entail_state:
   [[
-     `OPAREN ; `OSQUARE; il1=OPT id_list;`CSQUARE; `COMMA; ef = meta_constr; `COMMA; ls_ass = ls_rel_ass ; `CPAREN->
+     OPAREN ; OSQUARE; il1=OPT id_list;CSQUARE; COMMA; ef = meta_constr; COMMA; ls_ass = ls_rel_ass ; CPAREN->
          let il1 = un_option il1 [] in
          (il1, ef, ls_ass)
   ]];
 
 validate_list_context:
   [[
-     `OSQUARE; t = LIST0 validate_entail_state SEP `SEMICOLON ;`CSQUARE-> t
+     OSQUARE; t = LIST0 validate_entail_state SEP SEMICOLON ;CSQUARE-> t
   ]];
 
 validate_result:
   [[
-      `IDENTIFIER ex -> VR_Unknown ex
-    | `VALID -> VR_Valid
-    | `FAIL -> VR_Fail 0
-    | `FAIL_MUST -> VR_Fail 1
-    | `FAIL_MAY -> VR_Fail (-1)
-    | `SSAT -> VR_Sat
-    | `SUNSAT -> VR_Unsat
+      ex = IDENTIFIER -> VR_Unknown ex
+    | VALID -> VR_Valid
+    | FAIL -> VR_Fail 0
+    | FAIL_MUST -> VR_Fail 1
+    | FAIL_MAY -> VR_Fail (-1)
+    | SSAT -> VR_Sat
+    | SUNSAT -> VR_Unsat
   ]];
 validate_cmd_pair:
-    [[ `VALIDATE; vr = validate_result  ->
+    [[ VALIDATE; vr = validate_result  ->
       (vr, None)
-      | `VALIDATE; vr = validate_result; `COMMA; fl=OPT id ->
+      | VALIDATE; vr = validate_result; COMMA; fl=OPT id ->
             (vr, fl)
    ]];
 
 validate_cmd:
-  [[ (* `VALIDATE; vr = validate_result; fl=OPT id; lc = OPT validate_list_context  -> *)
+  [[ (* VALIDATE; vr = validate_result; fl=OPT id; lc = OPT validate_list_context  -> *)
       pr = validate_cmd_pair; lc = OPT validate_list_context  ->
           let vr,fl = pr in
           (vr, fl, (un_option lc []))
    ]];
 
 cond_path:
-    [[ `OPAREN; il2 = OPT int_list; `CPAREN -> un_option il2 []
+    [[ OPAREN; il2 = OPT int_list; CPAREN -> un_option il2 []
     ]];
 
 relassume_cmd:
-   [[ `RELASSUME; il2 = OPT cond_path; l=meta_constr; `CONSTR;r=meta_constr -> (un_option il2 [], l, None,  r)
-    | `RELASSUME; il2 = OPT cond_path; l=meta_constr; `REL_GUARD; guard = meta_constr; `CONSTR;r=meta_constr ->
+   [[ RELASSUME; il2 = OPT cond_path; l=meta_constr; CONSTR;r=meta_constr -> (un_option il2 [], l, None,  r)
+    | RELASSUME; il2 = OPT cond_path; l=meta_constr; REL_GUARD; guard = meta_constr; CONSTR;r=meta_constr ->
            (un_option il2 [], l, Some guard,  r)
    ]];
 
 derv_pred:
 [[
-   `IDENTIFIER vn;`OPAREN;sl= id_list_opt; `CPAREN -> (vn,sl)
+   vn = IDENTIFIER;OPAREN;sl= id_list_opt; CPAREN -> (vn,sl)
 ]];
 
 reldefn_cmd:
-   [[ `RELDEFN; il2 = OPT cond_path; l=meta_constr; `EQUIV ;r=meta_constr -> (un_option il2 [], l, r, [])
-     | `RELDEFN; il2 = OPT cond_path; l=meta_constr; `EQUIV; `EXTENDS;orig_pred = derv_pred; `ATPOS; extn_pos=integer_literal; `WITH ; extn = prop_extn->
+   [[ RELDEFN; il2 = OPT cond_path; l=meta_constr; EQUIV ;r=meta_constr -> (un_option il2 [], l, r, [])
+     | RELDEFN; il2 = OPT cond_path; l=meta_constr; EQUIV; EXTENDS;orig_pred = derv_pred; ATPOS; extn_pos=integer_literal; WITH ; extn = prop_extn->
            (un_option il2 [], l, MetaForm (F.mkTrue n_flow (get_pos_camlp4 _loc 1)) , [(orig_pred, extn, [extn_pos])])
    ]];
 
 decl_dang_cmd:
-   [[ `SHAPE_DECL_DANG; `OSQUARE; il1=OPT id_list ;`CSQUARE -> un_option il1 []
+   [[ SHAPE_DECL_DANG; OSQUARE; il1=OPT id_list ;CSQUARE -> un_option il1 []
    ]];
 
 decl_unknown_cmd:
-   [[ `SHAPE_DECL_UNKNOWN; il2 = OPT cond_path; `OSQUARE; il1= OPT id_list ;`CSQUARE   -> (un_option il2 [], un_option il1 [])
+   [[ SHAPE_DECL_UNKNOWN; il2 = OPT cond_path; OSQUARE; il1= OPT id_list ;CSQUARE   -> (un_option il2 [], un_option il1 [])
    ]];
 
 shapeinfer_cmd:
-   [[ `SHAPE_INFER; `OSQUARE;il1=OPT id_list;`CSQUARE; `OSQUARE; il2=OPT id_list;`CSQUARE ->
+   [[ SHAPE_INFER; OSQUARE;il1=OPT id_list;CSQUARE; OSQUARE; il2=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il1,il2)
    ]];
 
 rel_infer_cmd:
-   [[ `REL_INFER; `OSQUARE;il1=OPT id_list;`CSQUARE; `OSQUARE; il2=OPT id_list;`CSQUARE ->
+   [[ REL_INFER; OSQUARE;il1=OPT id_list;CSQUARE; OSQUARE; il2=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il1, il2)
    ]];
 
 shapedivide_cmd:
-   [[ `SHAPE_DIVIDE; `OSQUARE;il1=OPT id_list;`CSQUARE; `OSQUARE; il2=OPT id_list;`CSQUARE ->
+   [[ SHAPE_DIVIDE; OSQUARE;il1=OPT id_list;CSQUARE; OSQUARE; il2=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il1,il2)
    ]];
 shapeconquer_cmd:
-   [[ `SHAPE_CONQUER; `OSQUARE; il2=OPT id_list;`CSQUARE; `OSQUARE; il1=OPT list_int_list ;`CSQUARE ->
+   [[ SHAPE_CONQUER; OSQUARE; il2=OPT id_list;CSQUARE; OSQUARE; il1=OPT list_int_list ;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il2, il1)
    ]];
 
 shapelfp_cmd:
-   [[ `SHAPE_LFP; `OSQUARE;il1=OPT id_list;`CSQUARE ->
+   [[ SHAPE_LFP; OSQUARE;il1=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    il1
    ]];
 
 shaperec_cmd:
-   [[ `SHAPE_REC; `OSQUARE;il1=OPT id_list;`CSQUARE ->
+   [[ SHAPE_REC; OSQUARE;il1=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    il1
    ]];
 
 
 shapepost_obl_cmd:
-   [[ `SHAPE_POST_OBL; `OSQUARE;il1=OPT id_list;`CSQUARE; `OSQUARE; il2=OPT id_list;`CSQUARE ->
+   [[ SHAPE_POST_OBL; OSQUARE;il1=OPT id_list;CSQUARE; OSQUARE; il2=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il1,il2)
    ]];
 
 shape_sconseq_cmd:
-   [[ `SHAPE_STRENGTHEN_CONSEQ; `OSQUARE;il1=OPT id_list;`CSQUARE; `OSQUARE; il2=OPT id_list;`CSQUARE ->
+   [[ SHAPE_STRENGTHEN_CONSEQ; OSQUARE;il1=OPT id_list;CSQUARE; OSQUARE; il2=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il1,il2)
    ]];
 
 shape_sante_cmd:
-   [[ `SHAPE_WEAKEN_ANTE; `OSQUARE;il1=OPT id_list;`CSQUARE; `OSQUARE; il2=OPT id_list;`CSQUARE ->
+   [[ SHAPE_WEAKEN_ANTE; OSQUARE;il1=OPT id_list;CSQUARE; OSQUARE; il2=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il1,il2)
    ]];
 
 pred_split_cmd:
-   [[ `PRED_SPLIT; `OSQUARE;il1=OPT id_list;`CSQUARE->
+   [[ PRED_SPLIT; OSQUARE;il1=OPT id_list;CSQUARE->
    let il1 = un_option il1 [] in
    (il1)
    ]];
 
 pred_norm_seg_cmd:
-   [[ `PRED_NORM_SEG; `OSQUARE;il1=OPT id_list;`CSQUARE->
+   [[ PRED_NORM_SEG; OSQUARE;il1=OPT id_list;CSQUARE->
    let il1 = un_option il1 [] in
    (il1)
    ]];
 
 pred_norm_disj_cmd:
-   [[ `PRED_NORM_DISJ; `OSQUARE;il1=OPT id_list;`CSQUARE->
+   [[ PRED_NORM_DISJ; OSQUARE;il1=OPT id_list;CSQUARE->
    let il1 = un_option il1 [] in
    (il1)
    ]];
 
 
 simplify_cmd:
-  [[ `SIMPLIFY; t=meta_constr -> t]];
+  [[ SIMPLIFY; t=meta_constr -> t]];
 
 hull_cmd:
-  [[ `SLK_HULL; t=meta_constr -> t]];
+  [[ SLK_HULL; t=meta_constr -> t]];
 
 pairwise_cmd:
-  [[ `SLK_PAIRWISE; t=meta_constr -> t]];
+  [[ SLK_PAIRWISE; t=meta_constr -> t]];
 
 shapeinfer_proper_cmd:
-   [[ `SHAPE_INFER_PROP; `OSQUARE;il1=OPT id_list;`CSQUARE; `OSQUARE; il2=OPT id_list;`CSQUARE ->
+   [[ SHAPE_INFER_PROP; OSQUARE;il1=OPT id_list;CSQUARE; OSQUARE; il2=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il1,il2)
    ]];
 
 shapesplit_base_cmd:
-   [[ `SHAPE_SPLIT_BASE; `OSQUARE;il1=OPT id_list;`CSQUARE; `OSQUARE; il2=OPT id_list;`CSQUARE ->
+   [[ SHAPE_SPLIT_BASE; OSQUARE;il1=OPT id_list;CSQUARE; OSQUARE; il2=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    let il2 = un_option il2 [] in
    (il1,il2)
    ]];
 
 shapeElim_cmd:
-   [[ `PRED_ELIM_USELESS; `OSQUARE;il1=OPT id_list;`CSQUARE ->
+   [[ PRED_ELIM_USELESS; OSQUARE;il1=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    (il1)
    ]];
 
 shapeReuseSubs_cmd:
-   [[ `PRED_REUSE_SUBS; `OSQUARE;il1= shape_selective_id_list;`CSQUARE ->
+   [[ PRED_REUSE_SUBS; OSQUARE;il1= shape_selective_id_list;CSQUARE ->
    (* let il1 = un_option il1 [] in *)
    (il1)
    ]];
 
 predUnfold_cmd:
-   [[ `PRED_UNFOLD; arg = qualifier_selective_id_list_bracket ->
-      (* `OSQUARE;il1= shape_selective_id_list;`CSQUARE -> *)
+   [[ PRED_UNFOLD; arg = qualifier_selective_id_list_bracket ->
+      (* OSQUARE;il1= shape_selective_id_list;CSQUARE -> *)
    (* let il1 = un_option il1 [] in *)
    ((arg))
    ]];
 
 shapeReuse_cmd:
-   [[ `PRED_REUSE; `OSQUARE;il1=shape_selective_id_list;`CSQUARE ; `OSQUARE;il2=shape_selective_id_list;`CSQUARE->
+   [[ PRED_REUSE; OSQUARE;il1=shape_selective_id_list;CSQUARE ; OSQUARE;il2=shape_selective_id_list;CSQUARE->
        (il1,il2)
    ]];
 
 
 shapeExtract_cmd:
-   [[ `SHAPE_EXTRACT; `OSQUARE;il1=OPT id_list;`CSQUARE ->
+   [[ SHAPE_EXTRACT; OSQUARE;il1=OPT id_list;CSQUARE ->
    let il1 = un_option il1 [] in
    (il1)
    ]];
 
 shape_selective_id_list:
   [[ il = OPT id_list -> REGEX_LIST (un_option il [])
-   | `STAR -> REGEX_STAR
+   | STAR -> REGEX_STAR
   ]];
 
 shape_selective_id_star_list:
   [[ il = OPT id_star_list -> REGEX_LIST (un_option il [])
-   | `STAR -> REGEX_STAR
+   | STAR -> REGEX_STAR
   ]];
 
 selective_id_list_bracket:
-  [[ `OSQUARE;il1= shape_selective_id_list;`CSQUARE -> il1
+  [[ OSQUARE;il1= shape_selective_id_list;CSQUARE -> il1
   ]];
 
 qualifier_selective_id_list_bracket:
-  [[ qual = OPT id; `OSQUARE;il1= shape_selective_id_list;`CSQUARE ->
+  [[ qual = OPT id; OSQUARE;il1= shape_selective_id_list;CSQUARE ->
      (qual,il1)
   ]];
 
 selective_id_star_list_bracket:
-  [[ `OSQUARE;il1= shape_selective_id_star_list;`CSQUARE -> il1
+  [[ OSQUARE;il1= shape_selective_id_star_list;CSQUARE -> il1
   ]];
 
 data_mark_rec_cmd:
-  [[ `DATA_MARK_REC; `OSQUARE; il=shape_selective_id_star_list; `CSQUARE
+  [[ DATA_MARK_REC; OSQUARE; il=shape_selective_id_star_list; CSQUARE
      ->  il
   ]];
 
 shape_add_dangling_cmd:
-  [[ `SHAPE_ADD_DANGLING; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_ADD_DANGLING; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 shape_unfold_cmd:
-  [[ `SHAPE_UNFOLD; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_UNFOLD; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 shape_param_dangling_cmd:
-  [[ `SHAPE_PARAM_DANGLING; il=selective_id_list_bracket
-                              (* `OSQUARE; il=shape_selective_id_list; `CSQUARE *)
+  [[ SHAPE_PARAM_DANGLING; il=selective_id_list_bracket
+                              (* OSQUARE; il=shape_selective_id_list; CSQUARE *)
      ->  il
   ]];
 
 shape_simplify_cmd:
-  [[ `SHAPE_SIMPLIFY; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_SIMPLIFY; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 shape_merge_cmd:
-  [[ `SHAPE_MERGE; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_MERGE; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 shape_trans_to_view_cmd:
-  [[ `SHAPE_TRANS_TO_VIEW; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_TRANS_TO_VIEW; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 shape_derive_pre_cmd:
-  [[ `SHAPE_DERIVE_PRE; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_DERIVE_PRE; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 shape_derive_post_cmd:
-  [[ `SHAPE_DERIVE_POST; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_DERIVE_POST; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 shape_derive_view_cmd:
-  [[ `SHAPE_DERIVE_VIEW; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_DERIVE_VIEW; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 shape_extn_view_cmd:
-  [[ `SHAPE_EXTN_VIEW; `OSQUARE; il=shape_selective_id_list; `CSQUARE; `WITH; extn=id
+  [[ SHAPE_EXTN_VIEW; OSQUARE; il=shape_selective_id_list; CSQUARE; WITH; extn=id
      ->  (il, extn)
   ]];
 
 shape_normalize_cmd:
-  [[ `SHAPE_NORMALIZE; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ SHAPE_NORMALIZE; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 
 pred_elim_head_cmd:
-  [[ `PRED_ELIM_HEAD; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ PRED_ELIM_HEAD; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 pred_elim_tail_cmd:
-  [[ `PRED_ELIM_TAIL; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ PRED_ELIM_TAIL; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 pred_unify_disj_cmd:
-  [[ `PRED_UNIFY_DISJ; `OSQUARE; il=shape_selective_id_list; `CSQUARE
+  [[ PRED_UNIFY_DISJ; OSQUARE; il=shape_selective_id_list; CSQUARE
      ->  il
   ]];
 
 
 infer_type:
-   [[ `INFER_AT_TERM -> INF_TERM
-   | `INFER_AT_TERM_WO_POST -> INF_TERM_WO_POST
-   | `INFER_AT_FIELD_IMM -> INF_FIELD_IMM
-   | `INFER_AT_PRE -> INF_PRE
-   | `INFER_AT_POST -> INF_POST
-   | `INFER_AT_CLASSIC -> INF_CLASSIC
-   | `INFER_AT_PAR -> INF_PAR
-   | `INFER_AT_VER_POST -> INF_VER_POST
-   | `INFER_IMM_PRE -> INF_IMM_PRE
-   | `INFER_IMM_POST -> INF_IMM_POST
-   | `INFER_AT_IMM -> INF_IMM
-   | `INFER_AT_PURE_FIELD -> INF_PURE_FIELD
-   | `INFER_AT_ARR_AS_VAR -> INF_ARR_AS_VAR
-   | `INFER_AT_SHAPE -> INF_SHAPE
-   | `INFER_AT_SHAPE_PRE -> INF_SHAPE_PRE
-   | `INFER_AT_SHAPE_POST -> INF_SHAPE_POST
-   | `INFER_AT_SHAPE_PRE_POST -> INF_SHAPE_PRE_POST
-   | `INFER_AT_ERROR -> INF_ERROR
-   | `INFER_AT_SIZE -> INF_SIZE
-   | `INFER_ANA_NI -> INF_ANA_NI
-   | `INFER_AT_EFA -> INF_EFA
-   | `INFER_AT_DFA -> INF_DFA
-   | `INFER_AT_DE_EXC -> INF_DE_EXC
-   | `INFER_AT_ERRMUST_ONLY -> INF_ERR_MUST_ONLY
-   | `INFER_AT_ERRMUST -> INF_ERR_MUST
-   | `INFER_AT_PREMUST -> INF_PRE_MUST
-   | `INFER_AT_ERRMAY -> INF_ERR_MAY
-   | `INFER_AT_FLOW -> INF_FLOW
+   [[ INFER_AT_TERM -> INF_TERM
+   | INFER_AT_TERM_WO_POST -> INF_TERM_WO_POST
+   | INFER_AT_FIELD_IMM -> INF_FIELD_IMM
+   | INFER_AT_PRE -> INF_PRE
+   | INFER_AT_POST -> INF_POST
+   | INFER_AT_CLASSIC -> INF_CLASSIC
+   | INFER_AT_PAR -> INF_PAR
+   | INFER_AT_VER_POST -> INF_VER_POST
+   | INFER_IMM_PRE -> INF_IMM_PRE
+   | INFER_IMM_POST -> INF_IMM_POST
+   | INFER_AT_IMM -> INF_IMM
+   | INFER_AT_PURE_FIELD -> INF_PURE_FIELD
+   | INFER_AT_ARR_AS_VAR -> INF_ARR_AS_VAR
+   | INFER_AT_SHAPE -> INF_SHAPE
+   | INFER_AT_SHAPE_PRE -> INF_SHAPE_PRE
+   | INFER_AT_SHAPE_POST -> INF_SHAPE_POST
+   | INFER_AT_SHAPE_PRE_POST -> INF_SHAPE_PRE_POST
+   | INFER_AT_ERROR -> INF_ERROR
+   | INFER_AT_SIZE -> INF_SIZE
+   | INFER_ANA_NI -> INF_ANA_NI
+   | INFER_AT_EFA -> INF_EFA
+   | INFER_AT_DFA -> INF_DFA
+   | INFER_AT_DE_EXC -> INF_DE_EXC
+   | INFER_AT_ERRMUST_ONLY -> INF_ERR_MUST_ONLY
+   | INFER_AT_ERRMUST -> INF_ERR_MUST
+   | INFER_AT_PREMUST -> INF_PRE_MUST
+   | INFER_AT_ERRMAY -> INF_ERR_MAY
+   | INFER_AT_FLOW -> INF_FLOW
    ]];
 
 infer_id:
@@ -2765,28 +3340,28 @@ infer_id:
   ]];
 
 infer_extn_prop:
-  [[ `IDENTIFIER prop -> prop ]];
+  [[ prop = IDENTIFIER -> prop ]];
 
 infer_extn_for_id:
-  [[ `HASH; prop = infer_extn_prop -> [prop]
-   | `HASH; `OBRACE; lst = LIST1 infer_extn_prop SEP `COMMA; `CBRACE -> lst
+  [[ HASH; prop = infer_extn_prop -> [prop]
+   | HASH; OBRACE; lst = LIST1 infer_extn_prop SEP COMMA; CBRACE -> lst
   ]];
 
 infer_type_list:
-    [[ itl = LIST0 infer_id SEP `COMMA -> List.concat itl ]];
+    [[ itl = LIST0 infer_id SEP COMMA -> List.concat itl ]];
 
 (* id_list_w_sqr:                                                     *)
-(*     [[ `OSQUARE; il = OPT id_list; `CSQUARE -> un_option il [] ]]; *)
+(*     [[ OSQUARE; il = OPT id_list; CSQUARE -> un_option il [] ]]; *)
 
 (* id_list_w_itype: *)
-(*   [[ `OSQUARE; t = infer_type; `COMMA; il = id_list; `CSQUARE -> (Some t, il)  *)
-(*    | `OSQUARE; il = OPT id_list; `CSQUARE -> (None, un_option il []) *)
-(*    | `OSQUARE; t = infer_type; `CSQUARE -> (Some t, []) *)
+(*   [[ OSQUARE; t = infer_type; COMMA; il = id_list; CSQUARE -> (Some t, il)  *)
+(*    | OSQUARE; il = OPT id_list; CSQUARE -> (None, un_option il []) *)
+(*    | OSQUARE; t = infer_type; CSQUARE -> (Some t, []) *)
 (*   ]]; *)
 
 
 infer_cmd:
-  [[ `INFER; il_w_itype = cid_list_w_itype; t=meta_constr; `DERIVE; b=extended_meta_constr ->
+  [[ INFER; il_w_itype = cid_list_w_itype; t=meta_constr; DERIVE; b=extended_meta_constr ->
       (* let inf_o = new Globals.inf_obj_sub (\* Globals.clone_sub_infer_const_obj () *\) (\* Globals.infer_const_obj # clone *\) in *)
       (* let (i_consts,ivl) = List.fold_left  *)
       (*   (fun (lst_l,lst_r) e -> match e with FstAns l -> (l::lst_l,lst_r)  *)
@@ -2795,11 +3370,11 @@ infer_cmd:
       let (_,i_consts,ivl) = conv_ivars_icmd il_w_itype in
     (* let k, il = un_option il_w_itype (None, [])  *)
       (i_consts,ivl,t,b,None)
-    | `INFER_EXACT;  il_w_itype = cid_list_w_itype (* il=OPT id_list *); t=meta_constr; `DERIVE; b=extended_meta_constr ->
+    | INFER_EXACT;  il_w_itype = cid_list_w_itype (* il=OPT id_list *); t=meta_constr; DERIVE; b=extended_meta_constr ->
       let (_,i_consts,il) = conv_ivars_icmd il_w_itype in
       (* let il = un_option il [] in  *)
       (i_consts,il,t,b,Some true)
-    | `INFER_INEXACT; il_w_itype = cid_list_w_itype (* il=OPT id_list *); t=meta_constr; `DERIVE; b=extended_meta_constr ->
+    | INFER_INEXACT; il_w_itype = cid_list_w_itype (* il=OPT id_list *); t=meta_constr; DERIVE; b=extended_meta_constr ->
       let (_,i_consts,il) = conv_ivars_icmd il_w_itype in
       let i_consts = List.filter (fun i -> i!=INF_CLASSIC) i_consts in
       (* let il = un_option il [] in  *)
@@ -2807,40 +3382,40 @@ infer_cmd:
   ]];
 
 captureresidue_cmd:
-  [[ `CAPTURERESIDUE; `DOLLAR; `IDENTIFIER id -> id ]];
+  [[ CAPTURERESIDUE; DOLLAR; id = IDENTIFIER -> id ]];
 
 compose_cmd:
-  [[ `COMPOSE; `OSQUARE; il=id_list; `CSQUARE; `OPAREN; mc1=meta_constr; `SEMICOLON; mc2=meta_constr; `CPAREN ->(il, mc1, mc2)
-   | `COMPOSE; `OPAREN; mc1=meta_constr; `SEMICOLON; mc2=meta_constr; `CPAREN -> ([], mc1, mc2)]];
+  [[ COMPOSE; OSQUARE; il=id_list; CSQUARE; OPAREN; mc1=meta_constr; SEMICOLON; mc2=meta_constr; CPAREN ->(il, mc1, mc2)
+   | COMPOSE; OPAREN; mc1=meta_constr; SEMICOLON; mc2=meta_constr; CPAREN -> ([], mc1, mc2)]];
 
 
 print_cmd:
-  [[ `PRINT; `IDENTIFIER id;
+  [[ PRINT; id = IDENTIFIER;
         ilopt=OPT selective_id_star_list_bracket  ->
         (* let ilopt = map_opt (List.map () lst) ilopt in *)
         PCmd (id,ilopt)
-   | `PRINT; `DATA;
+   | PRINT; DATA;
         ilopt=OPT selective_id_star_list_bracket  ->
         PCmd ("data",ilopt)
-   | `PRINT; `DOLLAR; `IDENTIFIER id  -> PVar id
-   | `PRINT_LEMMAS  -> PCmd ("lemmas",None)
-   (* | `PRINT_VIEW  -> PCmd "view" *)
-   (* | `PRINT_VIEW_LONG  -> PCmd "view_long" *)
+   | PRINT; DOLLAR; id = IDENTIFIER  -> PVar id
+   | PRINT_LEMMAS  -> PCmd ("lemmas",None)
+   (* | PRINT_VIEW  -> PCmd "view" *)
+   (* | PRINT_VIEW_LONG  -> PCmd "view_long" *)
   ]];
 
 cmp_cmd:
-  [[ `CMP; `IDENTIFIER id ; `OSQUARE; il=OPT id_list; `CSQUARE ; `COLON; fl = LIST1 meta_constr SEP `COMMA  ->
+  [[ CMP; id = IDENTIFIER ; OSQUARE; il=OPT id_list; CSQUARE ; COLON; fl = LIST1 meta_constr SEP COMMA  ->
   let il = un_option il [] in (il,id,fl)]];
 
 time_cmd:
-  [[ `DTIME; `ON; `IDENTIFIER id   -> Time(true, id, get_pos_camlp4 _loc 1)
-   | `DTIME; `OFF; `IDENTIFIER id  -> Time(false, id, get_pos_camlp4 _loc 1)]];
+  [[ DTIME; ON; id = IDENTIFIER   -> Time(true, id, get_pos_camlp4 _loc 1)
+   | DTIME; OFF; id = IDENTIFIER  -> Time(false, id, get_pos_camlp4 _loc 1)]];
 
 let_decl:
-  [[ `LET; `DOLLAR; `IDENTIFIER id; `EQ; mc=meta_constr ->	LetDef (id, mc)]];
+  [[ LET; DOLLAR; id = IDENTIFIER; EQ; mc=meta_constr ->	LetDef (id, mc)]];
 
 extended_meta_constr:
-  [[ `DOLLAR;`IDENTIFIER id  -> MetaVar id
+  [[ DOLLAR;id = IDENTIFIER  -> MetaVar id
     | f=  formulas         -> MetaEForm (F.subst_stub_flow_struc n_flow (fst f))
     | f = extended_l2   ->  MetaEForm (F.subst_stub_flow_struc n_flow f)
     | f=  disjunctive_constr     -> MetaEForm (F.formula_to_struc_formula (F.subst_stub_flow n_flow f))
@@ -2848,7 +3423,7 @@ extended_meta_constr:
     | c = compose_cmd           -> MetaCompose c]];
 
 meta_constr:
-  [[ `DOLLAR; `IDENTIFIER id -> MetaVar id
+  [[ DOLLAR; id = IDENTIFIER -> MetaVar id
    | d=disjunctive_constr    -> MetaForm (F.subst_stub_flow n_flow d)
    | c=compose_cmd           -> MetaCompose c]];
 
@@ -2878,7 +3453,7 @@ coercion_decl:
 
 coercion_decl_list:
     [[
-        coerc = LIST1 coercion_decl SEP `SEMICOLON -> {
+        coerc = LIST1 coercion_decl SEP SEMICOLON -> {
             coercion_list_elems = coerc;
             coercion_list_kind  = LEM;
         }
@@ -2894,7 +3469,7 @@ infer_coercion_decl:
 
 (* infer_coercion_decl_list: *)
 (*     [[ *)
-(*         coerc = LIST1 infer_coercion_decl SEP `SEMICOLON -> { *)
+(*         coerc = LIST1 infer_coercion_decl SEP SEMICOLON -> { *)
 (*             coercion_list_elems = coerc; *)
 (*             coercion_list_kind  = LEM; *)
 (*         } *)
@@ -2902,35 +3477,35 @@ infer_coercion_decl:
 
 coerc_decl_aux:
     [[
-      `LEMMA TLEM_INFER; t = infer_coercion_decl ->
+      LEMMA "TLEM_INFER"; t = infer_coercion_decl ->
           let t = {t with coercion_kind = LEM_INFER;} in
           { coercion_list_elems = [t];
             coercion_list_kind  = LEM_INFER }
-      | `LEMMA TLEM_INFER_PRED; t = infer_coercion_decl ->
+      | LEMMA "TLEM_INFER_PRED"; t = infer_coercion_decl ->
             let t = {t with coercion_kind = LEM_INFER_PRED;} in
           { coercion_list_elems = [t];
           coercion_list_kind  = LEM_INFER_PRED }
-      (* | `LEMMA TLEM_INFER; `OSQUARE; t = infer_coercion_decl_list; `CSQUARE ->  *)
+      (* | LEMMA "TLEM_INFER"; OSQUARE; t = infer_coercion_decl_list; CSQUARE ->  *)
       (*     { t with coercion_list_kind = LEM_INFER } *)
-      | `LEMMA kind;t = coercion_decl ->
-            let k = convert_lem_kind kind in
+      | kind = LEMMA;t = coercion_decl ->
+            let k = convert_lem_kind (lemma_kind_of_string kind) in
             let t = {t with coercion_kind = k;} in
           { coercion_list_elems = [t];
             coercion_list_kind  = k }
-      | `LEMMA kind; `OSQUARE; t = coercion_decl_list; `CSQUARE ->
-            let k = convert_lem_kind kind in
+      | kind = LEMMA; OSQUARE; t = coercion_decl_list; CSQUARE ->
+            let k = convert_lem_kind (lemma_kind_of_string kind) in
             let t = {t with coercion_list_elems= List.map (fun l -> {l with coercion_kind = k;}) t.coercion_list_elems} in
           { t with coercion_list_kind = k }
     ]];
 
 coercion_direction:
-  [[ `LEFTARROW  -> Left
-   | `EQUIV      -> Equiv
-   | `RIGHTARROW -> Right]];
+  [[ LEFTARROW  -> Left
+   | EQUIV      -> Equiv
+   | RIGHTARROW -> Right]];
 
 opt_name: [[t= OPT name-> un_option t ""]];
 
-name:[[ `STRING(_,id)  -> id]];
+name:[[ id = STRING  -> id]];
 
 typ:
   [[ peek_array_type; t=array_type     -> (* An Hoa *) (* let () = print_endline "Parsed array type" in *) t
@@ -2938,17 +3513,17 @@ typ:
    | t=non_array_type -> (* An Hoa *) (* let () = print_endline "Parsed a non-array type" in *) t]];
 
 non_array_type:
-  [[ `VOID               -> void_type
-   | `INT                -> int_type
-   | `ANN_KEY           -> ann_type
-   | `FLOAT              -> float_type
-   | `INFINT_TYPE        -> infint_type
-   | `BOOL               -> bool_type
-   | `BAG               -> bag_type
-   | `ABSTRACT          -> void_type
-   | `BAG; `OPAREN; t = non_array_type ; `CPAREN -> BagT t
-   | `IDENTIFIER id      -> Named id
-   | `OPAREN; t1=non_array_type; `COMMA; t2=non_array_type; `CPAREN -> Tup2 (t1,t2)
+  [[ VOID               -> void_type
+   | INT                -> int_type
+   | ANN_KEY           -> ann_type
+   | FLOAT              -> float_type
+   | INFINT_TYPE        -> infint_type
+   | BOOL               -> bool_type
+   | BAG               -> bag_type
+   | ABSTRACT          -> void_type
+   | BAG; OPAREN; t = non_array_type ; CPAREN -> BagT t
+   | id = IDENTIFIER      -> Named id
+   | OPAREN; t1=non_array_type; COMMA; t2=non_array_type; CPAREN -> Tup2 (t1,t2)
    | t=rel_header_view   -> let tl,_ = List.split t.Iast.rel_typed_vars in RelT tl ]];
 
 pointer_type:
@@ -2961,47 +3536,47 @@ pointer_type:
   pointer_t
    ]];
 
-star_list: [[`STAR; s = OPT SELF -> 1 + (un_option s 0)]];
+star_list: [[STAR; s = OPT SELF -> 1 + (un_option s 0)]];
 
 array_type:
   [[ (* t=array_type; r=rank_specifier -> Array (t, None)
   | *) t=non_array_type; r=rank_specifier -> Array (t, r)]];
 
 rank_specifier:
-  [[`OSQUARE; c = OPT comma_list; `CSQUARE -> un_option c 1]];
+  [[OSQUARE; c = OPT comma_list; CSQUARE -> un_option c 1]];
 
-comma_list: [[`COMMA; s = OPT SELF -> 1 + (un_option s 1)]];
+comma_list: [[COMMA; s = OPT SELF -> 1 + (un_option s 1)]];
 
-id_list_opt:[[t= LIST0 id SEP `COMMA ->t]];
+id_list_opt:[[t= LIST0 id SEP COMMA ->t]];
 
-int_list:[[t= LIST1 integer_literal SEP `SEMICOLON ->t]];
+int_list:[[t= LIST1 integer_literal SEP SEMICOLON ->t]];
 
-list_int_list:[[t= LIST1 int_list SEP `COMMA ->t]];
+list_int_list:[[t= LIST1 int_list SEP COMMA ->t]];
 
-id_star_list:[[t=LIST1 id_star SEP `COMMA -> t]];
+id_star_list:[[t=LIST1 id_star SEP COMMA -> t]];
 
-id_list:[[t=LIST1 id SEP `COMMA -> t]];
+id_list:[[t=LIST1 id SEP COMMA -> t]];
 
-id_list_w_brace: [[`OBRACE; t=id_list; `CBRACE -> t]];
+id_list_w_brace: [[OBRACE; t=id_list; CBRACE -> t]];
 
-id:[[`IDENTIFIER id-> id]];
+id:[[id = IDENTIFIER-> id]];
 
-triv_star:[[`STAR -> 1]];
+triv_star:[[STAR -> 1]];
 
-id_star:[[`IDENTIFIER id; v = OPT triv_star ->
+id_star:[[id = IDENTIFIER; v = OPT triv_star ->
           let v = match v with None -> false | Some _ -> true in
           (id,v)]];
 
 (********** Higher Order Preds *******)
 
 hopred_decl:
-    [[`HPRED; h=hpred_header; `EXTENDS; b=ext_form
+    [[HPRED; h=hpred_header; EXTENDS; b=ext_form
                                       -> mkHoPred  (fst (fst h)) "extends" [(fst b)] (snd (fst h)) (fst (snd h)) (snd (snd h)) (snd b) (P.mkTrue no_pos)
-	   | `HPRED; h=hpred_header; `REFINES;  b=ext_form
+	   | HPRED; h=hpred_header; REFINES;  b=ext_form
                                          -> mkHoPred  (fst (fst h)) "refines" [(fst b)] (snd (fst h)) (fst (snd h)) (snd (snd h)) (snd b) (P.mkTrue no_pos)
-       | `HPRED; h=hpred_header; `JOIN; s=split_combine
+       | HPRED; h=hpred_header; JOIN; s=split_combine
                                       -> mkHoPred (fst (fst h)) "split_combine" [] [] [] [] [] (P.mkTrue no_pos)
-	   | `HPRED; h=hpred_header;  `EQEQ; s=shape; oi= opt_inv; `SEMICOLON
+	   | HPRED; h=hpred_header;  EQEQ; s=shape; oi= opt_inv; SEMICOLON
            ->
                let (oi, _) = oi in
                mkHoPred (fst (fst h)) "pure_higherorder_pred" [] (snd (fst h)) (fst (snd h)) (snd (snd h)) [s] oi]];
@@ -3010,53 +3585,53 @@ shape: [[ t= formulas -> fst t]];
 
 split_combine:
   [[ h=hpred_header -> ()
-   | h=hpred_header; `SPLIT; t=SELF -> ()
-   | h=hpred_header; `COMBINE; t=SELF -> ()]];
+   | h=hpred_header; SPLIT; t=SELF -> ()
+   | h=hpred_header; COMBINE; t=SELF -> ()]];
 
-ext_form: [[ h=hpred_header;	`WITH; `OBRACE; t=ho_fct_def_list; `CBRACE ->("",[])]];
+ext_form: [[ h=hpred_header;	WITH; OBRACE; t=ho_fct_def_list; CBRACE ->("",[])]];
 
-ho_fct_header: [[`IDENTIFIER id; `OPAREN; f= fct_arg_list; `CPAREN -> f]];
+ho_fct_header: [[id = IDENTIFIER; OPAREN; f= fct_arg_list; CPAREN -> f]];
 
-ho_fct_def:	[[ h=ho_fct_header; `EQ; s=shape -> ()]];
+ho_fct_def:	[[ h=ho_fct_header; EQ; s=shape -> ()]];
 
 ho_fct_def_list: [[t = LIST1 ho_fct_def  -> ()]];
 
-hpred_header: [[`IDENTIFIER id; t=opt_type_var_list; `LT; t2=opt_typed_arg_list; `GT; t3=opt_fct_list -> ((id,t),(t2,t3))]];
+hpred_header: [[id = IDENTIFIER; t=opt_type_var_list; LT; t2=opt_typed_arg_list; GT; t3=opt_fct_list -> ((id,t),(t2,t3))]];
 
 typed_arg:
    [[ t=typ -> ()
-    | `SET;  `OSQUARE; t=typ;  `CSQUARE -> ()
-    | `SET;  `OSQUARE; t=typ;  `CSQUARE; `COLON; t3=SELF -> ()
-    | t=typ; `OSQUARE; t2=typ; `CSQUARE -> ()
-    | t=typ; `OSQUARE; t2=typ; `CSQUARE; `COLON; t3=SELF -> ()
-    | t=typ; `COLON;   t2=SELF -> ()]];
+    | SET;  OSQUARE; t=typ;  CSQUARE -> ()
+    | SET;  OSQUARE; t=typ;  CSQUARE; COLON; t3=SELF -> ()
+    | t=typ; OSQUARE; t2=typ; CSQUARE -> ()
+    | t=typ; OSQUARE; t2=typ; CSQUARE; COLON; t3=SELF -> ()
+    | t=typ; COLON;   t2=SELF -> ()]];
 
-opt_typed_arg_list: [[t=LIST0 typed_arg SEP `COMMA -> [] ]];
+opt_typed_arg_list: [[t=LIST0 typed_arg SEP COMMA -> [] ]];
 
 type_var:
    [[ t= typ -> ()
-    | `SET; `OSQUARE; t=typ; `CSQUARE -> ()
-    | t=typ; `OSQUARE; t2=typ; `CSQUARE -> ()]];
+    | SET; OSQUARE; t=typ; CSQUARE -> ()
+    | t=typ; OSQUARE; t2=typ; CSQUARE -> ()]];
 
-type_var_list: [[`OSQUARE; t= LIST1 type_var SEP `COMMA; `CSQUARE -> ()]];
+type_var_list: [[OSQUARE; t= LIST1 type_var SEP COMMA; CSQUARE -> ()]];
 
 opt_type_var_list: [[ t= OPT type_var_list -> [] ]];
 
-fct_arg_list: [[ t=LIST1 cid SEP `COMMA -> t]];
+fct_arg_list: [[ t=LIST1 cid SEP COMMA -> t]];
 
-fct_list: [[ `OSQUARE; t=fct_arg_list; `CSQUARE -> [] ]];
+fct_list: [[ OSQUARE; t=fct_arg_list; CSQUARE -> ([] : string list) ]];
 
-opt_fct_list:[[ t = OPT fct_list -> []]];
+opt_fct_list:[[ t = OPT fct_list -> ([] : string list)]];
 
 (*** Function declaration ***)
 func_decl:
   [[ fh=func_header -> fh
   ]];
 
-func_typed_id_list_opt: [[ t = LIST1 typed_id_list SEP `COMMA -> t ]];
+func_typed_id_list_opt: [[ t = LIST1 typed_id_list SEP COMMA -> t ]];
 
 func_header:
-  [[ `FUNC; `IDENTIFIER id; `OPAREN; tl= func_typed_id_list_opt; `CPAREN ->
+  [[ FUNC; id = IDENTIFIER; OPAREN; tl= func_typed_id_list_opt; CPAREN ->
       let () = func_names # push id in
       { func_name = id;
         func_typed_vars = tl;
@@ -3064,47 +3639,47 @@ func_header:
   ]];
 
 (************ An Hoa :: Relations ************)
-rel_decl:[[ rh=rel_header; `EQEQ; rb=rel_body (* opt_inv *) ->
+rel_decl:[[ rh=rel_header; EQEQ; rb=rel_body (* opt_inv *) ->
 
 	{ rh with rel_formula = rb (* (fst $3) *); (* rel_invariant = $4; *) }
 	(* [4/10/2011] allow for declaration of relation without body; such relations are constant true and need to be axiomatized using axioms declarations. *)
 	| rh=rel_header -> rh
-  | rh = rel_header; `EQ -> report_error (get_pos_camlp4 _loc 2) ("use == to define a relation")
+  | rh = rel_header; EQ -> report_error (get_pos_camlp4 _loc 2) ("use == to define a relation")
 ]];
 
-typed_id_list:[[ t = typ; `IDENTIFIER id ->  (t,id) ]];
+typed_id_list:[[ t = typ; id = IDENTIFIER ->  (t,id) ]];
 
 id_part_ann: [[
-    `IDENTIFIER id-> (id,-1)
-  | `IDENTIFIER id; `COLON; t=integer_literal-> (id, t)
+    id = IDENTIFIER-> (id,-1)
+  | id = IDENTIFIER; COLON; t=integer_literal-> (id, t)
 ]]
 ;
 
-(* typed_id_inst_list_old:[[ t = typ; `IDENTIFIER id ->  (t,id, Globals.I)                    *)
-(*   |  t = typ; `NI; `IDENTIFIER id->  (t,id, Globals.NI)                                    *)
-(*   | t = typ; `RO; `IDENTIFIER id -> let () = pred_root_id := id in (t,id, Globals.I)        *)
-(*   |  t = typ; `NI; `RO; `IDENTIFIER id->  let () = pred_root_id := id in (t,id, Globals.NI) *)
-(*   |  t = typ; `RO; `NI; `IDENTIFIER id->  let () = pred_root_id := id in (t,id, Globals.NI) *)
+(* typed_id_inst_list_old:[[ t = typ; id = IDENTIFIER ->  (t,id, Globals.I)                    *)
+(*   |  t = typ; NI; id = IDENTIFIER->  (t,id, Globals.NI)                                    *)
+(*   | t = typ; RO; id = IDENTIFIER -> let () = pred_root_id := id in (t,id, Globals.I)        *)
+(*   |  t = typ; NI; RO; id = IDENTIFIER->  let () = pred_root_id := id in (t,id, Globals.NI) *)
+(*   |  t = typ; RO; NI; id = IDENTIFIER->  let () = pred_root_id := id in (t,id, Globals.NI) *)
 (*  ]];                                                                                       *)
 
 typed_id_inst_list:[[ t = typ; id_ann = id_part_ann ->  (t,id_ann, Globals.I)
-  |  t = typ; `NI; id_ann = id_part_ann ->  (t,id_ann, Globals.NI)
-  | t = typ; `RO; (id,n) = id_part_ann -> let () = pred_root_id := id in (t,(id,n), Globals.I)
-  |  t = typ; `NI; `RO; (id,n) = id_part_ann->  let () = pred_root_id := id in (t,(id,n), Globals.NI)
-  |  t = typ; `RO; `NI; (id,n) = id_part_ann->  let () = pred_root_id := id in (t,(id,n), Globals.NI)
+  |  t = typ; NI; id_ann = id_part_ann ->  (t,id_ann, Globals.NI)
+  | t = typ; RO; (id,n) = id_part_ann -> let () = pred_root_id := id in (t,(id,n), Globals.I)
+  |  t = typ; NI; RO; (id,n) = id_part_ann->  let () = pred_root_id := id in (t,(id,n), Globals.NI)
+  |  t = typ; RO; NI; (id,n) = id_part_ann->  let () = pred_root_id := id in (t,(id,n), Globals.NI)
  ]];
 
 
-typed_id_list_opt: [[ t = LIST0 typed_id_list SEP `COMMA -> t ]];
+typed_id_list_opt: [[ t = LIST0 typed_id_list SEP COMMA -> t ]];
 
-typed_id_inst_list_opt: [[ t = LIST0 typed_id_inst_list SEP `COMMA -> t ]];
+typed_id_inst_list_opt: [[ t = LIST0 typed_id_inst_list SEP COMMA -> t ]];
 
 typed_default_id_list:[[ t = typ  ->  (t,default_rel_id) ]];
 
-typed_default_id_list_opt: [[ t = LIST0 typed_default_id_list SEP `COMMA -> t ]];
+typed_default_id_list_opt: [[ t = LIST0 typed_default_id_list SEP COMMA -> t ]];
 
 rel_header:[[
-`REL; `IDENTIFIER id; `OPAREN; tl= typed_id_list_opt; (* opt_ann_cid_list *) `CPAREN  ->
+REL; id = IDENTIFIER; OPAREN; tl= typed_id_list_opt; (* opt_ann_cid_list *) CPAREN  ->
     (* let cids, anns = List.split $4 in
     let cids, br_labels = List.split cids in
 	  if List.exists
@@ -3122,7 +3697,7 @@ rel_header:[[
 ]];
 
 rel_header_view:[[
-  `REL; `OPAREN; tl= typed_default_id_list_opt; (* opt_ann_cid_list *) `CPAREN  ->
+  REL; OPAREN; tl= typed_default_id_list_opt; (* opt_ann_cid_list *) CPAREN  ->
   let rd = { rel_name = "";
 			rel_typed_vars = tl;
 			rel_formula = P.mkTrue (get_pos_camlp4 _loc 1); (* F.mkETrue top_flow (get_pos_camlp4 _loc 1); *)
@@ -3137,7 +3712,7 @@ rel_body:[[ (* formulas {
 ]];
 
 (* Template Definition *)
-templ_decl: [[ `TEMPLATE; t = typ; `IDENTIFIER id; `OPAREN; tl = typed_id_list_opt; `CPAREN; b = OPT templ_body ->
+templ_decl: [[ TEMPLATE; t = typ; id = IDENTIFIER; OPAREN; tl = typed_id_list_opt; CPAREN; b = OPT templ_body ->
   let () = templ_names # push id in
   let tdef = {
     templ_name = id;
@@ -3147,13 +3722,13 @@ templ_decl: [[ `TEMPLATE; t = typ; `IDENTIFIER id; `OPAREN; tl = typed_id_list_o
     templ_pos = get_pos_camlp4 _loc 1; } in
   tdef ]];
 
-templ_body: [[ `EQEQ; pc = cexp -> pc ]];
+templ_body: [[ EQEQ; pc = cexp -> pc ]];
 
 (* Unknown Temporal Definition *)
-ut_fname: [[ `AT; `IDENTIFIER fn -> fn ]];
+ut_fname: [[ AT; fn = IDENTIFIER -> fn ]];
 
 ut_decl:
-  [[ `UTPRE; fn = OPT ut_fname; `IDENTIFIER id; `OPAREN; tl = typed_id_list_opt; `CPAREN ->
+  [[ UTPRE; fn = OPT ut_fname; id = IDENTIFIER; OPAREN; tl = typed_id_list_opt; CPAREN ->
       let fname = un_option fn "" in
       let () = ut_names # push (id, fname, true) in
       let utdef = {
@@ -3163,7 +3738,7 @@ ut_decl:
         ut_is_pre = true;
         ut_pos = get_pos_camlp4 _loc 1; }
       in utdef
-  | `UTPOST; fn = OPT ut_fname; `IDENTIFIER id; `OPAREN; tl = typed_id_list_opt; `CPAREN ->
+  | UTPOST; fn = OPT ut_fname; id = IDENTIFIER; OPAREN; tl = typed_id_list_opt; CPAREN ->
       let fname = un_option fn "" in
       let () = ut_names # push (id, fname, false) in
       let utdef = {
@@ -3177,7 +3752,7 @@ ut_decl:
 
 (* Unknown Imm Definition *)
 ui_decl:
-  [[ `UIPRE; `IDENTIFIER id; `OPAREN; tl= typed_id_list_opt; (* opt_ann_cid_list *) `CPAREN  ->
+  [[ UIPRE; id = IDENTIFIER; OPAREN; tl= typed_id_list_opt; (* opt_ann_cid_list *) CPAREN  ->
       let () = ui_names # push (id, true) in
       let () = rel_names # push id in
       let rel = { rel_name = id; rel_typed_vars = tl;
@@ -3187,7 +3762,7 @@ ui_decl:
         ui_is_pre = true;
         ui_pos = get_pos_camlp4 _loc 1; }
       in uimmdef
-  | `UIPOST; `IDENTIFIER id; `OPAREN; tl= typed_id_list_opt; (* opt_ann_cid_list *) `CPAREN  ->
+  | UIPOST; id = IDENTIFIER; OPAREN; tl= typed_id_list_opt; (* opt_ann_cid_list *) CPAREN  ->
       let () = ui_names # push (id, false) in
       let () = rel_names # push id in
       let rel = { rel_name = id; rel_typed_vars = tl;
@@ -3200,14 +3775,14 @@ ui_decl:
   ]];
 
 axiom_decl:[[
-	`AXIOM; lhs=pure_constr; `ESCAPE; rhs=pure_constr ->
+	AXIOM; lhs=pure_constr; ESCAPE; rhs=pure_constr ->
 		{ axiom_id = fresh_int ();
 			axiom_hypothesis = lhs;
 		  axiom_conclusion = rhs; }
 ]];
 
 hp_decl:[[
-`HP; `IDENTIFIER id; `OPAREN; tl0= typed_id_inst_list_opt; (* opt_ann_cid_list *) `CPAREN  ->
+HP; id = IDENTIFIER; OPAREN; tl0= typed_id_inst_list_opt; (* opt_ann_cid_list *) CPAREN  ->
     let () = hp_names # push id in
     let tl, parts = pred_get_args_partition tl0 in
     let root_pos =  pred_get_root_pos !pred_root_id tl in
@@ -3225,7 +3800,7 @@ hp_decl:[[
     (*     hp_is_pre = true; *)
     (*     hp_formula =  F.mkBase F.HEmp (P.mkTrue (get_pos_camlp4 _loc 1)) VP.empty_vperm_sets top_flow [] (get_pos_camlp4 _loc 1); *)
     (* } *)
-  | `HPPOST; `IDENTIFIER id; `OPAREN; tl0= typed_id_inst_list_opt; (* opt_ann_cid_list *) `CPAREN  ->
+  | HPPOST; id = IDENTIFIER; OPAREN; tl0= typed_id_inst_list_opt; (* opt_ann_cid_list *) CPAREN  ->
     let () = hp_names # push id in
     let tl, parts = pred_get_args_partition tl0 in
     let root_pos =  pred_get_root_pos !pred_root_id tl in
@@ -3350,77 +3925,77 @@ mdecl:
 	  |t=decl -> [t]]];
 
 decl:
-  [[ `HIP_INCLUDE; `PRIME; ic = dir_path ; `PRIME -> Include ic
+  [[ HIP_INCLUDE; PRIME; ic = dir_path ; PRIME -> Include ic
 	|  t=type_decl                  -> Type t
-  |  r=func_decl; `DOT -> Func r
-  |  r=rel_decl; `DOT -> Rel r (* An Hoa *)
-  |  r=templ_decl; `DOT -> Template r
-  |  r=ut_decl; `DOT -> Ut r
-  |  r=ui_decl; `DOT -> Ui r
-  |  r=hp_decl; `DOT -> Hp r
-  |  a=axiom_decl; `DOT -> Axm a (* [4/10/2011] An Hoa *)
+  |  r=func_decl; DOT -> Func r
+  |  r=rel_decl; DOT -> Rel r (* An Hoa *)
+  |  r=templ_decl; DOT -> Template r
+  |  r=ut_decl; DOT -> Ut r
+  |  r=ui_decl; DOT -> Ui r
+  |  r=hp_decl; DOT -> Hp r
+  |  a=axiom_decl; DOT -> Axm a (* [4/10/2011] An Hoa *)
   |  g=global_var_decl            -> Global_var g
   |  l=logical_var_decl -> Logical_var l
   |  p=proc_decl                  -> Proc p
-  | `RLEMMA ; c= coercion_decl; `SEMICOLON    -> let c =  {c with coercion_kind = RLEM} in
+  | RLEMMA ; c= coercion_decl; SEMICOLON    -> let c =  {c with coercion_kind = RLEM} in
                                                  Coercion_list { coercion_list_elems = [c];
                                                                  coercion_list_kind = RLEM}
-  | `RLEMMA ; c= coercion_decl; `DOT    -> let c =  {c with coercion_kind = RLEM} in
+  | RLEMMA ; c= coercion_decl; DOT    -> let c =  {c with coercion_kind = RLEM} in
                                                  Coercion_list { coercion_list_elems = [c];
                                                                  coercion_list_kind = RLEM}
-  | `LEMMA kind; c= coercion_decl; `SEMICOLON    ->
-        let k = convert_lem_kind kind in
+  | kind = LEMMA; c= coercion_decl; SEMICOLON    ->
+        let k = convert_lem_kind (lemma_kind_of_string kind) in
         let c = {c with coercion_kind = k;} in
         Coercion_list
         { coercion_list_elems = [c];
           coercion_list_kind  = k}
-  | `LEMMA kind; c= coercion_decl; `DOT    ->
-        let k = convert_lem_kind kind in
+  | kind = LEMMA; c= coercion_decl; DOT    ->
+        let k = convert_lem_kind (lemma_kind_of_string kind) in
         let c = {c with coercion_kind = k;} in
         Coercion_list
         { coercion_list_elems = [c];
           coercion_list_kind  = k}
-  | `LEMMA kind(* lex *); c = coercion_decl_list; `SEMICOLON    -> Coercion_list {c with (* coercion_exact = false *) coercion_list_kind = convert_lem_kind kind}
-  | `LEMMA kind(* lex *); c = coercion_decl_list; `DOT    -> Coercion_list {c with (* coercion_exact = false *) coercion_list_kind = convert_lem_kind kind}
+  | kind = LEMMA(* lex *); c = coercion_decl_list; SEMICOLON    -> Coercion_list {c with (* coercion_exact = false *) coercion_list_kind = convert_lem_kind (lemma_kind_of_string kind)}
+  | kind = LEMMA(* lex *); c = coercion_decl_list; DOT    -> Coercion_list {c with (* coercion_exact = false *) coercion_list_kind = convert_lem_kind (lemma_kind_of_string kind)}
   ]];
 
-dir_path: [[t = LIST1 file_name SEP `DIV ->
+dir_path: [[t = LIST1 file_name SEP DIV ->
     let str  = List.fold_left (fun res str -> res^str^"/") "" t in
     let len = String.length str in
     Str.string_before str (len-1)
            ]];
 
-file_name: [[ `DOTDOT -> ".."
-              | `IDENTIFIER id -> id
+file_name: [[ DOTDOT -> ".."
+              | id = IDENTIFIER -> id
             ]];
 
 opt_pred:
-  [[ OPT [ x = `PRED] -> 1]];
+  [[ OPT [ x = PRED] -> 1]];
 type_decl:
   [[ t= data_decl  -> Data t
    | t= template_data_decl  -> Data t
    | c=class_decl -> Data c
    | e=enum_decl  -> Enum e
-   | peek_view_decl; o = opt_pred; v=view_decl; `SEMICOLON -> View v
-   | peek_view_decl; o = opt_pred; v=view_decl; `DOT -> View v
-   | `PRED_PRIM; v = prim_view_decl; `SEMICOLON    -> View v
-   | `PRED_EXT;v= view_decl_ext  ; `SEMICOLON   -> View v
-   | b=barrier_decl ; `SEMICOLON   -> Barrier b
+   | peek_view_decl; o = opt_pred; v=view_decl; SEMICOLON -> View v
+   | peek_view_decl; o = opt_pred; v=view_decl; DOT -> View v
+   | PRED_PRIM; v = prim_view_decl; SEMICOLON    -> View v
+   | PRED_EXT;v= view_decl_ext  ; SEMICOLON   -> View v
+   | b=barrier_decl ; SEMICOLON   -> Barrier b
    | h=hopred_decl-> Hopred h ]];
 
 
 (***************** Global_variable **************)
 global_var_decl:
-  [[ `GLOBAL; lvt=local_variable_type; vd=variable_declarators; `SEMICOLON -> mkGlobalVarDecl lvt vd (get_pos_camlp4 _loc 1)]];
+  [[ GLOBAL; lvt=local_variable_type; vd=variable_declarators; SEMICOLON -> mkGlobalVarDecl lvt vd (get_pos_camlp4 _loc 1)]];
 
 logical_var_decl:
-  [[ `LOGICAL; lvt=local_variable_type; vd=variable_declarators; `SEMICOLON ->
+  [[ LOGICAL; lvt=local_variable_type; vd=variable_declarators; SEMICOLON ->
         mkLogicalVarDecl lvt vd (get_pos_camlp4 _loc 1)
   ]];
 
 (**************** Class ******************)
 class_decl:
-  [[ `CLASS; `IDENTIFIER id; par=OPT extends; ml=class_body ->
+  [[ CLASS; id = IDENTIFIER; par=OPT extends; ml=class_body ->
       let t1, t2, t3 = split_members ml in
 		(* An Hoa [22/08/2011] : blindly add the members as non-inline because we do not support inline fields in classes. TODO revise. *)
 		let t1 = List.map (fun ((t,id), p) -> ((t,id), p, false, (gen_field_ann t) (* F_NO_ANN *))) t1 in
@@ -3435,22 +4010,22 @@ class_decl:
       let todo_unk = List.map (fun d -> set_proc_data_decl d cdef) t3 in
       cdef]];
 
-extends: [[`EXTENDS; `IDENTIFIER id -> id]];
+extends: [[EXTENDS; id = IDENTIFIER -> id]];
 
 class_body:
-      [[`OBRACE; fl=member_list; `CBRACE   ->  fl
-      | `OBRACE; `CBRACE                             -> []] ];
+      [[OBRACE; fl=member_list; CBRACE   ->  fl
+      | OBRACE; CBRACE                             -> []] ];
 
 one_member:
- [[ m= member; `SEMICOLON -> m
+ [[ m= member; SEMICOLON -> m
   | m = member -> m]];
 
 member_list: [[m = one_member; fl=member_list -> m::fl
              | m=one_member -> [m]]];
 
 member:
- [[ t=typ; `IDENTIFIER id -> Field ((t, id), get_pos_camlp4 _loc 2)
-  | `INV;  dc=disjunctive_constr -> Inv (F.subst_stub_flow top_flow dc)
+ [[ t=typ; id = IDENTIFIER -> Field ((t, id), get_pos_camlp4 _loc 2)
+  | INV;  dc=disjunctive_constr -> Inv (F.subst_stub_flow top_flow dc)
   | pd=proc_decl -> Method pd
   | cd=constructor_decl -> Method cd]];
 
@@ -3459,15 +4034,15 @@ member:
 enum_decl:
   [[ h=enum_header; b=enum_body -> { enum_name = h; enum_fields = b }]];
 
-enum_header: [[`ENUM; `IDENTIFIER n -> n]];
+enum_header: [[ENUM; n = IDENTIFIER -> n]];
 
-enum_body: [[`OBRACE; l=enum_list; `CBRACE -> l]];
+enum_body: [[OBRACE; l=enum_list; CBRACE -> l]];
 
-enum_list:[[t=LIST1 enumerator SEP `COMMA -> t]];
+enum_list:[[t=LIST1 enumerator SEP COMMA -> t]];
 
 enumerator:
-  [[ `IDENTIFIER n -> (n, None)
-   | `IDENTIFIER n; `EQ;  `INT_LITER(i,_) -> (n, Some i) ]];
+  [[ n = IDENTIFIER -> (n, None)
+   | n = IDENTIFIER; EQ;  i = INT_LITER -> (n, Some (int_of_string i)) ]];
 
 
 (****Specs *******)
@@ -3475,7 +4050,7 @@ opt_sq_clist : [[t = OPT sq_clist -> un_option t []]];
 
 opt_spec_list_file: [[t = LIST0 spec_list_file -> t]];
 
-spec_list_file: [[`IDENTIFIER id; t = opt_spec_list -> (id, t)]];
+spec_list_file: [[id = IDENTIFIER; t = opt_spec_list -> (id, t)]];
 
 opt_spec_list: [[t = LIST0 spec_list_grp -> label_struc_groups_auto t]];
 
@@ -3489,13 +4064,13 @@ spec_list_grp:
   [[
       (* c=spec -> [(empty_spec_label_def,c)] *)
      t= LIST1 spec -> List.map (fun c -> (Lbl.empty_spec_label_def,c)) t
-    | `IDENTIFIER id; `COLON; `OSQUARE;
+    | id = IDENTIFIER; COLON; OSQUARE;
           t = spec_list_only
-          (* LIST0 spec SEP `ORWORD *)
-      ; `CSQUARE -> List.map (fun ((n,l),c)-> ((n,id::l),c)) t
-    | `OSQUARE;
+          (* LIST0 spec SEP ORWORD *)
+      ; CSQUARE -> List.map (fun ((n,l),c)-> ((n,id::l),c)) t
+    | OSQUARE;
           t = spec_list_only
-      ; `CSQUARE -> List.map (fun ((n,l),c)-> ((n,l),c)) t
+      ; CSQUARE -> List.map (fun ((n,l),c)-> ((n,l),c)) t
   ]];
 
 disj_or_extn_constr:
@@ -3513,7 +4088,7 @@ disj_or_extn_constr:
 
 spec:
   [[
-    `INFER; transpec = opt_transpec; postxf = opt_infer_xpost; postf= opt_infer_post; ivl_w_itype = cid_list_w_itype; s = SELF ->
+    INFER; transpec = opt_transpec; postxf = opt_infer_xpost; postf= opt_infer_post; ivl_w_itype = cid_list_w_itype; s = SELF ->
     (* WN : need to use a list of @sym *)
      (* let inf_o = Globals.infer_const_obj # clone in *)
      (* let inf_o = new Globals.inf_obj_sub in *)
@@ -3534,7 +4109,7 @@ spec:
        F.formula_inf_continuation = s;
        F.formula_inf_pos = get_pos_camlp4 _loc 1;
      }
-    | `REQUIRES; cl= opt_sq_clist; dc= disjunctive_constr; s=SELF ->
+    | REQUIRES; cl= opt_sq_clist; dc= disjunctive_constr; s=SELF ->
 	  F.EBase {
 	      F.formula_struc_explicit_inst =cl;
 	      F.formula_struc_implicit_inst = [];
@@ -3543,7 +4118,7 @@ spec:
               F.formula_struc_is_requires = true;
 	      F.formula_struc_continuation = Some s;
 	      F.formula_struc_pos = (get_pos_camlp4 _loc 1)}
-    | `REQUIRES; cl=opt_sq_clist; dc=disjunctive_constr; `OBRACE; sl=spec_list; `CBRACE ->
+    | REQUIRES; cl=opt_sq_clist; dc=disjunctive_constr; OBRACE; sl=spec_list; CBRACE ->
 	  F.EBase {
 	      F.formula_struc_explicit_inst =cl;
 	      F.formula_struc_implicit_inst = [];
@@ -3553,66 +4128,66 @@ spec:
 	      F.formula_struc_continuation = Some sl (*if ((List.length sl)==0) then report_error (get_pos_camlp4 _loc 1) "spec must contain ensures"else sl*);
 	      F.formula_struc_pos = (get_pos_camlp4 _loc 1)}
               (* F.formula_ext_complete = false;*)
-    | `ENSURES; ol= opt_label; (f,sf)= disj_or_extn_constr; `SEMICOLON ->
+    | ENSURES; ol= opt_label; (f,sf)= disj_or_extn_constr; SEMICOLON ->
 	  F.mkEAssume f sf (fresh_formula_label ol) None
 
-    (* | `ENSURES; ol= opt_label; dc= disjunctive_constr; `SEMICOLON -> *)
+    (* | ENSURES; ol= opt_label; dc= disjunctive_constr; SEMICOLON -> *)
     (*       let f = F.subst_stub_flow n_flow dc in *)
     (*       let sf = F.mkEBase [] [] [] f None no_pos in *)
     (*       F.mkEAssume f sf (fresh_formula_label ol) None *)
-    (* | `ENSURES; ol= opt_label; dc= extended_constr; `SEMICOLON -> *)
+    (* | ENSURES; ol= opt_label; dc= extended_constr; SEMICOLON -> *)
     (*       let f = F.flatten_post_struc dc (get_pos_camlp4 _loc 1) in *)
     (*       F.mkEAssume (F.subst_stub_flow n_flow f) (F.subst_stub_flow_struc n_flow dc) (fresh_formula_label ol) None *)
 
-    | `ENSURES_EXACT; ol= opt_label; (f,sf)= disj_or_extn_constr; `SEMICOLON ->
+    | ENSURES_EXACT; ol= opt_label; (f,sf)= disj_or_extn_constr; SEMICOLON ->
 	  F.mkEAssume f sf (fresh_formula_label ol) (Some true)
 
-    (* | `ENSURES_EXACT; ol= opt_label; dc= disjunctive_constr; `SEMICOLON -> *)
+    (* | ENSURES_EXACT; ol= opt_label; dc= disjunctive_constr; SEMICOLON -> *)
     (*       let f = F.subst_stub_flow n_flow dc in *)
     (*       let sf = F.mkEBase [] [] [] f None no_pos in *)
     (*       F.mkEAssume f sf (fresh_formula_label ol) (Some true) *)
 
-    | `ENSURES_INEXACT; ol= opt_label; (f,sf)= disj_or_extn_constr; `SEMICOLON ->
+    | ENSURES_INEXACT; ol= opt_label; (f,sf)= disj_or_extn_constr; SEMICOLON ->
 	  F.mkEAssume f sf (fresh_formula_label ol) (Some false)
 
-    (* | `ENSURES_INEXACT; ol= opt_label; dc= disjunctive_constr; `SEMICOLON -> *)
+    (* | ENSURES_INEXACT; ol= opt_label; dc= disjunctive_constr; SEMICOLON -> *)
     (*       let f = F.subst_stub_flow n_flow dc in *)
     (*       let sf = F.mkEBase [] [] [] f None no_pos in *)
     (*       F.mkEAssume f sf (fresh_formula_label ol) (Some false) *)
 
-    | `CASE; `OBRACE; bl= branch_list; `CBRACE ->F.ECase {F.formula_case_branches = bl; F.formula_case_pos = get_pos_camlp4 _loc 1; }
+    | CASE; OBRACE; bl= branch_list; CBRACE ->F.ECase {F.formula_case_branches = bl; F.formula_case_pos = get_pos_camlp4 _loc 1; }
   ]];
 
 cid_list_w_itype:
-  [[ `OSQUARE; t = infer_type_list; `CSQUARE -> t
-   (* | `OSQUARE; il = OPT cid_list; `CSQUARE -> (None, un_option il []) *)
-   (* | `OSQUARE; t = infer_type_list; `CSQUARE -> (Some t, []) *)
+  [[ OSQUARE; t = infer_type_list; CSQUARE -> t
+   (* | OSQUARE; il = OPT cid_list; CSQUARE -> (None, un_option il []) *)
+   (* | OSQUARE; t = infer_type_list; CSQUARE -> (Some t, []) *)
   ]];
 
 (* opt_vlist: [[t = OPT opt_cid_list -> un_option t []]]; *)
 
 branch_list: [[t=LIST1 spec_branch -> List.rev t]];
 
-spec_branch: [[ pc=pure_constr; `LEFTARROW; sl= spec_list -> (pc,sl)]];
+spec_branch: [[ pc=pure_constr; LEFTARROW; sl= spec_list -> (pc,sl)]];
 
 
  (***********Proc decls ***********)
 
 opt_throws: [[ t = OPT throws -> un_option t []]];
-throws: [[ `THROWS; l=cid_list -> List.map fst l]];
+throws: [[ THROWS; l=cid_list -> List.map fst l]];
 flag_arg : [[
-	`IDENTIFIER t -> Flag_str t
-	| `INT_LITER (i,_)-> Flag_int i
-	| `FLOAT_LIT (f,_)-> Flag_float f]];
+	t = IDENTIFIER -> Flag_str t
+	| i = INT_LITER-> Flag_int (int_of_string i)
+	| f = FLOAT_LIT-> Flag_float (float_of_string f)]];
 
-flag: [[`MINUS; `IDENTIFIER t ; args = OPT flag_arg-> ("-",t, args)
-		| `OP_DEC; `IDENTIFIER t ; args = OPT flag_arg-> ("--",t, args)]];
+flag: [[MINUS; t = IDENTIFIER ; args = OPT flag_arg-> ("-",t, args)
+		| OP_DEC; t = IDENTIFIER ; args = OPT flag_arg-> ("--",t, args)]];
 
-flag_list:[[`ATATSQ; t=LIST1 flag;`CSQUARE -> t]];
+flag_list:[[ATATSQ; t=LIST1 flag;CSQUARE -> t]];
 
 opt_flag_list:[[t=OPT flag_list -> un_option t []]];
 
-resource_param: [[ `WITH; `PERCENT; `IDENTIFIER hid ->
+resource_param: [[ WITH; PERCENT; hid = IDENTIFIER ->
   { param_mod = NoMod;
     param_type = FORM;
     param_loc = get_pos_camlp4 _loc 3;
@@ -3627,12 +4202,12 @@ proc_decl:
    | h=proc_header; _=opt_flag_list-> h]];
 
 proc_header:
-  [[ t=typ; `IDENTIFIER id; `OPAREN; fpl= opt_formal_parameter_list; `CPAREN; hparam = opt_resource_param; ot=opt_throws; osl= opt_spec_list ->
+  [[ t=typ; id = IDENTIFIER; OPAREN; fpl= opt_formal_parameter_list; CPAREN; hparam = opt_resource_param; ot=opt_throws; osl= opt_spec_list ->
     (*let static_specs, dynamic_specs = split_specs osl in*)
       let cur_file = proc_files # top in
      mkProc cur_file id [] "" None false ot fpl t hparam osl (F.mkEFalseF ()) (get_pos_camlp4 _loc 1) None
 
-  | `VOID; `IDENTIFIER id; `OPAREN; fpl=opt_formal_parameter_list; `CPAREN; ot=opt_throws; osl=opt_spec_list ->
+  | VOID; id = IDENTIFIER; OPAREN; fpl=opt_formal_parameter_list; CPAREN; ot=opt_throws; osl=opt_spec_list ->
     (*let static_specs, dynamic_specs = split_specs $6 in*)
     let cur_file = proc_files # top in
     mkProc cur_file id [] "" None false ot fpl void_type None osl (F.mkEFalseF ()) (get_pos_camlp4 _loc 1) None]];
@@ -3642,7 +4217,7 @@ constructor_decl:
    | h=constructor_header -> h]];
 
 constructor_header:
-  [[ `IDENTIFIER id; `OPAREN; fpl=opt_formal_parameter_list; `CPAREN; ot=opt_throws; osl=opt_spec_list ; flgs=opt_flag_list->
+  [[ id = IDENTIFIER; OPAREN; fpl=opt_formal_parameter_list; CPAREN; ot=opt_throws; osl=opt_spec_list ; flgs=opt_flag_list->
     (*let static_specs, dynamic_specs = split_specs $5 in*)
 		(*if Util.empty dynamic_specs then*)
     let cur_file = proc_files # top in
@@ -3652,33 +4227,33 @@ constructor_header:
 
 
 
-opt_formal_parameter_list: [[t= LIST0 fixed_parameter SEP `COMMA -> t]];
+opt_formal_parameter_list: [[t= LIST0 fixed_parameter SEP COMMA -> t]];
 
 
 fixed_parameter:
-  [[ t=typ; pm=OPT pass_t; `IDENTIFIER id ->
+  [[ t=typ; pm=OPT pass_t; id = IDENTIFIER ->
       { param_mod = un_option pm NoMod;
         param_type = t;
         param_loc = get_pos_camlp4 _loc 3;
         param_name = id }
-    | pm=OPT pass_t2; t=typ;  `IDENTIFIER id ->
+    | pm=OPT pass_t2; t=typ;  id = IDENTIFIER ->
       { param_mod = un_option pm NoMod;
         param_type = t;
         param_loc = get_pos_camlp4 _loc 3;
         param_name = id }
 ]];
 
-pass_t2: [[`PASS_REF2 -> RefMod ]];
+pass_t2: [[PASS_REF2 -> RefMod ]];
 
-pass_t: [[`PASS_REF -> RefMod
-       | `PASS_COPY -> CopyMod]];
+pass_t: [[PASS_REF -> RefMod
+       | PASS_COPY -> CopyMod]];
 
 proc_body: [[t=block-> t]];
 
 (*********** Statements ***************)
 
 block:
-  [[ `OBRACE; t=statement_list; `CBRACE ->
+  [[ OBRACE; t=statement_list; CBRACE ->
 	  match t with
 	  | Empty _ -> Block { exp_block_body = Empty (get_pos_camlp4 _loc 1);
                          exp_block_jump_label = NoJumpLabel;
@@ -3697,13 +4272,13 @@ statement_list:
 									 exp_seq_pos = get_pos_camlp4 _loc 1 }
 ]];
 
-(* opt_statement_list: [[ t= LIST0 statement SEP `SEMICOLON ->  *)
+(* opt_statement_list: [[ t= LIST0 statement SEP SEMICOLON ->  *)
 (*     match t with  *)
 (*      | [] ->  Empty no_pos *)
 (*      | h::t -> List.fold_left (fun a c-> Seq {exp_seq_exp1 = a; exp_seq_exp2=c; exp_seq_pos =get_pos_camlp4 _loc 1}) h t ]]; *)
 
 statement:
-  [[ t=declaration_statement; `SEMICOLON -> t
+  [[ t=declaration_statement; SEMICOLON -> t
    | t=labeled_valid_declaration_statement -> t]];
 
 declaration_statement:
@@ -3714,22 +4289,22 @@ local_variable_type: [[ t= typ ->  t]];
 
 local_variable_declaration: [[  t1=local_variable_type; t2=variable_declarators -> mkVarDecl t1 t2 (get_pos_camlp4 _loc 1)]];
 
-local_constant_declaration: [[ `CONST; lvt=local_variable_type; cd=constant_declarators ->  mkConstDecl lvt cd (get_pos_camlp4 _loc 1)]];
+local_constant_declaration: [[ CONST; lvt=local_variable_type; cd=constant_declarators ->  mkConstDecl lvt cd (get_pos_camlp4 _loc 1)]];
 
-variable_declarators: [[ t= LIST1 variable_declarator SEP `COMMA -> t]];
+variable_declarators: [[ t= LIST1 variable_declarator SEP COMMA -> t]];
 
 variable_declarator:
-  [[ `IDENTIFIER id; `EQ; t=variable_initializer  -> (* print_string ("Identifier : "^id^"\n"); *) (id, Some t, get_pos_camlp4 _loc 1)
-   | `IDENTIFIER id -> (* print_string ("Identifier : "^id^"\n"); *)(id, None, get_pos_camlp4 _loc 1) ]];
+  [[ id = IDENTIFIER; EQ; t=variable_initializer  -> (* print_string ("Identifier : "^id^"\n"); *) (id, Some t, get_pos_camlp4 _loc 1)
+   | id = IDENTIFIER -> (* print_string ("Identifier : "^id^"\n"); *)(id, None, get_pos_camlp4 _loc 1) ]];
 
 variable_initializer: [[t= expression ->t]];
 
-constant_declarators: [[t=LIST1 constant_declarator SEP `COMMA -> t]];
+constant_declarators: [[t=LIST1 constant_declarator SEP COMMA -> t]];
 
-constant_declarator: [[ `IDENTIFIER id; `EQ; ce=constant_expression -> (id, ce, get_pos_camlp4 _loc 1)]];
+constant_declarator: [[ id = IDENTIFIER; EQ; ce=constant_expression -> (id, ce, get_pos_camlp4 _loc 1)]];
 
 labeled_valid_declaration_statement:
-	[[ `IDENTIFIER id ; `COLON; t=valid_declaration_statement ->
+	[[ id = IDENTIFIER ; COLON; t=valid_declaration_statement ->
 		(match t with
       | Block	b -> Block { b with exp_block_jump_label = JumpLabel id; }
       | While b -> While { b with exp_while_jump_label = JumpLabel id; }
@@ -3739,15 +4314,15 @@ labeled_valid_declaration_statement:
 
 valid_declaration_statement:
   [[ t=block -> t
-   | t=expression_statement;`SEMICOLON ->t
+   | t=expression_statement;SEMICOLON ->t
    | t=selection_statement -> t
    | t=iteration_statement -> t
-   | t=try_statement; `SEMICOLON -> t
+   | t=try_statement; SEMICOLON -> t
    | t=java_statement -> t
-   | t=jump_statement;`SEMICOLON  -> t
-   | t= assert_statement;`SEMICOLON -> t
-   | t=dprint_statement;`SEMICOLON  -> t
-   (* | t=skip_statement;`SEMICOLON  -> t *)
+   | t=jump_statement;SEMICOLON  -> t
+   | t= assert_statement;SEMICOLON -> t
+   | t=dprint_statement;SEMICOLON  -> t
+   (* | t=skip_statement;SEMICOLON  -> t *)
    | t=debug_statement -> t
    | t=time_statement -> t
    | t=bind_statement -> t
@@ -3757,47 +4332,47 @@ valid_declaration_statement:
    | [t= empty_statement -> t]
 ];
 
-empty_statement: [[`SEMICOLON -> Empty (get_pos_camlp4 _loc 1) ]];
+empty_statement: [[SEMICOLON -> Empty (get_pos_camlp4 _loc 1) ]];
 
-unfold_statement: [[ `UNFOLD; t=cid  ->	Unfold { exp_unfold_var = t; exp_unfold_pos = get_pos_camlp4 _loc 1 }]];
+unfold_statement: [[ UNFOLD; t=cid  ->	Unfold { exp_unfold_var = t; exp_unfold_pos = get_pos_camlp4 _loc 1 }]];
 
-barr_statement : [[`BARRIER; `IDENTIFIER t -> I.Barrier {exp_barrier_recv = t ; exp_barrier_pos = get_pos_camlp4 _loc 1}]];
+barr_statement : [[BARRIER; t = IDENTIFIER -> I.Barrier {exp_barrier_recv = t ; exp_barrier_pos = get_pos_camlp4 _loc 1}]];
 
 assert_statement:
-  [[ `ASSERT; ol= opt_label; f=formulas ->
+  [[ ASSERT; ol= opt_label; f=formulas ->
        mkAssert (Some ((F.subst_stub_flow_struc n_flow (fst f)),(snd f))) None (fresh_formula_label ol) (Some false) (get_pos_camlp4 _loc 1)
-   | `ASSERT_EXACT; ol= opt_label; f=formulas ->
+   | ASSERT_EXACT; ol= opt_label; f=formulas ->
        mkAssert (Some ((F.subst_stub_flow_struc n_flow (fst f)),(snd f))) None (fresh_formula_label ol) (Some true) (get_pos_camlp4 _loc 1)
-   | `ASSERT_INEXACT; ol= opt_label; f=formulas ->
+   | ASSERT_INEXACT; ol= opt_label; f=formulas ->
        mkAssert (Some ((F.subst_stub_flow_struc n_flow (fst f)),(snd f))) None (fresh_formula_label ol) (Some false) (get_pos_camlp4 _loc 1)
-   | `INFER_ASSUME; `OSQUARE;il1=OPT id_list;`CSQUARE ->
+   | INFER_ASSUME; OSQUARE;il1=OPT id_list;CSQUARE ->
        mkAssert ~inf_vars:(un_option il1 []) None None (fresh_formula_label "") None (get_pos_camlp4 _loc 1)
-   | `ASSUME; ol=opt_label; dc=disjunctive_constr ->
+   | ASSUME; ol=opt_label; dc=disjunctive_constr ->
        mkAssert None (Some (F.subst_stub_flow n_flow dc)) (fresh_formula_label ol) None (get_pos_camlp4 _loc 1)
-   | `ASSERT; ol=opt_label; f=formulas; `ASSUME; dc=disjunctive_constr ->
+   | ASSERT; ol=opt_label; f=formulas; ASSUME; dc=disjunctive_constr ->
        mkAssert (Some ((F.subst_stub_flow_struc n_flow (fst f)),(snd f))) (Some (F.subst_stub_flow n_flow dc)) (fresh_formula_label ol) (Some false) (get_pos_camlp4 _loc 1)
-   | `ASSERT_EXACT; ol=opt_label; f=formulas; `ASSUME; dc=disjunctive_constr ->
+   | ASSERT_EXACT; ol=opt_label; f=formulas; ASSUME; dc=disjunctive_constr ->
        mkAssert (Some ((F.subst_stub_flow_struc n_flow (fst f)),(snd f))) (Some (F.subst_stub_flow n_flow dc)) (fresh_formula_label ol) (Some true) (get_pos_camlp4 _loc 1)
-   | `ASSERT_INEXACT; ol=opt_label; f=formulas; `ASSUME; dc=disjunctive_constr ->
+   | ASSERT_INEXACT; ol=opt_label; f=formulas; ASSUME; dc=disjunctive_constr ->
        mkAssert (Some ((F.subst_stub_flow_struc n_flow (fst f)),(snd f))) (Some (F.subst_stub_flow n_flow dc)) (fresh_formula_label ol) (Some false) (get_pos_camlp4 _loc 1)]];
 
 debug_statement:
-  [[ `DDEBUG; `ON -> Debug { exp_debug_flag = true;	exp_debug_pos = get_pos_camlp4 _loc 2 }
-   | `DDEBUG; `OFF -> Debug { exp_debug_flag = false; exp_debug_pos = get_pos_camlp4 _loc 2 }]];
+  [[ DDEBUG; ON -> Debug { exp_debug_flag = true;	exp_debug_pos = get_pos_camlp4 _loc 2 }
+   | DDEBUG; OFF -> Debug { exp_debug_flag = false; exp_debug_pos = get_pos_camlp4 _loc 2 }]];
 
 time_statement:
-  [[ `DTIME; `ON; `IDENTIFIER id -> I.Time (true,id,get_pos_camlp4 _loc 1)
-   | `DTIME; `OFF; `IDENTIFIER id -> I.Time (false,id,get_pos_camlp4 _loc 1)]];
+  [[ DTIME; ON; id = IDENTIFIER -> I.Time (true,id,get_pos_camlp4 _loc 1)
+   | DTIME; OFF; id = IDENTIFIER -> I.Time (false,id,get_pos_camlp4 _loc 1)]];
 
 dprint_statement:
-  [[ `DPRINT  -> Dprint ({exp_dprint_string = ""; exp_dprint_pos = (get_pos_camlp4 _loc 1)})
-   | `DPRINT; `STRING(_,id)  -> Dprint ({exp_dprint_string = id;  exp_dprint_pos = (get_pos_camlp4 _loc 1)})]];
+  [[ DPRINT  -> Dprint ({exp_dprint_string = ""; exp_dprint_pos = (get_pos_camlp4 _loc 1)})
+   | DPRINT; id = STRING  -> Dprint ({exp_dprint_string = id;  exp_dprint_pos = (get_pos_camlp4 _loc 1)})]];
 
 (* skip_statement: *)
-(*   [[ `SKIP  -> Empty (get_pos_camlp4 _loc 1); ]]; *)
+(*   [[ SKIP  -> Empty (get_pos_camlp4 _loc 1); ]]; *)
 
 bind_statement:
-  [[ `BIND; `IDENTIFIER id; `TO; `OPAREN; il = id_list_opt; `CPAREN; `IN_T; b= block ->
+  [[ BIND; id = IDENTIFIER; TO; OPAREN; il = id_list_opt; CPAREN; IN_T; b= block ->
       Bind { exp_bind_bound_var = id;
              exp_bind_fields = il;
              exp_bind_body = b;
@@ -3805,14 +4380,14 @@ bind_statement:
              exp_bind_pos = get_pos_camlp4 _loc 1 }]];
 
 bind_expression:
-  [[ `BIND; `IDENTIFIER id; `TO; `OPAREN; il = id_list_opt; `CPAREN; `IN_T; b= expression ->
+  [[ BIND; id = IDENTIFIER; TO; OPAREN; il = id_list_opt; CPAREN; IN_T; b= expression ->
       Bind { exp_bind_bound_var = id;
              exp_bind_fields = il;
              exp_bind_body = b;
              exp_bind_path_id = None ;
              exp_bind_pos = get_pos_camlp4 _loc 1 }]];
 
-java_statement: [[ `JAVA s -> Java { exp_java_code = s;exp_java_pos = get_pos_camlp4 _loc 1 }]];
+java_statement: [[ s = JAVA -> Java { exp_java_code = s;exp_java_pos = get_pos_camlp4 _loc 1 }]];
 
 (*TO CHECK*)
 expression_statement: [[(* t=statement_expression -> t *)
@@ -3835,16 +4410,16 @@ selection_statement: [[t=if_statement -> t]];
 embedded_statement: [[t=valid_declaration_statement -> t]];
 
 if_statement:
-  [[ `IF; `OPAREN; bc = boolean_expression; `CPAREN; es=embedded_statement ->
+  [[ IF; OPAREN; bc = boolean_expression; CPAREN; es=embedded_statement ->
 	  Cond { exp_cond_condition = bc;
            exp_cond_then_arm = es;
            exp_cond_else_arm = Empty (get_pos_camlp4 _loc 1);
            exp_cond_path_id = None;
            exp_cond_pos = get_pos_camlp4 _loc 1 }
-  |`IF;
-  `OPAREN; bc=boolean_expression;
-  `CPAREN; tb=embedded_statement;
-  `ELSE_TT; eb=embedded_statement ->
+  |IF;
+  OPAREN; bc=boolean_expression;
+  CPAREN; tb=embedded_statement;
+  ELSE_TT; eb=embedded_statement ->
 		Cond { exp_cond_condition = bc;
 			   exp_cond_then_arm = tb;
 			   exp_cond_else_arm = eb;
@@ -3852,8 +4427,8 @@ if_statement:
 			   exp_cond_pos = get_pos_camlp4 _loc 1 }]];
 
 par_statement:
-  [[  `PAR; vps = vperm_var_list_opt; lh = OPT heap_constr;
-      `OBRACE; pl = par_case_list; `CBRACE ->
+  [[  PAR; vps = vperm_var_list_opt; lh = OPT heap_constr;
+      OBRACE; pl = par_case_list; CBRACE ->
       let pos = get_pos_camlp4 _loc 1 in
       let pl = Iast.norm_par_case_list pl pos in
       let lend_pos = get_pos_camlp4 _loc 3 in
@@ -3871,28 +4446,28 @@ par_statement:
 
 vpid:
   [[
-      `IDENTIFIER t -> (VP_Full, sv_of_id t)
-    | `IDENTIFIER t; `LEND -> (VP_Lend, sv_of_id t)
+      t = IDENTIFIER -> (VP_Full, sv_of_id t)
+    | t = IDENTIFIER; LEND -> (VP_Lend, sv_of_id t)
   ]];
 
 opt_vpid_list:
-  [[ t = LIST0 vpid SEP `COMMA -> VP.vperm_sets_of_anns t ]];
+  [[ t = LIST0 vpid SEP COMMA -> VP.vperm_sets_of_anns t ]];
 
 vperm_var_list:
-  [[ `OBRACE; vps = opt_vpid_list; `CBRACE -> vps ]];
+  [[ OBRACE; vps = opt_vpid_list; CBRACE -> vps ]];
 
 vperm_var_list_opt:
   [[ vps = OPT vperm_var_list -> un_option vps VP.empty_vperm_sets ]];
 
 par_case:
   [[
-     `CASE; vps = vperm_var_list_opt; dc = disjunctive_constr; `LEFTARROW; sl = statement_list ->
+     CASE; vps = vperm_var_list_opt; dc = disjunctive_constr; LEFTARROW; sl = statement_list ->
       { exp_par_case_cond = Some (F.subst_stub_flow n_flow dc);
         exp_par_case_vperm = vps;
         exp_par_case_body = stmt_list_to_block sl (get_pos_camlp4 _loc 5);
         exp_par_case_else = false;
         exp_par_case_pos = (get_pos_camlp4 _loc 1); }
-   | `ELSE_TT; (* vps = vperm_var_list_opt; *) `LEFTARROW; sl = statement_list ->
+   | ELSE_TT; (* vps = vperm_var_list_opt; *) LEFTARROW; sl = statement_list ->
       { exp_par_case_cond = None;
         exp_par_case_vperm = VP.empty_vperm_sets;
         exp_par_case_body = stmt_list_to_block sl (get_pos_camlp4 _loc 5);
@@ -3900,12 +4475,12 @@ par_case:
         exp_par_case_pos = (get_pos_camlp4 _loc 1); }
   ]];
 
-par_case_list: [[ cl = LIST1 par_case SEP `OROR -> cl ]];
+par_case_list: [[ cl = LIST1 par_case SEP OROR -> cl ]];
 
 iteration_statement: [[t=while_statement -> t]];
 
 while_statement:
-  [[ `WHILE; `OPAREN; bc=boolean_expression; `CPAREN; es=embedded_statement ->
+  [[ WHILE; OPAREN; bc=boolean_expression; CPAREN; es=embedded_statement ->
         While { exp_while_condition = bc;
             exp_while_body = es;
             exp_while_addr_vars = [];
@@ -3916,7 +4491,7 @@ while_statement:
             exp_while_f_name = "";
             exp_while_wrappings = None;
             exp_while_pos = get_pos_camlp4 _loc 1 }
-   | `WHILE; `OPAREN; bc=boolean_expression; `CPAREN; sl=spec_list_outer; es=embedded_statement ->
+   | WHILE; OPAREN; bc=boolean_expression; CPAREN; sl=spec_list_outer; es=embedded_statement ->
         While { exp_while_condition = bc;
           exp_while_body = es;
           exp_while_addr_vars = [];
@@ -3926,7 +4501,7 @@ while_statement:
           exp_while_f_name = "";
           exp_while_wrappings = None;
           exp_while_pos = get_pos_camlp4 _loc 1 }
-   | `WHILE; `OPAREN; bc=boolean_expression; `CPAREN;`OSQUARE; t = id; `CSQUARE; es=embedded_statement ->
+   | WHILE; OPAREN; bc=boolean_expression; CPAREN;OSQUARE; t = id; CSQUARE; es=embedded_statement ->
          While { exp_while_condition = bc;
          exp_while_body = es;
          exp_while_addr_vars = [];
@@ -3937,7 +4512,7 @@ while_statement:
          exp_while_f_name = t;
          exp_while_wrappings = None;
          exp_while_pos = get_pos_camlp4 _loc 1 }
-   | `WHILE; `OPAREN; bc=boolean_expression; `CPAREN; `OSQUARE; t = id; `CSQUARE; sl=spec_list_outer; es=embedded_statement ->
+   | WHILE; OPAREN; bc=boolean_expression; CPAREN; OSQUARE; t = id; CSQUARE; sl=spec_list_outer; es=embedded_statement ->
          While { exp_while_condition = bc;
          exp_while_body = es;
          exp_while_addr_vars = [];
@@ -3956,34 +4531,34 @@ jump_statement:
    | t=raise_statement -> t]];
 
 break_statement:
-  [[ `BREAK  ->
+  [[ BREAK  ->
         Break {
 				  exp_break_jump_label = NoJumpLabel;
 				  exp_break_path_id = None;
 					exp_break_pos = (get_pos_camlp4 _loc 1);}
-	| `BREAK; `IDENTIFIER id  ->
+	| BREAK; id = IDENTIFIER  ->
         Break {exp_break_jump_label = (JumpLabel id);
 				  		 exp_break_path_id = None;
 							exp_break_pos = get_pos_camlp4 _loc 1}]];
 
 continue_statement:
-  [[ `CONTINUE  ->
+  [[ CONTINUE  ->
       Continue {exp_continue_jump_label = NoJumpLabel;
 							 exp_continue_path_id = None;
 							 exp_continue_pos = get_pos_camlp4 _loc 1}
-   | `CONTINUE; `IDENTIFIER  id ->
+   | CONTINUE; id = IDENTIFIER ->
       Continue {exp_continue_jump_label = (JumpLabel id);
 							 exp_continue_path_id = None;
 							 exp_continue_pos = get_pos_camlp4 _loc 1}]];
 
 return_statement:
-  [[ `RETURN; t=opt_expression ->
+  [[ RETURN; t=opt_expression ->
       Return { exp_return_val = t;
 			 		     exp_return_path_id = None;
 							 exp_return_pos = get_pos_camlp4 _loc 1 }]];
 
 raise_statement:
-	[[ `RAISE; t=expression ->
+	[[ RAISE; t=expression ->
       Raise { exp_raise_type = Const_flow "" ;
 			  exp_raise_val = Some t;
 			  exp_raise_use_type = false;
@@ -3992,7 +4567,7 @@ raise_statement:
               exp_raise_pos = get_pos_camlp4 _loc 1 }]];
 
 try_statement:
-	[[ `TRY; t=valid_declaration_statement; cl=opt_catch_list; fl=opt_finally->
+	[[ TRY; t=valid_declaration_statement; cl=opt_catch_list; fl=opt_finally->
       Try { exp_try_block = t;
             exp_catch_clauses = cl;
             exp_finally_clause = fl;
@@ -4002,7 +4577,7 @@ try_statement:
 opt_catch_list: [[t= LIST0 catch_clause -> t]];
 
 catch_clause:
-	[[ `CATCH; `OPAREN; `IDENTIFIER id1; `IDENTIFIER id2; `CPAREN; vds = valid_declaration_statement ->
+	[[ CATCH; OPAREN; id1 = IDENTIFIER; id2 = IDENTIFIER; CPAREN; vds = valid_declaration_statement ->
 		  Catch { exp_catch_var = Some id2;
               exp_catch_flow_type = id1;
               exp_catch_flow_var = None;
@@ -4012,7 +4587,7 @@ catch_clause:
 
 opt_finally: [[t =OPT finally_c -> un_option t [] ]];
 
-finally_c: [[`FINALLY; vds=valid_declaration_statement -> [Finally {exp_finally_body = vds;exp_finally_pos = get_pos_camlp4 _loc 1 }]]];
+finally_c: [[FINALLY; vds=valid_declaration_statement -> [Finally {exp_finally_body = vds;exp_finally_pos = get_pos_camlp4 _loc 1 }]]];
 
 opt_expression: [[t=OPT expression -> t]];
 
@@ -4022,26 +4597,26 @@ opt_expression: [[t=OPT expression -> t]];
 object_creation_expression: [[t=object_or_delegate_creation_expression-> t]];
 
 object_or_delegate_creation_expression:
-  [[ `NEW; `IDENTIFIER id; `OPAREN; al=opt_argument_list; `CPAREN ->
+  [[ NEW; id = IDENTIFIER; OPAREN; al=opt_argument_list; CPAREN ->
       New { exp_new_class_name = id;
             exp_new_arguments = al;
             exp_new_pos = get_pos_camlp4 _loc 1 }
 	(* An Hoa : Array allocation. *)
-	| `NEW; `INT; `OSQUARE; al = argument_list; `CSQUARE ->
+	| NEW; INT; OSQUARE; al = argument_list; CSQUARE ->
 		ArrayAlloc { exp_aalloc_etype_name = "int";
 					 exp_aalloc_dimensions = al;
 					 exp_aalloc_pos = get_pos_camlp4 _loc 1; } ]];
 
 new_expression: [[t=object_or_delegate_creation_expression -> t]];
 
-opt_argument_list : [[t= LIST0 argument SEP `COMMA -> t]];
+opt_argument_list : [[t= LIST0 argument SEP COMMA -> t]];
 
-argument_list : [[t= LIST1 argument SEP `COMMA -> t]];
+argument_list : [[t= LIST1 argument SEP COMMA -> t]];
 
 (* opt_argument_list : [[ t = OPT argument_list -> un_option t [] ]];
 
 argument_list : [[  t = expression -> [t]
-				  | arg_list = SELF; `COMMA; t = expression -> t::arg_list
+				  | arg_list = SELF; COMMA; t = expression -> t::arg_list
 			    ]]; *)
 
 argument: [[t=expression -> t]];
@@ -4056,22 +4631,22 @@ constant_expression: [[t=expression -> t]];
 boolean_expression:  [[t=expression -> t]];
 
 assignment_expression:
-  [[ t1= prefixed_unary_expression; `EQ;  t2=expression ->
+  [[ t1= prefixed_unary_expression; EQ;  t2=expression ->
        mkAssign OpAssign t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-   | t1=prefixed_unary_expression; `OP_MULT_ASSIGN;t2=expression ->
+   | t1=prefixed_unary_expression; OP_MULT_ASSIGN;t2=expression ->
        mkAssign OpMultAssign t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-   | t1=prefixed_unary_expression; `OP_DIV_ASSIGN; t2=expression ->
+   | t1=prefixed_unary_expression; OP_DIV_ASSIGN; t2=expression ->
        mkAssign OpDivAssign t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-   | t1=prefixed_unary_expression; `OP_MOD_ASSIGN; t2=expression ->
+   | t1=prefixed_unary_expression; OP_MOD_ASSIGN; t2=expression ->
        mkAssign OpModAssign t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-   | t1=prefixed_unary_expression; `OP_ADD_ASSIGN; t2=expression ->
+   | t1=prefixed_unary_expression; OP_ADD_ASSIGN; t2=expression ->
        mkAssign OpPlusAssign t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-   | t1=prefixed_unary_expression; `OP_SUB_ASSIGN; t2=expression ->
+   | t1=prefixed_unary_expression; OP_SUB_ASSIGN; t2=expression ->
        mkAssign OpMinusAssign t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 conditional_expression:
   [[ t= conditional_or_expression -> t
-   (*| t= conditional_or_expression; `INTERR; e1=expression; `COLON; e2=expression ->
+   (*| t= conditional_or_expression; INTERR; e1=expression; COLON; e2=expression ->
           Cond { exp_cond_condition = t;
              exp_cond_then_arm = e1;
              exp_cond_else_arm = e2;
@@ -4080,12 +4655,12 @@ conditional_expression:
 
 conditional_or_expression:
   [[ t=conditional_and_expression -> t
-   | t1=SELF; `OROR; t2=conditional_and_expression ->
+   | t1=SELF; OROR; t2=conditional_and_expression ->
        mkBinary OpLogicalOr t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 conditional_and_expression:
   [[ t=inclusive_or_expression -> t
-   | t1=SELF; `ANDAND; t2=inclusive_or_expression ->
+   | t1=SELF; ANDAND; t2=inclusive_or_expression ->
        mkBinary OpLogicalAnd t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 (* bitwise *)
@@ -4097,77 +4672,77 @@ and_expression : [[t=equality_expression -> t]];
 
 equality_expression :
  [[ t=relational_expression -> t
-  | t1=SELF; `EQEQ; t2=relational_expression ->
+  | t1=SELF; EQEQ; t2=relational_expression ->
       mkBinary OpEq t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-  | t1=SELF; `NEQ; t2=relational_expression ->
+  | t1=SELF; NEQ; t2=relational_expression ->
       mkBinary OpNeq t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 relational_expression :
  [[ t=shift_expression                 -> t
-  | t1=SELF; `LT; t2=shift_expression  ->
+  | t1=SELF; LT; t2=shift_expression  ->
       mkBinary OpLt t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-  | t1=SELF; `GT; t2=shift_expression  ->
+  | t1=SELF; GT; t2=shift_expression  ->
       mkBinary OpGt t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-  | t1=SELF; `LTE; t2=shift_expression ->
+  | t1=SELF; LTE; t2=shift_expression ->
       mkBinary OpLte t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-  | t1=SELF; `GTE; t2=shift_expression ->
+  | t1=SELF; GTE; t2=shift_expression ->
       mkBinary OpGte t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 shift_expression: [[t=additive_expression -> t]];
 
 additive_expression:
  [[ t=multiplicative_expression                   -> t
-  | t1=SELF; `PLUS; t2=multiplicative_expression  ->
+  | t1=SELF; PLUS; t2=multiplicative_expression  ->
       mkBinary OpPlus t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-  | t1=SELF; `MINUS; t2=multiplicative_expression ->
+  | t1=SELF; MINUS; t2=multiplicative_expression ->
       mkBinary OpMinus t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 multiplicative_expression:
  [[ t=unary_expression                            -> t
-  | t1=SELF; `STAR; t2=prefixed_unary_expression  ->
+  | t1=SELF; STAR; t2=prefixed_unary_expression  ->
       mkBinary OpMult t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-  | t1=SELF; `DIV;  t2=prefixed_unary_expression  ->
+  | t1=SELF; DIV;  t2=prefixed_unary_expression  ->
       mkBinary OpDiv t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)
-  | t1=SELF; `PERCENT; t2=prefixed_unary_expression ->
+  | t1=SELF; PERCENT; t2=prefixed_unary_expression ->
       mkBinary OpMod t1 t2 (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 prefixed_unary_expression:
  [[ t=unary_expression -> t]];
 
 pre_increment_expression:
- [[ `OP_INC; t=prefixed_unary_expression ->
+ [[ OP_INC; t=prefixed_unary_expression ->
       mkUnary OpPreInc t (fresh_branch_point_id "") (get_pos_camlp4 _loc 1)]];
 
 pre_decrement_expression:
- [[ `OP_DEC; t=prefixed_unary_expression ->
+ [[ OP_DEC; t=prefixed_unary_expression ->
       mkUnary OpPreDec t (fresh_branch_point_id "") (get_pos_camlp4 _loc 1)]];
 
 post_increment_expression:
- [[ peek_try_st_in; t=primary_expression; `OP_INC ->
+ [[ peek_try_st_in; t=primary_expression; OP_INC ->
       mkUnary OpPostInc t (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 post_decrement_expression:
- [[ peek_try_st; t=primary_expression; `OP_DEC ->
+ [[ peek_try_st; t=primary_expression; OP_DEC ->
       mkUnary OpPostDec t (fresh_branch_point_id "") (get_pos_camlp4 _loc 2)]];
 
 unary_expression:
  [[ t=unary_expression_not_plusminus -> t
-  | `PLUS; t=SELF ->
+  | PLUS; t=SELF ->
       let zero = mkIntLit 0 (get_pos_camlp4 _loc 1) in
       mkBinary OpPlus zero t (fresh_branch_point_id "") (get_pos_camlp4 _loc 1)
-  | `MINUS; t=SELF ->
+  | MINUS; t=SELF ->
       let zero = mkIntLit 0 (get_pos_camlp4 _loc 1) in
       mkBinary OpMinus zero t (fresh_branch_point_id "") (get_pos_camlp4 _loc 1)
-  | `STAR; t=SELF ->   (*Pointers: value-of *v *)
+  | STAR; t=SELF ->   (*Pointers: value-of *v *)
       mkUnary OpVal t (fresh_branch_point_id "") (get_pos_camlp4 _loc 1)
-  | `AND; t=SELF ->   (*Pointers: address-of *& *)
+  | AND; t=SELF ->   (*Pointers: address-of *& *)
       mkUnary OpAddr t (fresh_branch_point_id "") (get_pos_camlp4 _loc 1)
   | t=pre_increment_expression -> t
   | t=pre_decrement_expression -> t]];
 
 unary_expression_not_plusminus:
  [[ t=postfix_expression -> t
-  | `NOT; t = prefixed_unary_expression ->
+  | NOT; t = prefixed_unary_expression ->
       mkUnary OpNot t (fresh_branch_point_id "") (get_pos_camlp4 _loc 1)
   | t=cast_expression -> t]];
 
@@ -4177,37 +4752,37 @@ postfix_expression:
   | t=post_decrement_expression -> t]];
 
 cast_expression:
- [[ `OPAREN; e=expression; `CPAREN; ue=unary_expression_not_plusminus ->
+ [[ OPAREN; e=expression; CPAREN; ue=unary_expression_not_plusminus ->
 	  (match e with
 		| Var v -> Cast { exp_cast_target_type = Named v.exp_var_name; (*TODO: fix this *)
                       exp_cast_body = ue;
                       exp_cast_pos = get_pos_camlp4 _loc 1 }
 		| _ -> report_error (get_pos_camlp4 _loc 2) ("Expecting a type"))
-  | `OPAREN; `INT; `CPAREN; t=unary_expression ->
+  | OPAREN; INT; CPAREN; t=unary_expression ->
       Cast { exp_cast_target_type = Int;
              exp_cast_body = t;
              exp_cast_pos = get_pos_camlp4 _loc 1 }
-  | `OPAREN; `BOOL; `CPAREN; t=unary_expression ->
+  | OPAREN; BOOL; CPAREN; t=unary_expression ->
       Cast { exp_cast_target_type = Bool;
              exp_cast_body = t;
              exp_cast_pos = get_pos_camlp4 _loc 1 }
-  | `OPAREN; `FLOAT; `CPAREN; t=unary_expression ->
+  | OPAREN; FLOAT; CPAREN; t=unary_expression ->
       Cast { exp_cast_target_type = Float;
              exp_cast_body = t;
              exp_cast_pos = get_pos_camlp4 _loc 1 }]];
 
-ho_arg: [[ `WITH; dc = disjunctive_constr -> F.subst_stub_flow n_flow dc ]];
+ho_arg: [[ WITH; dc = disjunctive_constr -> F.subst_stub_flow n_flow dc ]];
 
 opt_ho_arg: [[ oha = OPT ho_arg -> oha ]];
 
 invocation_expression:
- [[ (* peek_invocation; *) qi=qualified_identifier; `OPAREN; oal=opt_argument_list; `CPAREN ->
+ [[ (* peek_invocation; *) qi=qualified_identifier; OPAREN; oal=opt_argument_list; CPAREN ->
 	  CallRecv { exp_call_recv_receiver = fst qi;
                exp_call_recv_method = snd qi;
                exp_call_recv_arguments = oal;
                exp_call_recv_path_id = None;
                exp_call_recv_pos = get_pos_camlp4 _loc 1 }
-  | (* peek_invocation; *) `IDENTIFIER id; l = opt_lock_info ; `OPAREN; oal=opt_argument_list; `CPAREN; oha = opt_ho_arg ->
+  | (* peek_invocation; *) id = IDENTIFIER; l = opt_lock_info ; OPAREN; oal=opt_argument_list; CPAREN; oha = opt_ho_arg ->
     let _ =
       if (Iast.is_tnt_prim_proc id) then
         Hashtbl.add Iast.tnt_prim_proc_tbl id id
@@ -4223,44 +4798,44 @@ invocation_expression:
 
 opt_lock_info: [[t = OPT lock_info -> t ]];
 
-(* lock_info: [[`OBRACE; t = id; `CBRACE -> t ]]; *)
+(* lock_info: [[OBRACE; t = id; CBRACE -> t ]]; *)
 
-lock_info: [[`OSQUARE; t = id; `CSQUARE -> t ]];
+lock_info: [[OSQUARE; t = id; CSQUARE -> t ]];
 
-qualified_identifier: [[peek_try_st_qi; t=primary_expression; `DOT; `IDENTIFIER id -> (t, id)]];
+qualified_identifier: [[peek_try_st_qi; t=primary_expression; DOT; id = IDENTIFIER -> (t, id)]];
 
-(* member_access: [[peek_try_st; t=primary_expression; `DOT; `IDENTIFIER id -> *)
+(* member_access: [[peek_try_st; t=primary_expression; DOT; id = IDENTIFIER -> *)
 (* 	Member { exp_member_base = t; *)
 (*            exp_member_fields = [id]; *)
 (*            exp_member_path_id = None ; *)
 (*            exp_member_pos = get_pos_camlp4 _loc 3 }] *)
-(* 		   | [ `IDENTIFIER id ->   Var { exp_var_name = id; exp_var_pos = get_pos_camlp4 _loc 1 } *)
-(* 			| `THIS _ -> This{exp_this_pos = get_pos_camlp4 _loc 1}] *)
+(* 		   | [ id = IDENTIFIER ->   Var { exp_var_name = id; exp_var_pos = get_pos_camlp4 _loc 1 } *)
+(* 			| THIS -> This{exp_this_pos = get_pos_camlp4 _loc 1}] *)
 (* 		   ]; *)
 
 literal:
  [[ t=boolean_literal -> BoolLit { exp_bool_lit_val = t; exp_bool_lit_pos = get_pos_camlp4 _loc 1 }
   | t=integer_literal -> IntLit { exp_int_lit_val = t;exp_int_lit_pos = get_pos_camlp4 _loc 1 }
   | t=real_literal -> FloatLit { exp_float_lit_val = t; exp_float_lit_pos = get_pos_camlp4 _loc 1 }
-  | `NULL -> Null (get_pos_camlp4 _loc 1)
-  (* | `IMM -> P.AConst (Imm, (get_pos_camlp4 _loc 1))  *)
-  (* | `LEND -> P.AConst (Lend, (get_pos_camlp4 _loc 1))  *)
-  (* | `MUT -> P.AConst (Mutable, (get_pos_camlp4 _loc 1))  *)
+  | NULL -> Null (get_pos_camlp4 _loc 1)
+  (* | IMM -> P.AConst (Imm, (get_pos_camlp4 _loc 1))  *)
+  (* | LEND -> P.AConst (Lend, (get_pos_camlp4 _loc 1))  *)
+  (* | MUT -> P.AConst (Mutable, (get_pos_camlp4 _loc 1))  *)
  ]];
 
-real_literal:[[ `FLOAT_LIT (t,_) -> t]];
+real_literal:[[ t = FLOAT_LIT -> float_of_string t]];
 
-integer_literal: [[`INT_LITER (t,_) -> t]];
+integer_literal: [[t = INT_LITER -> int_of_string t]];
 
 boolean_literal :
-  [[ `TRUE -> true
-   | `FALSE-> false]];
+  [[ TRUE -> true
+   | FALSE-> false]];
 
 primary_expression :
  [[ t=parenthesized_expression -> t
   | t=primary_expression_no_parenthesis -> t ]];
 
-parenthesized_expression : [[`OPAREN; e= expression; `CPAREN -> e]];
+parenthesized_expression : [[OPAREN; e= expression; CPAREN -> e]];
 
 primary_expression_no_parenthesis :
   [[ peek_array_type; t = arrayaccess_expression -> t
@@ -4270,16 +4845,16 @@ primary_expression_no_array_no_parenthesis :
  [[ t= literal -> t
   (*| t= member_access -> t*)
   (*| t= member_name -> t*)
-  | t=SELF; `DOT; `IDENTIFIER id ->
+  | t=SELF; DOT; id = IDENTIFIER ->
 	Member { exp_member_base = t;
            exp_member_fields = [id];
            exp_member_path_id = None ;
            exp_member_pos = get_pos_camlp4 _loc 3 }
   | t = new_expression -> t
   | peek_invocation; t = invocation_expression -> t
-  | `THIS _ -> This{exp_this_pos = get_pos_camlp4 _loc 1}
+  | THIS -> This{exp_this_pos = get_pos_camlp4 _loc 1}
   ]
-  | [`IDENTIFIER id -> (* print_string ("Variable Id : "^id^"\n"); *)
+  | [id = IDENTIFIER -> (* print_string ("Variable Id : "^id^"\n"); *)
 		let pos = get_pos_camlp4 _loc 1 in
 		let res = if (String.contains id '.') then (* Identifier contains "." ==> this must be field access. *)
 				let flds = Str.split (Str.regexp "\\.") id in
@@ -4298,15 +4873,15 @@ primary_expression_no_array_no_parenthesis :
 
 (* An Hoa : array access expression *)
 arrayaccess_expression:[[
-             id=primary_expression_no_array_no_parenthesis; `OSQUARE; ex = LIST1 expression SEP `COMMA; `CSQUARE ->
+             id=primary_expression_no_array_no_parenthesis; OSQUARE; ex = LIST1 expression SEP COMMA; CSQUARE ->
 			ArrayAt {
 				exp_arrayat_array_base = id;
 				exp_arrayat_index = ex;
 				exp_arrayat_pos = get_pos_camlp4 _loc 1 }
 	         ]];
 (* member_name : *)
-(*  [[ `IDENTIFIER id ->   Var { exp_var_name = id; exp_var_pos = get_pos_camlp4 _loc 1 } *)
-(*   | `THIS _ -> This{exp_this_pos = get_pos_camlp4 _loc 1}]]; *)
+(*  [[ id = IDENTIFIER ->   Var { exp_var_name = id; exp_var_pos = get_pos_camlp4 _loc 1 } *)
+(*   | THIS -> This{exp_this_pos = get_pos_camlp4 _loc 1}]]; *)
 
 (*end of hip part*)
 
@@ -4329,11 +4904,11 @@ opt_cp_list: [[t=LIST0 cp_comps -> List.concat t]];
 cp_comps: [[ t=macro -> []
 	  |t=cp_comp -> [t]]];
 
-cp_comp: [[ r=hp_decl; `DOT -> Hpdecl r
+cp_comp: [[ r=hp_decl; DOT -> Hpdecl r
 	  | t=test -> ProcERes t]];
 
 test:
-  [[t = id;`COLON; s = id ; `OSQUARE; tl=test_list; `CSQUARE ->  (t,tl) ]];
+  [[t = id;COLON; s = id ; OSQUARE; tl=test_list; CSQUARE ->  (t,tl) ]];
 
 test_list: [[t = LIST0 test_ele ->
     let ass  =  ref (None : ((ident list) *(ident list) * (ass list)) option) in
@@ -4347,25 +4922,25 @@ test_list: [[t = LIST0 test_ele ->
       expected_hpdefs = !hpdefs}]];
 
 test_ele:
-  [[t = id; `OSQUARE; il=OPT id_list; `CSQUARE; `OSQUARE; sl=OPT id_list; `CSQUARE; `COLON;`OBRACE;cs=constrs;`CBRACE  ->
+  [[t = id; OSQUARE; il=OPT id_list; CSQUARE; OSQUARE; sl=OPT id_list; CSQUARE; COLON;OBRACE;cs=constrs;CBRACE  ->
   let il = un_option il [] in
   let sl = un_option sl [] in
   if(String.compare "ass" t == 0) then ExpectedAss (il,sl,cs)
   else if(String.compare t "hpdefs" == 0) then ExpectedHpDef (il,sl,cs)
   else report_error no_pos "no_case"]];
 
-constrs: [[t = LIST0 constr SEP `SEMICOLON -> t]];
+constrs: [[t = LIST0 constr SEP SEMICOLON -> t]];
 
 
-constr : [[ t=disjunctive_constr; `CONSTR; b=disjunctive_constr ->
+constr : [[ t=disjunctive_constr; CONSTR; b=disjunctive_constr ->
     {ass_lhs = F.subst_stub_flow n_flow t;
     ass_guard = None;
     ass_rhs = F.subst_stub_flow n_flow b}
-  | t=disjunctive_constr; `REL_GUARD; guard = disjunctive_constr; `CONSTR; b=disjunctive_constr ->
+  | t=disjunctive_constr; REL_GUARD; guard = disjunctive_constr; CONSTR; b=disjunctive_constr ->
         {ass_lhs = F.subst_stub_flow n_flow t;
         ass_guard = Some guard;
         ass_rhs = F.subst_stub_flow n_flow b}
-  |  t=disjunctive_constr; `EQUIV; b=disjunctive_constr ->
+  |  t=disjunctive_constr; EQUIV; b=disjunctive_constr ->
          {ass_lhs = F.subst_stub_flow n_flow t;
          ass_guard = None;
          ass_rhs = F.subst_stub_flow n_flow b}
@@ -4375,10 +4950,10 @@ constr : [[ t=disjunctive_constr; `CONSTR; b=disjunctive_constr ->
 END;;
 
 let parse_sleek n s =
-  SHGram.parse sprog (PreCast.Loc.mk n) s
+  Grammar.Entry.parse sprog s
 
 let parse_hip_with_option n s : (string * Iast.prog_decl) =
-  let (slst,p) = SHGram.parse hip_with_option (PreCast.Loc.mk n) s in
+  let (slst,p) = Grammar.Entry.parse hip_with_option s in
   let s = List.fold_left (fun r s -> r^s) "" slst in
   (* let _ = print_endline s in*)
   (s,p)
@@ -4387,27 +4962,27 @@ let parse_sleek n s =
   DD.no_1(* _loop *) "parse_sleek" (fun x -> x) (pr_list string_of_command) (fun n -> parse_sleek n s) n
 
 let parse_hip n s =
-  SHGram.parse hprog (PreCast.Loc.mk n) s
+  Grammar.Entry.parse hprog s
 
 let parse_hip n s =
   DD.no_1(* _loop *) "parse_hip" (fun x -> x) (fun _ -> "?") (fun n -> parse_hip n s) n
 
 let parse_sleek_int n s =
-  SHGram.parse_string sprog_int (PreCast.Loc.mk n) s
+  shgram_parse_str sprog_int s
 
 let parse_hip_string n s =
-  SHGram.parse_string hprog (PreCast.Loc.mk n) s
+  shgram_parse_str hprog s
 
 let parse_hip_string n s =
   let pr x = x in
   let pr_no x = "?" in DD.no_2 "parse_hip_string" pr pr pr_no parse_hip_string n s
 
 let parse_specs_list s =
-  SHGram.parse_string opt_spec_list_file (PreCast.Loc.mk "spec string") s
+  shgram_parse_str opt_spec_list_file s
 
-let parse_spec s = SHGram.parse_string opt_spec_list_file (PreCast.Loc.mk "spec string") s
+let parse_spec s = shgram_parse_str opt_spec_list_file s
 
-let parse_cpfile n s = SHGram.parse cp_file (PreCast.Loc.mk n) s
+let parse_cpfile n s = Grammar.Entry.parse cp_file s
 
 (*****************************************************************)
 (******** The function below will be used by CIL parser **********)
@@ -4419,7 +4994,7 @@ let parse_c_aux_proc (fname: string) (proc: string) =
   (* swith to cparser mode *)
   is_cparser_mode := true;
   (* parse *)
-  let res = SHGram.parse_string hproc (PreCast.Loc.mk fname) proc in
+  let res = shgram_parse_str hproc proc in
   (* restore states of previous parser *)
   is_cparser_mode := old_parser_mode;
   (* return *)
@@ -4435,7 +5010,7 @@ let parse_c_function_spec (fname: string) (spec: string) (base_loc: file_offset)
   cparser_base_loc := base_loc;
   is_cparser_mode := true;
   (* parse *)
-  let res = SHGram.parse_string opt_spec_list (PreCast.Loc.mk fname) spec in
+  let res = shgram_parse_str opt_spec_list spec in
   (* restore states of previous parser *)
   is_cparser_mode := old_parser_mode;
   cparser_base_loc := old_base_loc;
@@ -4451,7 +5026,7 @@ let parse_c_program_spec (fname: string) (spec: string) (base_loc: file_offset)
   cparser_base_loc := base_loc;
   is_cparser_mode := true;
   (* parse *)
-  let res = SHGram.parse_string hprog (PreCast.Loc.mk fname) spec in
+  let res = shgram_parse_str hprog spec in
   (* restore states of previous parser *)
   is_cparser_mode := old_parser_mode;
   cparser_base_loc := old_base_loc;
@@ -4466,7 +5041,7 @@ let parse_c_statement_spec (fname: string) (spec: string) (base_loc: file_offset
   cparser_base_loc := base_loc;
   is_cparser_mode := true;
   (* parse *)
-  let res = SHGram.parse_string statement (PreCast.Loc.mk fname) spec in
+  let res = shgram_parse_str statement spec in
   (* restore states of previous parser *)
   is_cparser_mode := old_parser_mode;
   cparser_base_loc := old_base_loc;
@@ -4549,4 +5124,3 @@ let create_tnt_prim_proc_list ids : Iast.proc_decl list =
   List.concat (List.map (fun id ->
     match (create_tnt_prim_proc id) with
     | None -> [] | Some pd -> [pd]) ids)
-

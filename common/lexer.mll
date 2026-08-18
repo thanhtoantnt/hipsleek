@@ -4,11 +4,9 @@ open Exc.ETABLE_NFLOW
 
 open Token
 (** A signature for specialized tokens. *)
-module Sig = Camlp4.Sig
-
-module Make (Token : SleekTokenS)
+module Make (Token : SleekTokenS with type t = sleek_token)
 = struct
-  module Loc = Token.Loc
+  module Loc = Loc
   module Token = Token
 
   open Lexing
@@ -44,8 +42,6 @@ module Make (Token : SleekTokenS)
     let print ppf err = fprintf ppf "%s" (to_string err)
 
   end;;
-
-  let module M = Camlp4.ErrorHandler.Register(Error) in ()
 
   open Error
 
@@ -378,15 +374,15 @@ rule tokenizer file_name = parse
           move_start_p (-1) file_name; STAR                                      }
   | '"'
         { with_curr_loc string file_name;
-          let s = buff_contents file_name in STRING (Camlp4.Struct.Token.Eval.string s, s)     }
+          let s = buff_contents file_name in STRING (Plexing.eval_string Ploc.dummy s, s)     }
   | "'" (newline as x) "'"
-        { update_loc file_name None 1 false 1; CHAR_LIT (Camlp4.Struct.Token.Eval.char x, x)       }
+        { update_loc file_name None 1 false 1; CHAR_LIT (Plexing.eval_char (if String.length x > 1 && x.[0] = '\\' then x else Char.escaped x.[0]), x)       }
   | "'" ( [^ '\\' '\010' '\013']
             | '\\' (['\\' '"' 'n' 't' 'b' 'r' ' ' '\'']
                 |['0'-'9'] ['0'-'9'] ['0'-'9']
                 |'x' hexa_char hexa_char)
-          as x) "'"                                { CHAR_LIT (Camlp4.Struct.Token.Eval.char x, x) }
-  | "##OPTION " (['0'-'9' 'A'-'Z' 'a'-'z' '-' ' ' '.' '_' '"' ]* as x) {ARGOPTION (Camlp4.Struct.Token.Eval.string x)}
+          as x) "'"                                { CHAR_LIT (Plexing.eval_char (if String.length x > 1 && x.[0] = '\\' then x else Char.escaped x.[0]), x) }
+  | "##OPTION " (['0'-'9' 'A'-'Z' 'a'-'z' '-' ' ' '.' '_' '"' ]* as x) {ARGOPTION (Plexing.eval_string Ploc.dummy x)}
   | "@frac" { PFRAC }
   | "@A" { ACCS }
   | '&' { AND }
