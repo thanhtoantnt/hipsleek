@@ -19,7 +19,11 @@ dune exec ./hip.exe -- --parser cil examples/hip/incr.c
 | `hip/counter.ss` | VeriFast `counter.c`: increment and swap |
 | `hip/swap.ss` | VeriFast `swap.c`: swap two point fields |
 | `hip/stack.ss` | VeriFast `aplas-stack.c`: push/pop |
-| `hip/incr.c` | C via CIL (`--parser cil`): incr / swap `int*` |
+| `hip/incr.c` | C via CIL: incr / swap `int*` |
+| `hip/abs.c` | Frama-C/ACSL: absolute value |
+| `hip/max.c` | ACSL: max of two ints |
+| `hip/sum.c` | recursive `1+...+n` |
+| `hip/loop.c` | Frama-C WP: while-loop count |
 | `sleek/sleek2.slk` | Entailment checks (Valid / Fail) |
 
 The full regression suite (hundreds of cases) lives under `dune-tests/`.
