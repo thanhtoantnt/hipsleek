@@ -2,7 +2,7 @@
   (name hipsleek_common)
   (public_name hipsleek.common)
   ;(libraries extlib fileutils batteries ocamlgraph camlp4 camlp4.lib xml-light)
-  (libraries fileutils ocamlgraph camlp5 camlp-streams str num visitors.ppx)
+  (libraries unix ocamlgraph camlp5 camlp-streams str num visitors.ppx)
     (inline_tests)
   (preprocess (per_module
     ((action (run camlp5o -loc _loc %{input-file})) parser)

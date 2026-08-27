@@ -18,7 +18,6 @@
  (synopsis "Separation logic verifier")
  (description "The HIP/SLEEK separation logic verifier")
  (depends
-  (fileutils (>= 0.6.4))
   (ocamlgraph (>= 2.1.0))
   (camlp5 (>= 8.00))
   (camlp-streams (>= 5.0.1))

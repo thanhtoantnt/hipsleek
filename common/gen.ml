@@ -2073,6 +2073,24 @@ struct
 
   (** String-handling utility functions. *)
 
+  (** [which prog] returns the full path of [prog] as found on the PATH,
+      raising [Not_found] otherwise. Replaces FileUtil.which (issue #56). *)
+  let which prog =
+    let path = try Sys.getenv "PATH" with Not_found -> "" in
+    let is_exec f =
+      try
+        Sys.file_exists f && not (Sys.is_directory f)
+        && ((Unix.stat f).Unix.st_perm land 0o111) <> 0
+      with _ -> false
+    in
+    let rec go = function
+      | [] -> raise Not_found
+      | d :: rest ->
+        let f = Filename.concat d prog in
+        if is_exec f then f else go rest
+    in
+    go (String.split_on_char ':' path)
+
   let trim_quotes s =
     let trim_last s' = if String.get s' ((String.length s')-1) = '"' then
         String.sub s' 0 ((String.length s')-1) else s' in
