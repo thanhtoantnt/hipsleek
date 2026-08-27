@@ -23,7 +23,6 @@
   (camlp-streams (>= 5.0.1))
   num
   (ppx_expect (>= v0.15.1))
-  (ppx_deriving (>= 6.0.3))
   (visitors (>= 20210608))
   (menhir (>= 20220210))
   dune
