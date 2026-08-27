@@ -40,7 +40,7 @@ export PATH="$PWD/omega_modified/omega_calc/obj:$PATH"
 **Mona** (vendored in `mona-1.4/`):
 
 ```sh
-(cd mona-1.4 && ./configure --prefix="$PWD" && make install)
+(cd mona-1.4 && make)
 cp mona-1.4/mona_predicates.mona .
 export PATH="$PWD/mona-1.4/bin:$PATH"
 ```
