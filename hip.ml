@@ -555,8 +555,6 @@ let process_source_full_after_parser source (prog, prims_list, prims_incls) =
      let () = print_string (" done in " ^ (string_of_float (t2 -. t1)) ^ " second(s)\n") in *)
   let () = Gen.Profiling.pop_time "Preprocessing" in
 
-  (* An Hoa : initialize html *)
-  let () = Prooftracer.initialize_html source in
 
   if (!Scriptarguments.typecheck_only) 
   then print_string (Cprinter.string_of_program cprog)
@@ -583,14 +581,6 @@ let process_source_full_after_parser source (prog, prims_list, prims_incls) =
   let ptime4 = Unix.times () in
   let t4 = ptime4.Unix.tms_utime +. ptime4.Unix.tms_cutime +. ptime4.Unix.tms_stime +. ptime4.Unix.tms_cstime   in
 
-  (* An Hoa : export the proof to html *)
-  let () = if !Globals.print_proof then
-      begin 
-        print_string "\nExport proof to HTML file ... ";
-        Prooftracer.write_html_output ();
-        print_endline_quiet "done!" 
-      end
-  in
 
   (* Proof Logging *)
   let () = Log.process_proof_logging !Globals.source_files cprog prim_names

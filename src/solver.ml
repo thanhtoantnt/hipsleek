@@ -8751,14 +8751,11 @@ and heap_entail_empty_rhs_heap_one_flow (prog : prog_decl) conseq (is_folding : 
       (* Temporarily suppress output of implication checking *)
       let () = Smtsolver.suppress_all_output () in
       let () = Z3.suppress_all_output () in
-      let () = Tpdispatcher.push_suppress_imply_output_state () in
-      let () = Tpdispatcher.suppress_imply_output () in
       let inst = pure_match evarstoi lhs_p rhs_p in (* Do matching! *)
       let lhs_p = MCP.memoise_add_pure_N lhs_p inst in
       (* Unsuppress the printing *)
       let () = Smtsolver.unsuppress_all_output ()  in
       let () = Z3.unsuppress_all_output ()  in
-      let () = Tpdispatcher.restore_suppress_imply_output_state () in
       (* let () = print_string ("An Hoa :: New LHS with instantiation : " ^ (Cprinter.string_of_mix_formula lhs_p) ^ "\n\n") in *)
       lhs_p
   in

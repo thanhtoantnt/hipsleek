@@ -8,8 +8,6 @@ open Gen.Basic
 open Cpure
 open VarGen
 
-let set_generated_prover_input = ref (fun _ -> ())
-let set_prover_original_output = ref (fun _ -> ())
 
 let set_prover_type () = Others.last_tp_used # set Others.OmegaCalc
 
@@ -403,7 +401,6 @@ let check_formula f timeout =
       let result = ref true in
       let str = read_last_line_from_in_channel (!process.inchannel) in
       (* An Hoa : set original output *)
-      let () = !set_prover_original_output str in
       let () = set_proof_result str in
       let n = String.length str in
       if n > 7 then
@@ -649,7 +646,6 @@ let is_valid_ops pr_weak pr_strong (pe : formula) timeout: bool =
       (*test*)
       (*print_endline (Gen.break_lines fomega);*)
       (* An Hoa : set generated input *)
-      let () = !set_generated_prover_input fomega in
       let () = set_proof_string ("IMPLY:"^fomega) in
       if !log_all_flag then begin
         (*output_string log_all ("YYY" ^ (Cprinter.string_of_pure_formula pe) ^ "\n");*)

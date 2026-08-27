@@ -10,8 +10,6 @@ module StringSet = Set.Make(String)
 
 let set_prover_type () = Others.last_tp_used # set Others.Z3
 
-let set_generated_prover_input = ref (fun _ -> ())
-let set_prover_original_output = ref (fun _ -> ())
 
 (* Pure formula printing function, to be intialized by cprinter module *)
 
@@ -1133,14 +1131,12 @@ and smt_imply_x pr_weak pr_strong (ante : Cpure.formula) (conseq : Cpure.formula
   if (should_run_smt) then
     let input = to_smt pr_weak pr_strong ante (Some conseq) prover bget_cex in
     (* let input = if (Cpure.contains_exists conseq) then ("(set-option :mbqi true)\n" ^ input) else input in *)
-    let () = !set_generated_prover_input input in
     let output = 
       if !smtsolver_name = "z3-2.19" then
         run "is_imply" prover input timeout
       else
         check_formula input bget_cex timeout
     in
-    let () = !set_prover_original_output (String.concat "\n" output.original_output_text) in
     let res = (
       match output.sat_result with
       | Sat -> false

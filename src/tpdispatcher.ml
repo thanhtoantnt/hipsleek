@@ -70,32 +70,6 @@ let imply_cache = ref (Hashtbl.create 200)
 
 (* An Hoa : Global variablew the prover interface to pass message to this interface *)
 
-let generated_prover_input = ref "_input_not_set_"
-
-let prover_original_output = ref "_output_not_set_"
-
-let set_generated_prover_input inp =
-  generated_prover_input := inp;;
-
-let reset_generated_prover_input () = generated_prover_input := "_input_not_set_";;
-
-let get_generated_prover_input () = !generated_prover_input;;
-
-let set_prover_original_output oup = 
-  prover_original_output := oup;;
-
-let reset_prover_original_output () = prover_original_output := "_output_not_set_";;
-
-let get_prover_original_output () = !prover_original_output;;
-
-let suppress_imply_out = ref true;;
-
-Smtsolver.set_generated_prover_input := set_generated_prover_input;;
-Smtsolver.set_prover_original_output := set_prover_original_output;;
-Z3.set_generated_prover_input := set_generated_prover_input;;
-Z3.set_prover_original_output := set_prover_original_output;;
-Omega.set_generated_prover_input := set_generated_prover_input;;
-Omega.set_prover_original_output := set_prover_original_output;;
 
 (* An Hoa : end *)
 
@@ -2524,23 +2498,6 @@ let simplify_with_pairwise (s:int) (f:CP.formula): CP.formula =
   let pf = Cprinter.string_of_pure_formula in
   Debug.no_1_num s ("TP.simplify_with_pairwise") pf pf simplify_with_pairwise f
 
-let should_output () = !print_proof && not !suppress_imply_out
-
-let suppress_imply_output () = suppress_imply_out := true
-
-let unsuppress_imply_output () = suppress_imply_out := false
-
-let suppress_imply_output_stack = ref ([] : bool list)
-
-let push_suppress_imply_output_state () = 
-  suppress_imply_output_stack := !suppress_imply_out :: !suppress_imply_output_stack
-
-let restore_suppress_imply_output_state () = match !suppress_imply_output_stack with
-  | [] -> suppress_imply_output ()
-  | h :: t -> begin
-      suppress_imply_out := h;
-      suppress_imply_output_stack := t;
-    end
 
 let tp_imply_translate_cyclic_x ante conseq =
   (*
@@ -2696,10 +2653,6 @@ let tp_imply_no_cache ante conseq imp_no timeout process =
       then let a,c = Infinity.normalize_inf_formula_imply ante conseq
         in let a = Infinity.fixed_point_pai_num a in a,c
       else ante,conseq in
-    if should_output () then (
-      reset_generated_prover_input ();
-      reset_prover_original_output ();
-    );
     let (pr_weak,pr_strong) = CP.drop_complex_ops in
     let (pr_weak_z3,pr_strong_z3) = CP.drop_complex_ops_z3 in
     let ante_w = ante in
@@ -2864,13 +2817,6 @@ let tp_imply_no_cache ante conseq imp_no timeout process =
     if not !tp_batch_mode then stop_prover ();
     (* let tstop = Gen.Profiling.get_time () in *)
     Gen.Profiling.push_time "tp_is_sat"; 
-    if should_output () then (
-      Prooftracer.push_pure_imply ante conseq r;
-      Prooftracer.push_pop_prover_input (get_generated_prover_input ()) (string_of_prover !pure_tp);
-      Prooftracer.push_pop_prover_output (get_prover_original_output ()) (string_of_prover !pure_tp);
-      Prooftracer.add_pure_imply ante conseq r (string_of_prover !pure_tp) (get_generated_prover_input ()) (get_prover_original_output ());
-      Prooftracer.pop_div ();
-    );
     let () = Gen.Profiling.pop_time "tp_is_sat" in 
     r
 
