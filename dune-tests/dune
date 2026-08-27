@@ -14,5 +14,19 @@
 
 (cram
  (deps %{project_root}/prelude.ss %{project_root}/prelude.slk
+       %{project_root}/examples/hip/abs.c
+       %{project_root}/examples/hip/cell.ss
+       %{project_root}/examples/hip/cll.ss
+       %{project_root}/examples/hip/counter.ss
+       %{project_root}/examples/hip/dll.ss
+       %{project_root}/examples/hip/incr.c
+       %{project_root}/examples/hip/loop.c
+       %{project_root}/examples/hip/max.c
+       %{project_root}/examples/hip/reverse.ss
+       %{project_root}/examples/hip/sll.ss
+       %{project_root}/examples/hip/stack.ss
+       %{project_root}/examples/hip/sum.c
+       %{project_root}/examples/hip/swap.ss
+       %{project_root}/examples/hip/tree.ss
        hip_postprocess.sh sleek_postprocess.sh)
  (applies_to :whole_subtree))
