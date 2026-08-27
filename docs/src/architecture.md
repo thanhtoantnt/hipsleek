@@ -37,7 +37,7 @@ External provers are dispatched by `src/tpdispatcher.ml` (`-tp` flag):
 |--------|----------|------------|
 | z3 | default, nonlinear arithmetic + uninterpreted functions | system package |
 | Omega (`oc`) | Presburger arithmetic | `omega_modified/`, `make oc` |
-| Mona (`mona`) | WS1S | `mona-1.4/`, `make` (`-tp mona` dropped until `mona_inter` exists, issue #36) |
+| Mona (`set`) | WS1S | `mona-1.4/`, `make` (file-based; `-tp mona` and the om/zm/cm/rm/prm combos were dropped until `mona_inter` exists, issues #36/#52; `parahip`/`auto` keep Mona bag paths) |
 | fixcalc | fixed-point (recursive predicate) constraints | `fixcalc_src/` (Haskell) |
 | redlog | quantifier elimination | system package |
 

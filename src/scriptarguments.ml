@@ -621,9 +621,9 @@ let common_arguments = [
   ("--pr_str_assume", Arg.Set Globals.print_assume_struc, "Print structured formula for assume");
   ("-stop", Arg.Clear Globals.check_all,
    "Stop checking on erroneous procedure");
-  ("-tp", Arg.Symbol (["cvc4"; "oc";"oc-2.1.6"; "co"; "z3"; "z3-2.19"; "z3n"; "z3-4.3.1"; "zm"; "om";
-                       "set"; "cm"; "OCRed"; "redlog"; "rm"; "prm"; "parahip"; "auto";"log"; "dp"], (set_tp) (* Tpdispatcher.set_tp *)),
-   "Choose theorem prover:\n\tcvc4: CVC4\n\tomega: Omega Calculator (default)\n\tco: CVC4 then Omega\n\tz3: Z3\n\tom: Omega and Mona\n\tset: Use MONA in set mode.\n\tcm: CVC4 then MONA.");
+  ("-tp", Arg.Symbol (["cvc4"; "oc";"oc-2.1.6"; "co"; "z3"; "z3-2.19"; "z3n"; "z3-4.3.1";
+                       "set"; "OCRed"; "redlog"; "parahip"; "auto";"log"; "dp"], (set_tp) (* Tpdispatcher.set_tp *)),
+   "Choose theorem prover:\n\tcvc4: CVC4\n\tomega: Omega Calculator (default)\n\tco: CVC4 then Omega\n\tz3: Z3\n\tset: Use MONA in set mode.");
   ("--dis-tp-batch-mode", Arg.Clear Tpdispatcher.tp_batch_mode,"disable batch-mode processing of external theorem provers");
   ("-perm", Arg.Symbol (["fperm"; "cperm"; "dperm"; "bperm"; "none"], Perm.set_perm),
    "Choose type of permissions for concurrency :\n\t fperm: fractional permissions\n\t cperm: counting permissions");

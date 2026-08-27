@@ -146,17 +146,12 @@ type tp_type =
   | Cvc4
   | CO (* CVC4 then Omega combination *)
   | Mona
-  | MonaH
-  | OM
   | SetMONA
-  | CM (* CVC4 then MONA *)
   | Z3
   | Z3N
   | OCRed
   | Redlog
-  | RM (* Redlog and Mona *)
   | PARAHIP (* Redlog, Z3 and Mona *) (*This option is used on ParaHIP website*)
-  | ZM (* Z3 and Mona *)
   | OZ (* Omega and Z3 *)
   | AUTO (* Omega, Z3, Mona *)
   | DP (*ineq prover for proof slicing experim*)
@@ -167,17 +162,12 @@ let string_of_prover prover = match prover with
   | Cvc4 -> "CVC4"
   | CO  -> "CO"
   | Mona -> "MONA"
-  | MonaH -> "MonaH"
-  | OM -> "OM"
   | SetMONA -> "SetMONA"
-  | CM  -> "CM"
   | Z3 -> "Z3"
   | Z3N -> "Z3N"
   | OCRed -> "OC and REDLOG"
   | Redlog -> "REDLOG (REDUCE LOGIC)"
-  | RM -> "Redlog, Mona"
   | PARAHIP -> "Redlog, Mona, z3" (*This option is used on ParaHIP website*)
-  | ZM -> "Z3, Mona"
   | OZ -> "Omega, z3"
   | AUTO -> "AUTO - omega, z3, mona"
   | DP -> "Disequality Solver"
@@ -192,17 +182,12 @@ let string_of_prover_code prover = match prover with
   | Cvc4 -> "3"
   | CO  -> "4"
   | Mona -> "6"
-  | MonaH -> "7"
-  | OM -> "8"^(string_of_ato ())
   | SetMONA -> "10"
-  | CM  -> "11"
   | Z3 -> "13"
   | Z3N -> "14"
   | OCRed -> "15"
   | Redlog -> "16"
-  | RM -> "17"
   | PARAHIP -> "19" (*This option is used on ParaHIP website*)
-  | ZM -> "20"
   | OZ -> "21"^(string_of_ato ())
   | AUTO -> "22"
   | DP -> "23"
