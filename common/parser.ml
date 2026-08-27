@@ -2859,7 +2859,6 @@ cexp_w:
             Pure_f (P.BForm ((P.LexVar (ann, [], [], pos), None), None))
           with Not_found ->
             if not (rel_names # mem id ) then
-              if not !Globals.web_compile_flag then
                 print_endline_quiet ("WARNING : parsing problem "^id^" is neither a ranking function nor a relation nor a heap predicate");
             Pure_f(P.BForm ((P.RelForm (id, cl, get_pos_camlp4 _loc 1), None), None))
         end

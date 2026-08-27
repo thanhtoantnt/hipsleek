@@ -1235,10 +1235,7 @@ and check_scall_fork prog ctx e0 (post_start_label:formula_label) ret_t mn lock 
       let () = PTracer.log_proof prf in
       (* let () = print_endline (("\n ###  after res ctx: ") ^ (Cprinter.string_of_list_failesc_context rs)) in *)
       if (CF.isSuccessListFailescCtx sctx) && (CF.isFailListFailescCtx rs) then
-        if (!Globals.web_compile_flag) then
-          Debug.print_info "procedure call" ("\nProving precondition in forked method " ^ proc.proc_name ^ " has failed \n") pos
-        else
-          Debug.print_info "procedure call" (to_print^" has failed \n") pos
+        Debug.print_info "procedure call" (to_print^" has failed \n") pos
       else () ;
       rs
     in
@@ -1399,10 +1396,7 @@ and check_scall_lock_op prog ctx e0 (post_start_label:formula_label) ret_t mn lo
     let rs, prf = x_add heap_entail_struc_list_failesc_context_init 3 prog false true ctx prepost None None None pos pid in
     (* let () = print_string_quiet (("\nSCall: acquire: rs =  ") ^ (Cprinter.string_of_list_failesc_context rs) ^ "\n") in *)
     if (CF.isSuccessListFailescCtx ctx) && (CF.isFailListFailescCtx rs) then
-      if (!Globals.web_compile_flag) then
-        Debug.print_info "procedure call" ("\nProving precondition in method " ^ mn ^ " has failed \n") pos
-      else
-        Debug.print_info "procedure call" (to_print^" has failed \n") pos else () ;
+      Debug.print_info "procedure call" (to_print^" has failed \n") pos else () ;
     (*NORMALIZE after acquiring some new states*)
     let tmp_res = normalize_list_failesc_context_w_lemma prog rs in
     let tmp_res2 =
@@ -1526,12 +1520,11 @@ and check_exp_a (prog : prog_decl) (proc : proc_decl) (ctx : CF.list_failesc_con
                   let () = PTracer.log_proof prf in
 
                   (*do not display the context if deploy in website*)
-                  if not !Globals.web_compile_flag then
-                    begin
-                      Debug.pprint(*print_info "assert"*) ("assert condition:\n" ^ (Cprinter.string_of_struc_formula c1)) pos;
-                      x_tinfo_hp (add_str "assert(inp-formula)" Cprinter.string_of_struc_formula) c1 pos;
-                      x_tinfo_hp (add_str "assert(res-failesc)" Cprinter.string_of_list_failesc_context) rs pos
-                    end;
+                  begin
+                    Debug.pprint(*print_info "assert"*) ("assert condition:\n" ^ (Cprinter.string_of_struc_formula c1)) pos;
+                    x_tinfo_hp (add_str "assert(inp-formula)" Cprinter.string_of_struc_formula) c1 pos;
+                    x_tinfo_hp (add_str "assert(res-failesc)" Cprinter.string_of_list_failesc_context) rs pos
+                  end;
                   if CF.isSuccessListFailescCtx_new rs then
                     begin
                       Debug.print_info "assert" (s ^(if (CF.isNonFalseListFailescCtx ts) then " : ok\n" else ": unreachable\n")) pos;
@@ -2682,13 +2675,7 @@ and check_exp_a (prog : prog_decl) (proc : proc_decl) (ctx : CF.list_failesc_con
               (*   let () = print_endline ("\nlocle2:" ^ proc.proc_name) in *)
               (* get source code position of failed branches *)
               (
-                if (!Globals.web_compile_flag) then
-                  let to_print = "\nProving precondition in method " ^ proc.proc_name ^ " Failed.\n" in
-                  let s,_,_= CF.get_failure_list_failesc_context res in
-                  let () = print_string_quiet (to_print ^s^"\n") in
-                  res
-                else
-                  (*FAILURE explaining*)
+                (*FAILURE explaining*)
                   let to_print = "\nProving precondition in method " ^ proc.proc_name ^ " Failed.\n" in
                   let _ =
                     if not !Globals.disable_failure_explaining then
@@ -3330,7 +3317,7 @@ and proc_mutual_scc (prog: prog_decl) (proc_lst : proc_decl list) (fn:prog_decl 
             (p.proc_stk_of_static_specs # top) (* (p.proc_static_specs) *) no_pos in
           let cur_r = (fn prog p) in
           let () = if not cur_r then
-              let () = if not !Globals.web_compile_flag then Debug.ninfo_hprint (add_str "proc.proc_name"  pr_id) (p.proc_name) no_pos in
+              let () = Debug.ninfo_hprint (add_str "proc.proc_name"  pr_id) (p.proc_name) no_pos in
               ()
             else () in
           tot_r && cur_r
@@ -3649,7 +3636,7 @@ and check_proc iprog (prog : prog_decl) (proc0 : proc_decl) cout_option (mutual_
           stk_vars # push_list args;
           let () = x_binfo_hp (add_str "start check_proc" pr_id) (stk_vars # string_of_no_ln) no_pos in
           let pr_flag = not(!phase_infer_ind) in
-          if !Globals.print_proc && pr_flag && (not !Globals.web_compile_flag) then
+          if !Globals.print_proc && pr_flag then
             print_string_quiet ("Procedure " ^ proc.proc_name ^ ":\n" ^ (Cprinter.string_of_proc_decl 3 proc) ^ "\n\n");
           if pr_flag then
             begin
@@ -4109,10 +4096,7 @@ and check_proc iprog (prog : prog_decl) (proc0 : proc_decl) cout_option (mutual_
             begin
               if pp then
                 (* let () = Debug.info_hprint (add_str "proc.proc_sel_hps"  !CP.print_svl) proc.proc_sel_hps  no_pos in *)
-                if !Globals.web_compile_flag then
-                  print_string_quiet ("\nProcedure <b>"^proc.proc_name^"</b> <font color=\"blue\">SUCCESS</font>.\n")
-                else
-                  let () = print_web_mode ("\nProcedure "^proc.proc_name^" SUCCESS.\n") in
+                let () = print_web_mode ("\nProcedure "^proc.proc_name^" SUCCESS.\n") in
                   if (pre_ctr # get> 0) then
                     let () = print_endline_quiet "\nVariable Inference result:" in
                     let () = print_endline_quiet proc0.proc_name in
@@ -4121,16 +4105,7 @@ and check_proc iprog (prog : prog_decl) (proc0 : proc_decl) cout_option (mutual_
                     ()
               else
                 let () = Log.last_cmd # dumping (proc.proc_name^" FAIL-1") in
-                if !Globals.web_compile_flag then
-                  begin
-                    print_string_quiet ("\nProcedure <b>"^proc.proc_name^"</b> result <font color=\"red\">FAIL</font>.\n");
-                    (if proving_loc#is_avail then
-                       Printf.printf "\nLast Proving Location: %s\n"
-                         proving_loc#string_of
-                     else ())
-                  end
-                else
-                  print_web_mode ("\nProcedure "^proc.proc_name^" result FAIL.(1)\n")
+                print_web_mode ("\nProcedure "^proc.proc_name^" result FAIL.(1)\n")
             end;
           pp
         end
@@ -4156,7 +4131,7 @@ let reverify_proc prog proc do_infer =
       let new_spec = proc.proc_stk_of_static_specs # top in
       (* Do not remove inf_cmd when do_infer *)
       let new_spec = if not do_infer then CF.remove_inf_cmd_spec new_spec else new_spec in
-      if !Globals.print_proc && pr_flag && (not !Globals.web_compile_flag) then
+      if !Globals.print_proc && pr_flag then
         print_string_quiet ("Procedure " ^ proc.proc_name ^ ":\n" ^ (Cprinter.string_of_proc_decl 3 proc) ^ "\n\n");
       if pr_flag then
         begin
@@ -4168,12 +4143,11 @@ let reverify_proc prog proc do_infer =
         (* if proc.proc_sel_hps = [] || not do_infer then () *)
         (* else                                              *)
           begin
-            if (not !Globals.web_compile_flag) then
-              print_endline_quiet "";
-              print_endline_quiet "\n\n*******************************";
-              print_endline_quiet     "******* SPECIFICATION 2 *******";
-              print_endline_quiet     "*******************************";
-              print_endline_quiet (Cprinter.string_of_struc_formula(*_for_spec_inst prog*) new_spec);
+            print_endline_quiet "";
+            print_endline_quiet "\n\n*******************************";
+            print_endline_quiet     "******* SPECIFICATION 2 *******";
+            print_endline_quiet     "*******************************";
+            print_endline_quiet (Cprinter.string_of_struc_formula(*_for_spec_inst prog*) new_spec);
           end
       in
       (*****LOCKSET variable: ls'=ls *********)

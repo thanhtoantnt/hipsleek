@@ -73,7 +73,7 @@ let parse_file_full file_name (primitive: bool) =
     ) in
     (* start parsing *)
     if not primitive then
-      if (not (!Globals.web_compile_flag || not !Debug.webprint)) then
+      if (!Debug.webprint) then
         print_endline_quiet ("Parsing file \"" ^ file_name ^ "\" by " 
                              ^ parser_to_use ^ " parser...");
     let () = Gen.Profiling.push_time "Parsing" in
@@ -124,8 +124,7 @@ let parse_file_full file_name (primitive: bool) =
 
 (* Parse all prelude files declared by user.*)
 let process_primitives (file_list: string list) : Iast.prog_decl list =
-  if (not !Globals.web_compile_flag) then
-    Debug.info_zprint (lazy ((" processing primitives \"" ^(pr_list pr_id file_list) ^ "\n"))) no_pos;
+  Debug.info_zprint (lazy ((" processing primitives \"" ^(pr_list pr_id file_list) ^ "\n"))) no_pos;
   flush stdout;
   let new_names = List.map (fun c-> (Gen.get_path Sys.executable_name) ^ (String.sub c 1 ((String.length c) - 2))) file_list in
   if (Sys.file_exists "prelude.ss") then
@@ -499,26 +498,6 @@ let process_source_full_after_parser source (prog, prims_list, prims_incls) =
   let () = Gen.Profiling.push_time "Translating to Core" in
   (*    let () = print_string ("Translating to core language...\n"); flush stdout in *)
   (* let () = print_endline_quiet (Iprinter.string_of_program intermediate_prog) in *)
-  (**************************************)
-  (*Simple heuristic for ParaHIP website*)
-  (*Heuristic: check if waitlevel and locklevels have been used for verification
-    If not detect waitlevel or locklevel -> set allow_locklevel==faslse
-    Note: this is used in ParaHIP website for demonstration only.
-    We could use the run-time flag "--dis-locklevel" to disable the use of locklevels
-    and waitlevel.
-  *)
-  let search_for_locklevel proc =
-    if (not !Globals.allow_locklevel) then
-      let struc_fv = Iformula.struc_free_vars false proc.Iast.proc_static_specs in
-      let b = List.exists (fun (id,_) -> (id = Globals.waitlevel_name)) struc_fv in
-      if b then
-        Globals.allow_locklevel := true
-  in
-  let () = if !Globals.web_compile_flag then
-      let todo_unk = List.map search_for_locklevel prog.Iast.prog_proc_decls in
-      ()
-  in
-  (**************************************)
   (*to improve: annotate field*)
   let () = Iast.annotate_field_pure_ext intermediate_prog in
   (*END: annotate field*)
@@ -815,7 +794,7 @@ let process_source_full_after_parser source (prog, prims_list, prims_incls) =
   (* print mapping table control path id and loc *)
   (*let () = print_endline_quiet (Cprinter.string_of_iast_label_table !Globals.iast_label_table) in*)
   (* hip_epilogue (); *)
-  if (not (!Globals.web_compile_flag || not !Debug.webprint)) then 
+  if (!Debug.webprint) then 
     let rev_false_ctx_line_list = List.rev !Globals.false_ctx_line_list in 
     print_string_quiet ("\n"^(string_of_int (List.length !Globals.false_ctx_line_list))^" false contexts at: ("^
                         (List.fold_left (fun a c-> a^" ("^(string_of_int c.VarGen.start_pos.Lexing.pos_lnum)^","^
@@ -843,8 +822,7 @@ let process_source_full_after_parser source (prog, prims_list, prims_incls) =
                               )
 
 let process_source_full source =
-  if (not !Globals.web_compile_flag) then
-    Debug.info_zprint (lazy (("Full processing file \"" ^ source ^ "\"\n"))) no_pos;
+  Debug.info_zprint (lazy (("Full processing file \"" ^ source ^ "\"\n"))) no_pos;
   flush stdout;
   let () = Gen.Profiling.push_time "Preprocessing" in
   let prog = parse_file_full source false in
