@@ -399,15 +399,11 @@ let set_tp user_flag tp_str =
   if (* (String.sub tp_str 0 2) = "oc" *) String.compare tp_str "./oc" = 0 || String.compare tp_str "oc" = 0 then
     (Omega.omegacalc := tp_str; pure_tp := OmegaCalc; prover_str := "oc"::!prover_str;)
   else if tp_str = "dp" then pure_tp := DP
-  else if tp_str = "cvcl" then 
-    (pure_tp := CvcLite; prover_str := "cvcl"::!prover_str;)
   else if tp_str = "cvc4" then 
     (pure_tp := Cvc4; prover_str := "cvc4"::!prover_str;)
   else if tp_str = "co" then
     (pure_tp := CO; prover_str := "cvc4"::!prover_str; 
      prover_str := "oc"::!prover_str;)
-  else if tp_str = "isabelle" then
-    (pure_tp := Isabelle; prover_str := "isabelle-process"::!prover_str;)
   else if tp_str = "mona" then
     (pure_tp := Mona; prover_str := "mona"::!prover_str;)
   else if tp_str = "monah" then
@@ -415,16 +411,11 @@ let set_tp user_flag tp_str =
   else if tp_str = "om" then
     (pure_tp := OM; prover_str := "oc"::!prover_str;
      prover_str := "mona"::!prover_str;)
-  else if tp_str = "oi" then
-    (pure_tp := OI; prover_str := "oc"::!prover_str;
-     prover_str := "isabelle-process"::!prover_str;)
   else if tp_str = "set" then
     (pure_tp := SetMONA; prover_str := "mona"::!prover_str;)
   else if tp_str = "cm" then
     (pure_tp := CM; prover_str := "cvc4"::!prover_str;
      prover_str := "mona"::!prover_str;)
-  else if tp_str = "coq" then
-    (pure_tp := Coq; prover_str := "coqtop"::!prover_str;)
     (*else if tp_str = "z3" then 
       	(pure_tp := Z3; prover_str := "z3"::!prover_str;)*)
   else
@@ -440,8 +431,6 @@ let set_tp user_flag tp_str =
     (pure_tp := Redlog; prover_str := redcsl_str::!prover_str;)
   else if tp_str = "OCRed" then
     (pure_tp := OCRed; prover_str := "oc"::redcsl_str::!prover_str;)
-  else if tp_str = "math" then
-    (pure_tp := Mathematica; prover_str := "mathematica"::!prover_str;)
   else if tp_str = "rm" then
     pure_tp := RM
   else if tp_str = "parahip" then
@@ -465,10 +454,6 @@ let set_tp user_flag tp_str =
     )
   else if tp_str = "prm" then
     (Redlog.is_presburger := true; pure_tp := RM)
-  else if tp_str = "spass" then
-    (pure_tp := SPASS; prover_str:= "SPASS-MOD"::!prover_str)
-  else if tp_str = "minisat" then
-    (pure_tp := MINISAT; prover_str := "z3"::!prover_str;)
   else if tp_str = "log" then
     (pure_tp := LOG; prover_str := "log"::!prover_str)
   else
@@ -501,74 +486,56 @@ let imm_stk = new Gen.stack_pr "imm-stk" pr_p (fun (x,_) (y,_) -> CP.eq_spec_var
 
 let string_of_tp tp = match tp with
   | OmegaCalc -> "omega"
-  | CvcLite -> "cvcl"
   | Cvc4 -> "cvc4"
   | CO -> "co"
-  | Isabelle -> "isabelle"
   | Mona -> "mona"
   | MonaH -> "monah"
   | OM -> "om"
-  | OI -> "oi"
   | SetMONA -> "set"
   | CM -> "cm"
-  | Coq -> "coq"
   | Z3 -> "z3"
   | Z3N -> "z3n"
   | Redlog -> "redlog"
   | OCRed -> "OC/redlog"
-  | Mathematica -> "mathematica"
   | RM -> "rm"
   | PARAHIP -> "parahip"
   | ZM -> "zm"
   | OZ -> "oz"
   | AUTO -> "auto"
   | DP -> "dp"
-  | SPASS -> "spass"
-  | MINISAT -> "minisat"
   | LOG -> "log"
 
 let name_of_tp tp = match tp with
   | OmegaCalc -> "Omega Calculator"
-  | CvcLite -> "CVC Lite"
   | Cvc4 -> "CVC4"
   | CO -> "CVC Lite and Omega"
-  | Isabelle -> "Isabelle"
   | Mona -> "Mona"
   | MonaH -> "MonaH"
   | OM -> "Omega and Mona"
-  | OI -> "Omega and Isabelle"
   | SetMONA -> "Set Mona"
   | CM -> "CVC Lite and Mona"
-  | Coq -> "Coq"
   | Z3 -> "Z3"
   | Z3N -> "Z3N"
   | Redlog -> "Redlog"
   | OCRed -> "OC/Redlog"
-  | Mathematica -> "Mathematica"
   | RM -> "Redlog and Mona"
   | PARAHIP -> "Redlog, Z3, and Mona"
   | ZM -> "Z3 and Mona"
   | OZ -> "Omega, Z3"
-  | AUTO -> "Omega, Z3, Mona, Coq"
+  | AUTO -> "Omega, Z3, Mona"
   | DP -> "DP"
-  | SPASS -> "SPASS"
-  | MINISAT -> "MINISAT"
   | LOG -> "LOG"
 
 let log_file_of_tp tp = match tp with
   | OmegaCalc -> "allinput.oc"
   | Cvc4 -> "allinput.cvc4"
-  | Isabelle -> "allinput.thy"
   | Mona -> "allinput.mona"
-  | Coq -> "allinput.v"
   | Redlog -> "allinput.rl"
   | OCRed -> "allinput.rl"
-  | Mathematica -> "allinput.math"
   | Z3 -> "allinput.z3"
   | Z3N -> "allinput.z3n"
   | AUTO -> "allinput.auto"
   | OZ -> "allinput.oz"
-  | SPASS -> "allinput.spass"
   | _ -> ""
 
 let get_current_tp_name () = name_of_tp !pure_tp
@@ -577,7 +544,6 @@ let omega_count = ref 0
 
 let start_prover () =
   match !pure_tp with
-  | Coq -> Coq.start ();
   | Redlog | OCRed | RM -> Redlog.start ();
   | Cvc4 -> (
       provers_process := Some (Cvc4.start ()); (* because of incremental *)
@@ -587,11 +553,6 @@ let start_prover () =
       Omega.start_prover ();
     )
   | Mona -> Mona.start()
-  | Mathematica -> Mathematica.start()
-  | Isabelle -> (
-      Isabelle.start();
-      Omega.start_prover();
-    )
   | OM -> (
       Mona.start();
       Omega.start_prover();
@@ -603,9 +564,7 @@ let start_prover () =
   | DP -> Smtsolver.start();
   | Z3 -> Smtsolver.start();
   | Z3N -> Z3.start();
-  | SPASS -> Spass.start();
   | LOG -> file_to_proof_log !Globals.source_files
-  | MINISAT -> Minisat.start ()
   | _ -> Omega.start_prover()
 
 let start_prover () =
@@ -617,23 +576,17 @@ let stop_prover () =
       Omega.stop ();
       if !Redlog.is_reduce_running then Redlog.stop ();
     )
-  | Coq -> Coq.stop ();
-  | OCRed | Redlog | RM -> (
-      Redlog.stop();
-      Omega.stop();
-    )
   | Cvc4 -> (
       let () = match !provers_process with
         |Some proc ->  Cvc4.stop proc;
         |_ -> () in
       Omega.stop();
     )
-  | Isabelle -> (
-      Isabelle.stop();
+  | OCRed | Redlog | RM -> (
+      Redlog.stop();
       Omega.stop();
     )
   | Mona -> Mona.stop();
-  | Mathematica -> Mathematica.stop();
   | OM -> (
       if !Mona.is_mona_running then
         Mona.stop();
@@ -651,8 +604,6 @@ let stop_prover () =
   | Z3N -> (Z3.stop();
             (*in the website, use z3, oc keeps running although hip is stopped*)
             if !Omega.is_omega_running then Omega.stop ();)
-  | SPASS -> Spass.stop();
-  | MINISAT -> Minisat.stop ();
   | _ -> Omega.stop();;
 
 let stop_prover () =
@@ -1870,9 +1821,7 @@ let tp_is_sat_no_cache (f : CP.formula) (sat_no : string) =
   let omega_is_sat f = Omega.is_sat_ops pr_weak pr_strong f sat_no in
   let redlog_is_sat f = wrap_redlog (Redlog.is_sat_ops pr_weak pr_strong f) sat_no in
   let ocredlog_is_sat f = wrap_ocredlog (Redlog.is_sat_ops pr_weak pr_strong f) sat_no in
-  let mathematica_is_sat f = Mathematica.is_sat_ops pr_weak pr_strong f sat_no in
   let mona_is_sat f = Mona.is_sat_ops pr_weak pr_strong f sat_no in
-  let coq_is_sat f = Coq.is_sat_ops pr_weak pr_strong f sat_no in
   let z3_is_sat f = Smtsolver.is_sat_ops pr_weak_z3 pr_strong_z3 f sat_no in
   let z3n_is_sat f = Z3.is_sat_ops_cex pr_weak_z3 pr_strong_z3 f sat_no in
 
@@ -1892,7 +1841,6 @@ let tp_is_sat_no_cache (f : CP.formula) (sat_no : string) =
     | OmegaCalc ->
       if (CP.is_float_formula wf) then (redlog_is_sat wf)
       else (omega_is_sat f);
-    | CvcLite -> Cvclite.is_sat f sat_no
     | Cvc4 -> (
         match !provers_process with
         |Some proc -> Cvc4.is_sat_increm !provers_process f sat_no
@@ -1900,10 +1848,6 @@ let tp_is_sat_no_cache (f : CP.formula) (sat_no : string) =
       )
     | Z3 -> z3_is_sat f
     | Z3N -> z3n_is_sat f
-    | Isabelle -> Isabelle.is_sat wf sat_no
-    | Coq ->
-      if (is_list_constraint wf) then (coq_is_sat wf)
-      else (Smtsolver(*Omega*).is_sat f sat_no);
     | Mona | MonaH -> mona_is_sat wf
     | CO -> (
         let result1 = (Cvc4.is_sat_helper_separate_process wf sat_no) in
@@ -1926,19 +1870,14 @@ let tp_is_sat_no_cache (f : CP.formula) (sat_no : string) =
       else (omega_is_sat f)
     | AUTO ->
       if (is_bag_constraint wf) then (mona_is_sat wf)
-      else if (is_list_constraint wf) then (coq_is_sat wf)
       else if (is_array_constraint f) then (z3_is_sat f)
       else (omega_is_sat f)
     | OZ ->
       if (is_array_constraint f) then (z3_is_sat f)
       else (omega_is_sat f)
-    | OI ->
-      if (is_bag_constraint wf) then (Isabelle.is_sat wf sat_no)
-      else (omega_is_sat f)
     | SetMONA -> Setmona.is_sat wf
     | Redlog -> redlog_is_sat wf
     | OCRed -> ocredlog_is_sat wf
-    | Mathematica -> mathematica_is_sat wf
     | RM ->
       if (is_bag_constraint wf) && (CP.is_float_formula wf) then
         (* Mixed bag constraints and float constraints *)
@@ -2007,8 +1946,6 @@ let tp_is_sat_no_cache (f : CP.formula) (sat_no : string) =
     | ZM ->
       if (is_bag_constraint wf) then mona_is_sat wf
       else z3_is_sat wf
-    | SPASS -> Spass.is_sat f sat_no
-    | MINISAT -> Minisat.is_sat f sat_no
     | LOG -> find_bool_proof_res sat_no
   ) in 
   if not !tp_batch_mode then stop_prover ();
@@ -2264,11 +2201,6 @@ let simplify (f : CP.formula) : CP.formula =
           let fn f = 
             match !pure_tp with
             | DP -> Dp.simplify f
-            | Isabelle -> Isabelle.simplify f
-            | Coq -> 
-              if (is_list_constraint f) then
-                (Coq.simplify f)
-              else ((*Omega*)Smtsolver.simplify f)
             | Mona | MonaH ->
               if (is_bag_constraint f) then
                 (Mona.simplify f)
@@ -2282,9 +2214,6 @@ let simplify (f : CP.formula) : CP.formula =
               else
                 let f=(omega_simplify f) in
                 x_add CP.arith_simplify 12 f
-            | OI ->
-              if (is_bag_constraint f) then (Isabelle.simplify f)
-              else (omega_simplify f)
             | SetMONA -> Mona.simplify f
             | CM ->
               if is_bag_constraint f then Mona.simplify f
@@ -2308,13 +2237,11 @@ let simplify (f : CP.formula) : CP.formula =
               else Smtsolver.simplify f
             | AUTO ->
               if (is_bag_constraint f) then (Mona.simplify f)
-              else if (is_list_constraint f) then (Coq.simplify f)
               else if (is_array_constraint f) then (Smtsolver.simplify f)
               else (omega_simplify f)
             | OZ ->
               if (is_array_constraint f) then (Smtsolver.simplify f)
               else (omega_simplify f)
-            | SPASS -> Spass.simplify f
             | LOG -> find_formula_proof_res simpl_no
             | _ -> omega_simplify f 
           in
@@ -2407,16 +2334,9 @@ let tp_pairwisecheck (f : CP.formula) : CP.formula =
     else *)
   let fn f = match !pure_tp with
     | DP -> Dp.pairwisecheck f
-    | Isabelle -> Isabelle.pairwisecheck f
-    | Coq -> 
-      if (is_list_constraint f) then (Coq.pairwisecheck f)
-      else (Smtsolver.pairwisecheck f)
     | Mona 
     | OM ->
       if (is_bag_constraint f) then (Mona.pairwisecheck f)
-      else (x_add_1 om_pairwisecheck f)
-    | OI ->
-      if (is_bag_constraint f) then (Isabelle.pairwisecheck f)
       else (x_add_1 om_pairwisecheck f)
     | SetMONA -> Mona.pairwisecheck f
     | CM ->
@@ -2426,7 +2346,6 @@ let tp_pairwisecheck (f : CP.formula) : CP.formula =
     | Z3N -> Z3.pairwisecheck f
     | Redlog -> Redlog.pairwisecheck f
     | OCRed -> Redlog.pairwisecheck f
-    | Mathematica -> Mathematica.pairwisecheck f
     | RM ->
       if is_bag_constraint f then Mona.pairwisecheck f
       else Redlog.pairwisecheck f
@@ -2609,17 +2528,10 @@ let hull (f : CP.formula) : CP.formula =
   (*let f = if !Globals.allow_inf then Infinity.convert_inf_to_var f else f in*)
   let fn f = match !pure_tp with
     | DP -> Dp.hull  f
-    | Isabelle -> Isabelle.hull f
-    | Coq -> (* Coq.hull f *)
-      if (is_list_constraint f) then (Coq.hull f)
-      else ((*Omega*)Smtsolver.hull f)
     | Mona   -> Mona.hull f  
     | MonaH
     | OM ->
       if (is_bag_constraint f) then (Mona.hull f)
-      else (oc_hull f)
-    | OI ->
-      if (is_bag_constraint f) then (Isabelle.hull f)
       else (oc_hull f)
     | SetMONA -> Mona.hull f
     | CM ->
@@ -2629,7 +2541,6 @@ let hull (f : CP.formula) : CP.formula =
     | Z3N -> Z3.hull f
     | Redlog -> Redlog.hull f
     | OCRed -> Redlog.hull f
-    | Mathematica -> Mathematica.hull f
     | RM ->
       if is_bag_constraint f then Mona.hull f
       else Redlog.hull f
@@ -2708,16 +2619,9 @@ let tp_pairwisecheck (f : CP.formula) : CP.formula =
     else *)
   let fn f = match !pure_tp with
     | DP -> Dp.pairwisecheck f
-    | Isabelle -> Isabelle.pairwisecheck f
-    | Coq -> 
-      if (is_list_constraint f) then (Coq.pairwisecheck f)
-      else (Smtsolver.pairwisecheck f)
     | Mona 
     | OM ->
       if (is_bag_constraint f) then (Mona.pairwisecheck f)
-      else (x_add_1 om_pairwisecheck f)
-    | OI ->
-      if (is_bag_constraint f) then (Isabelle.pairwisecheck f)
       else (x_add_1 om_pairwisecheck f)
     | SetMONA -> Mona.pairwisecheck f
     | CM ->
@@ -2727,7 +2631,6 @@ let tp_pairwisecheck (f : CP.formula) : CP.formula =
     | Z3N -> Z3.pairwisecheck f
     | Redlog -> Redlog.pairwisecheck f
     | OCRed -> Redlog.pairwisecheck f
-    | Mathematica -> Mathematica.pairwisecheck f
     | RM ->
       if is_bag_constraint f then Mona.pairwisecheck f
       else Redlog.pairwisecheck f
@@ -2980,9 +2883,7 @@ let tp_imply_no_cache ante conseq imp_no timeout process =
     let omega_imply a c = Omega.imply_ops pr_weak pr_strong a c imp_no timeout in
     let redlog_imply a c = wrap_redlog (Redlog.imply_ops pr_weak pr_strong a c) imp_no (* timeout *) in
     let oc_redlog_imply a c = wrap_ocredlog (Redlog.imply_ops pr_weak pr_strong a c) imp_no (* timeout *) in
-    let mathematica_imply a c = Mathematica.imply_ops pr_weak pr_strong a c imp_no (* timeout *) in
     let mona_imply a c = Mona.imply_ops pr_weak pr_strong a c imp_no in
-    let coq_imply a c = Coq.imply_ops pr_weak pr_strong a c in
     let z3_imply a c = Smtsolver.imply_ops pr_weak_z3 pr_strong_z3 a c timeout in
     let z3n_imply a c = Z3.imply_ops_cex pr_weak_z3 pr_strong_z3 a c timeout in
     if not !tp_batch_mode then start_prover ();
@@ -3001,7 +2902,6 @@ let tp_imply_no_cache ante conseq imp_no timeout process =
         if (CP.is_float_formula ante) || (CP.is_float_formula conseq) then
           redlog_imply ante_w conseq_s
         else (omega_imply ante conseq)
-      | CvcLite -> Cvclite.imply ante_w conseq_s
       | Cvc4 -> (
           match process with
           | Some (Some proc, _) -> Cvc4.imply_increm process ante conseq imp_no
@@ -3012,16 +2912,9 @@ let tp_imply_no_cache ante conseq imp_no timeout process =
         (* let _ = print_endline ("z3 conseq"^(Cprinter.string_of_pure_formula conseq)) in *)
         z3_imply ante conseq
       | Z3N -> z3n_imply ante conseq
-      | Isabelle -> Isabelle.imply ante_w conseq_s imp_no
-      | Coq ->
-        if (is_list_constraint ante) || (is_list_constraint conseq) then
-          ( coq_imply ante_w conseq_s)
-        else ( z3_imply ante conseq)
       | AUTO ->
         if (is_bag_constraint ante) || (is_bag_constraint conseq) then
           (mona_imply ante_w conseq_s)
-        else if (is_list_constraint ante) || (is_list_constraint conseq) then
-          (coq_imply ante_w conseq_s)
         else if (is_array_constraint ante) || (is_array_constraint conseq) then
           ( z3_imply ante conseq)
         else
@@ -3055,14 +2948,9 @@ let tp_imply_no_cache ante conseq imp_no timeout process =
         if (is_bag_constraint ante) || (is_bag_constraint conseq) then
           ((* called_prover :="mona " ; *) mona_imply ante_w conseq_s)
         else ((* called_prover :="omega " ; *) omega_imply ante conseq)
-      | OI ->
-        if (is_bag_constraint ante) || (is_bag_constraint conseq) then
-          (Isabelle.imply ante_w conseq_s imp_no)
-        else (omega_imply ante conseq)
       | SetMONA -> Setmona.imply ante_w conseq_s 
       | Redlog -> redlog_imply ante_w conseq_s  
       | OCRed -> oc_redlog_imply ante_w conseq_s  
-      | Mathematica -> mathematica_imply ante_w conseq_s  
       | RM ->
         (*use UNSOUND approximation
           a & b -> c&d ~~~ (a->c) & (b->d)*)
@@ -3146,8 +3034,6 @@ let tp_imply_no_cache ante conseq imp_no timeout process =
         if (is_bag_constraint ante) || (is_bag_constraint conseq) then
           ((* called_prover := "mona "; *) mona_imply ante_w conseq_s)
         else z3_imply ante conseq
-      | SPASS -> Spass.imply ante conseq timeout
-      | MINISAT -> Minisat.imply ante conseq timeout
       | LOG -> find_bool_proof_res imp_no 
     ) in
 
