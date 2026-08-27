@@ -1235,8 +1235,6 @@ let allow_ramify = ref false
 let allow_mem = ref false
 (*enabling allow_mem will turn on field ann as well *)
 
-let gen_coq_file = ref false
-
 let infer_mem = ref false
 let filter_infer_search = ref true
 let infer_raw_flag = ref true
