@@ -143,58 +143,44 @@ let wrap_proving_kind (tk) exec_function args =
 
 type tp_type =
   | OmegaCalc
-  | CvcLite
   | Cvc4
   | CO (* CVC4 then Omega combination *)
-  | Isabelle
   | Mona
   | MonaH
   | OM
-  | OI
   | SetMONA
   | CM (* CVC4 then MONA *)
-  | Coq
   | Z3
   | Z3N
   | OCRed
   | Redlog
-  | Mathematica
   | RM (* Redlog and Mona *)
   | PARAHIP (* Redlog, Z3 and Mona *) (*This option is used on ParaHIP website*)
   | ZM (* Z3 and Mona *)
   | OZ (* Omega and Z3 *)
-  | AUTO (* Omega, Z3, Mona, Coq *)
+  | AUTO (* Omega, Z3, Mona *)
   | DP (*ineq prover for proof slicing experim*)
-  | SPASS
-  | MINISAT
   | LOG (* Using previous results instead of invoking the actual provers *)
 
 let string_of_prover prover = match prover with
   | OmegaCalc -> "OMEGA CALCULATOR"
-  | CvcLite -> "CVC Lite"
   | Cvc4 -> "CVC4"
   | CO  -> "CO"
-  | Isabelle -> "ISABELLE"
   | Mona -> "MONA"
   | MonaH -> "MonaH"
   | OM -> "OM"
-  | OI -> "OI"
   | SetMONA -> "SetMONA"
   | CM  -> "CM"
-  | Coq -> "COQ"
   | Z3 -> "Z3"
   | Z3N -> "Z3N"
   | OCRed -> "OC and REDLOG"
   | Redlog -> "REDLOG (REDUCE LOGIC)"
   | RM -> "Redlog, Mona"
-  | Mathematica -> "Mathematica"
   | PARAHIP -> "Redlog, Mona, z3" (*This option is used on ParaHIP website*)
   | ZM -> "Z3, Mona"
   | OZ -> "Omega, z3"
-  | AUTO -> "AUTO - omega, z3, mona, coq"
+  | AUTO -> "AUTO - omega, z3, mona"
   | DP -> "Disequality Solver"
-  | SPASS -> "SPASS"
-  | MINISAT -> "MINISAT"
   | LOG -> "LOG"
 
 let string_of_ato () =
@@ -203,30 +189,23 @@ let string_of_ato () =
 
 let string_of_prover_code prover = match prover with
   | OmegaCalc -> "1"^(string_of_ato ())
-  | CvcLite -> "2"
   | Cvc4 -> "3"
   | CO  -> "4"
-  | Isabelle -> "5"
   | Mona -> "6"
   | MonaH -> "7"
   | OM -> "8"^(string_of_ato ())
-  | OI -> "9"
   | SetMONA -> "10"
   | CM  -> "11"
-  | Coq -> "12"
   | Z3 -> "13"
   | Z3N -> "14"
   | OCRed -> "15"
   | Redlog -> "16"
   | RM -> "17"
-  | Mathematica -> "18"
   | PARAHIP -> "19" (*This option is used on ParaHIP website*)
   | ZM -> "20"
   | OZ -> "21"^(string_of_ato ())
   | AUTO -> "22"
   | DP -> "23"
-  | SPASS -> "24"
-  | MINISAT -> "25"
   | LOG -> "26"
 
 let last_tp_used = new VarGen.store LOG string_of_prover

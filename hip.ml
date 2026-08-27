@@ -15,8 +15,6 @@ module CF = Cformula
 
 module M = Lexer.Make(Token.Token)
 
-let to_java = ref false
-
 let usage_msg = Sys.argv.(0) ^ " [options] <source files>"
 
 let set_source_file arg =
@@ -444,18 +442,6 @@ let process_source_full source =
   let prims_list = replace_with_user_include prims_list prims_incls in
 
   let () = Debug.ninfo_hprint (add_str "new_prims_lists.proc_decl" (pr_list ((fun prog -> pr_list (fun proc -> Iprinter.string_of_proc_decl proc) prog.Iast.prog_proc_decls)))) prims_list no_pos in
-  if !to_java then begin
-    print_string ("Converting to Java..."); flush stdout;
-    let tmp = Filename.chop_extension (Filename.basename source) in
-    let main_class = Gen.replace_minus_with_uscore tmp in
-    let java_str = Java.convert_to_java prog main_class in
-    let tmp2 = Gen.replace_minus_with_uscore (Filename.chop_extension source) in
-    let jfile = open_out ("output/" ^ tmp2 ^ ".java") in
-    output_string jfile java_str;
-    close_out jfile;
-    (* print_string (" done-1.\n"); flush stdout; *)
-    exit 0
-  end;
   (* Dump prog into ss file  *)
   if (!Scriptarguments.dump_ss) then (
     let dump_file = "logs/" ^ (Filename.basename source) ^ ".gen-ss" in
@@ -784,31 +770,6 @@ let process_source_full source =
   (* let ptime2 = Unix.times () in
      let t2 = ptime2.Unix.tms_utime +. ptime2.Unix.tms_cutime in
      let () = print_string (" done in " ^ (string_of_float (t2 -. t1)) ^ " second(s)\n") in *)
-  let _ =
-    if !Scriptarguments.comp_pred then begin
-      let () = print_string ("Compiling predicates to Java..."); flush stdout in
-      let compile_one_view vdef = 
-        if (!Scriptarguments.pred_to_compile = ["all"] || List.mem vdef.Cast.view_name !Scriptarguments.pred_to_compile) then
-          let data_def, pbvars = Predcomp.gen_view cprog vdef in
-          let java_str = Java.java_of_data data_def pbvars in
-          let jfile = open_out (vdef.Cast.view_name ^ ".java") in
-          print_string ("\n\tWriting Java file " ^ vdef.Cast.view_name ^ ".java");
-          output_string jfile java_str;
-          close_out jfile
-        else
-          ()
-      in
-      ignore (List.map compile_one_view cprog.Cast.prog_view_decls);
-      print_string ("\nDone-3.\n"); flush stdout;
-      exit 0
-    end 
-  in
-  let _ =
-    if !Scriptarguments.rtc then begin
-      Rtc.compile_prog cprog source;
-      exit 0
-    end
-  in
   let () = Gen.Profiling.pop_time "Preprocessing" in
 
   (* An Hoa : initialize html *)
@@ -912,20 +873,15 @@ let process_source_list source_files =
     let index = try String.rindex file_name '.' with _ -> 0 in
     let length = (String.length file_name) - index in
     let ext = String.lowercase_ascii (String.sub file_name index length) in
-    if (ext = ".java") then
-      let ss_file_name = file_name ^ ".ss" in
-      let () = Pretty_ss.print_out_str_from_files_new source_files ss_file_name in
-      [process_source_full ss_file_name]
-    else
-      let parser = 
-        if (ext = ".c") || (ext = ".cc") || (ext = ".cpp") || (ext = ".h") then
-          "cil"
-        else if (ext = ".i") then "cil-i"
-        else if (ext = ".t2") then "ints"
-        else (* "default" *) !Parser.parser_name
-      in 
-      let () = Parser.parser_name := parser in
-      List.map process_source_full source_files
+    let parser = 
+      if (ext = ".c") || (ext = ".cc") || (ext = ".cpp") || (ext = ".h") then
+        "cil"
+      else if (ext = ".i") then "cil-i"
+      else if (ext = ".t2") then "ints"
+      else (* "default" *) !Parser.parser_name
+    in 
+    let () = Parser.parser_name := parser in
+    List.map process_source_full source_files
 
 (*None Working: see process_source_full instead *)
 let process_source_full_parse_only source =
@@ -940,18 +896,6 @@ let process_source_full_parse_only source =
   let new_h_files = process_header_with_pragma header_files !Globals.pragma_list in
   let prims_list = process_primitives new_h_files in (*list of primitives in header files*)
 
-  if !to_java then begin
-    print_string ("Converting to Java..."); flush stdout;
-    let tmp = Filename.chop_extension (Filename.basename source) in
-    let main_class = Gen.replace_minus_with_uscore tmp in
-    let java_str = Java.convert_to_java prog main_class in
-    let tmp2 = Gen.replace_minus_with_uscore (Filename.chop_extension source) in
-    let jfile = open_out ("output/" ^ tmp2 ^ ".java") in
-    output_string jfile java_str;
-    close_out jfile;
-    (* print_string (" done-1.\n"); flush stdout; *)
-    exit 0
-  end;
   let () = Gen.Profiling.pop_time "Preprocessing" in
   (prog, prims_list)
 
@@ -1045,31 +989,6 @@ let process_source_full_after_parser source (prog, prims_list) =
   (* let ptime2 = Unix.times () in
      let t2 = ptime2.Unix.tms_utime +. ptime2.Unix.tms_cutime in
      let () = print_string (" done in " ^ (string_of_float (t2 -. t1)) ^ " second(s)\n") in *)
-  let _ =
-    if !Scriptarguments.comp_pred then begin
-      let () = print_string ("Compiling predicates to Java..."); flush stdout in
-      let compile_one_view vdef = 
-        if (!Scriptarguments.pred_to_compile = ["all"] || List.mem vdef.Cast.view_name !Scriptarguments.pred_to_compile) then
-          let data_def, pbvars = Predcomp.gen_view cprog vdef in
-          let java_str = Java.java_of_data data_def pbvars in
-          let jfile = open_out (vdef.Cast.view_name ^ ".java") in
-          print_string ("\n\tWriting Java file " ^ vdef.Cast.view_name ^ ".java");
-          output_string jfile java_str;
-          close_out jfile
-        else
-          ()
-      in
-      ignore (List.map compile_one_view cprog.Cast.prog_view_decls);
-      print_string ("\nDone-3.\n"); flush stdout;
-      exit 0
-    end 
-  in
-  let _ =
-    if !Scriptarguments.rtc then begin
-      Rtc.compile_prog cprog source;
-      exit 0
-    end
-  in
   let () = Gen.Profiling.pop_time "Preprocessing" in
 
   (* An Hoa : initialize html *)

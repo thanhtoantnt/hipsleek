@@ -8,12 +8,6 @@ let dump_ss = ref false
 
 let typecheck_only = ref false
 
-let rtc = ref false
-
-let comp_pred = ref false
-
-let pred_to_compile = ref ([] : string list)
-
 let print_version_flag = ref false
 
 
@@ -26,10 +20,6 @@ type front_end =
   | NativeFE
 
 let fe = ref NativeFE
-
-let set_pred arg =
-  comp_pred := true;
-  pred_to_compile := arg :: !pred_to_compile
 
 let set_proc_verified arg =
   let procs = Gen.split_by "," arg in
@@ -316,9 +306,6 @@ let common_arguments = [
   (* Exception(compute_fixpoint#5@4):Failure("compute_def:Error in translating the input for fixcalc") *)
   ("--trace-all", Arg.Set Globals.trace_all,
    "Trace all proof paths");
-  ("--log-cvcl", Arg.String Cvclite.set_log_file,
-   "Log all CVC Lite formula to specified log file");
-  (* ("--log-cvc4", Arg.String Cvc4.set_log_file, *)
   ("--log-cvc4", Arg.Unit Cvc4.set_log_file,    "Log all formulae sent to CVC4 in file allinput.cvc4");
   ("--log-omega", Arg.Set Omega.log_all_flag,
    "Log all formulae sent to Omega Calculator in file allinput.oc");
@@ -326,18 +313,10 @@ let common_arguments = [
    "Log all formulae sent to z3 in file allinput.z3");
   ("--log-z3n", Arg.Set Z3.log_all_flag,
    "Log all formulae sent to z3 in file allinput.z3n");
-  ("--log-isabelle", Arg.Set Isabelle.log_all_flag,
-   "Log all formulae sent to Isabelle in file allinput.thy");
-  ("--log-coq", Arg.Set Coq.log_all_flag,
-   "Log all formulae sent to Coq in file allinput.v");
   ("--log-mona", Arg.Set Mona.log_all_flag,
    "Log all formulae sent to Mona in file allinput.mona");
   ("--log-redlog", Arg.Set Redlog.is_log_all,
    "Log all formulae sent to Reduce/Redlog in file allinput.rl");
-  ("--log-math", Arg.Set Mathematica.is_log_all,
-   "Log all formulae sent to Mathematica in file allinput.math");
-  ("--use-isabelle-bag", Arg.Set Isabelle.bag_flag,
-   "Use the bag theory from Isabelle, instead of the set theory");
   ("--ann-derv", Arg.Set Globals.ann_derv,"manual annotation of derived nodes");
   ("--en-weaker-pre", Arg.Set Globals.weaker_pre_flag,"Enable Weaker Pre-Condition to be Inferred");
   ("--dis-weaker-pre", Arg.Clear Globals.weaker_pre_flag,"Disable Weaker Pre-Condition to be Inferred");
@@ -647,11 +626,9 @@ let common_arguments = [
   ("--pr_str_assume", Arg.Set Globals.print_assume_struc, "Print structured formula for assume");
   ("-stop", Arg.Clear Globals.check_all,
    "Stop checking on erroneous procedure");
-  ("--build-image", Arg.Symbol (["true"; "false"], Isabelle.building_image),
-   "Build the image theory in Isabelle - default false");
-  ("-tp", Arg.Symbol (["cvcl"; "cvc4"; "oc";"oc-2.1.6"; "co"; "isabelle"; "coq"; "mona"; "monah"; "z3"; "z3-2.19"; "z3n"; "z3-4.3.1"; "zm"; "om";
-                       "oi"; "set"; "cm"; "OCRed"; "redlog"; "rm"; "prm"; "spass";"parahip"; "math"; "minisat" ;"auto";"log"; "dp"], (set_tp) (* Tpdispatcher.set_tp *)),
-   "Choose theorem prover:\n\tcvcl: CVC Lite\n\tcvc4: CVC4\n\tomega: Omega Calculator (default)\n\tco: CVC4 then Omega\n\tisabelle: Isabelle\n\tcoq: Coq\n\tmona: Mona\n\tz3: Z3\n\tom: Omega and Mona\n\toi: Omega and Isabelle\n\tset: Use MONA in set mode.\n\tcm: CVC4 then MONA.");
+  ("-tp", Arg.Symbol (["cvc4"; "oc";"oc-2.1.6"; "co"; "mona"; "monah"; "z3"; "z3-2.19"; "z3n"; "z3-4.3.1"; "zm"; "om";
+                       "set"; "cm"; "OCRed"; "redlog"; "rm"; "prm"; "parahip"; "auto";"log"; "dp"], (set_tp) (* Tpdispatcher.set_tp *)),
+   "Choose theorem prover:\n\tcvc4: CVC4\n\tomega: Omega Calculator (default)\n\tco: CVC4 then Omega\n\tmona: Mona\n\tz3: Z3\n\tom: Omega and Mona\n\tset: Use MONA in set mode.\n\tcm: CVC4 then MONA.");
   ("--dis-tp-batch-mode", Arg.Clear Tpdispatcher.tp_batch_mode,"disable batch-mode processing of external theorem provers");
   ("-perm", Arg.Symbol (["fperm"; "cperm"; "dperm"; "bperm"; "none"], Perm.set_perm),
    "Choose type of permissions for concurrency :\n\t fperm: fractional permissions\n\t cperm: counting permissions");
@@ -1373,15 +1350,7 @@ let common_arguments = [
 ]
 
 (* arguments/flags used only by hip *)
-let hip_specific_arguments = [ ("-cp", Arg.String set_pred,
-                                "Compile specified predicate to Java.");
-                               ("-rtc", Arg.Set rtc,
-                                "Compile to Java with runtime checks.");
-                               ("-nopp", Arg.String Rtc.set_nopp,
-                                "-nopp caller:callee: do not check callee's pre/post in caller");
-                               ("-nofield", Arg.String Rtc.set_nofield,
-                                "-nofield proc: do not perform field check in proc");
-                               ("--verify-callees", Arg.Set Globals.verify_callees,
+let hip_specific_arguments = [ ("--verify-callees", Arg.Set Globals.verify_callees,
                                 "Verify callees of the specified procedures");
                                ("-inline", Arg.String Inliner.set_inlined,
                                 "Procedures to be inlined");
