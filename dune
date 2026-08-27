@@ -1,10 +1,7 @@
 (executables
  (names hip sleek)
  (libraries hipsleek)
-  (modules hip sleek)
- (preprocess
-  (action
-   (run cppo -I . -D TRACE %{input-file}))))
+ (modules hip sleek))
 
 (env
  (dev

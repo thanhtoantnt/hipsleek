@@ -27,6 +27,5 @@
   (visitors (>= 20210608))
   (menhir (>= 20220210))
   dune
-  (cppo :build)
 ))
 

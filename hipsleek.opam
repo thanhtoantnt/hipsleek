@@ -17,7 +17,6 @@ depends: [
   "visitors" {>= "20210608"}
   "menhir" {>= "20220210"}
   "dune" {>= "3.14"}
-  "cppo" {build}
   "odoc" {with-doc}
 ]
 build: [
