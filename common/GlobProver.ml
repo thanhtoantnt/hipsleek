@@ -20,7 +20,11 @@ let set_tmp_files_path () =
        ignore (Unix.chmod ("/tmp/" ^ Unix.getlogin() ^ "/prover_tmp_files/") 0o766;)		 
      with
        Unix.Unix_error (_, _, _) -> (););
-    tmp_files_path := ("/tmp/" ^ Unix.getlogin() ^ "/prover_tmp_files/")
+    (* ponytail: pid-qualify so concurrent hip/sleek runs (e.g. dune test -jN)
+       never share files in here (issue #61) *)
+    let pid_dir = "/tmp/" ^ Unix.getlogin() ^ "/prover_tmp_files." ^ (string_of_int (Unix.getpid ())) ^ "/" in
+    (try ignore (Unix.mkdir pid_dir 0o766) with Unix.Unix_error (_, _, _) -> ());
+    tmp_files_path := pid_dir
   end
 
 (*type of process used for communicating with the prover*)
