@@ -8,6 +8,7 @@ mona.failure
 mona-1.4/bin/
 mona-1.4/obj/
 *.omega
+oc.out
 
 # external tools cloned/built by CI
 fixcalc_src/
