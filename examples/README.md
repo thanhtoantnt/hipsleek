@@ -19,6 +19,11 @@ dune exec ./hip.exe -- --parser cil examples/hip/incr.c
 | `hip/counter.ss` | VeriFast `counter.c`: increment and swap |
 | `hip/swap.ss` | VeriFast `swap.c`: swap two point fields |
 | `hip/stack.ss` | VeriFast `aplas-stack.c`: push/pop |
+| `hip/reverse.ss` | Smallfoot: reverse a list in place |
+| `hip/dll.ss` | Smallfoot: doubly-linked list insert |
+| `hip/sll.ss` | sorted-list insert |
+| `hip/tree.ss` | tree count + BST insert |
+| `hip/cll.ss` | circular-list insert + count |
 | `hip/incr.c` | C via CIL: incr / swap `int*` |
 | `hip/abs.c` | Frama-C/ACSL: absolute value |
 | `hip/max.c` | ACSL: max of two ints |
