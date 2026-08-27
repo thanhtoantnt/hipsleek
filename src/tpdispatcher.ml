@@ -404,10 +404,6 @@ let set_tp user_flag tp_str =
   else if tp_str = "co" then
     (pure_tp := CO; prover_str := "cvc4"::!prover_str; 
      prover_str := "oc"::!prover_str;)
-  else if tp_str = "mona" then
-    (pure_tp := Mona; prover_str := "mona"::!prover_str;)
-  else if tp_str = "monah" then
-    (pure_tp := MonaH; prover_str := "mona"::!prover_str;)
   else if tp_str = "om" then
     (pure_tp := OM; prover_str := "oc"::!prover_str;
      prover_str := "mona"::!prover_str;)

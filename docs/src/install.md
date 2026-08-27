@@ -61,14 +61,14 @@ cd -
 ```
 
 Note: HIP's mona backend currently needs a `mona_inter` wrapper binary that
-the build does not produce (issue #36); `-tp mona` falls back until that
-exists.
+the build does not produce (issue #36); `-tp mona` has been removed until
+that exists.
 
 Try some tests:
 
 ```sh
-./hip -tp mona dune-tests/hip/ll.t/ll.ss
-./sleek -tp mona dune-tests/sleek/sleek2.t/sleek2.slk
+./hip -tp z3 dune-tests/hip/ll.t/ll.ss
+./sleek -tp z3 dune-tests/sleek/sleek2.t/sleek2.slk
 ```
 
 ### Fixcalc
