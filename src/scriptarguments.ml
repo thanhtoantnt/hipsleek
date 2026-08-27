@@ -927,7 +927,6 @@ let common_arguments = [
   (* abduce pre from post *)
   ("--abdfpost", Arg.Set Globals.do_abd_from_post, "Enable abduction from post-condition");
   (* incremental spec *)
-  ("--inc", Arg.Set Globals.do_infer_inc, "Enable incremental spec inference");
   (* invariant *)
   ("--inv-test", Arg.Set Globals.do_test_inv, "Enable explicit checking of invariant (for run-fast-test)");
   ("--dis-inv-test", Arg.Clear Globals.do_test_inv, "Disable explicit checking of invariant (for run-fast-test)");

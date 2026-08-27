@@ -212,7 +212,6 @@ let mk_hrel id cl pos =
 let mk_absent_ann = Ipure_D.ConstAnn Accs
 let print_pure_formula = ref(fun (c:Ipure.formula) -> "printer not initialized")
 (* Interactive command line *)
-let cmd: (string * (bool * struc_formula option * string option)) ref = ref ("", (false, None, None))
 
 let print_formula = ref(fun (c:formula) -> "printer not initialized")
 let print_rflow_formula = ref(fun (c: rflow_formula) -> "printer not initialized")

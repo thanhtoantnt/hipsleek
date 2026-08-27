@@ -254,9 +254,7 @@ let rec simplify_pre pre_fml lst_assume = match pre_fml with
   | _ ->
     let h, p, vp, fl, t, a = CF.split_components pre_fml in
     let p1,p2 = List.partition CP.is_lexvar (CP.list_of_conjs (CP.remove_dup_constraints (MCP.pure_of_mix p))) in
-    let p = if !do_infer_inc then TP.pairwisecheck_raw (Infer.simplify_helper (CP.conj_of_list p2 no_pos))
-      else CP.mkAnd (TP.pairwisecheck_raw (Infer.simplify_helper (CP.conj_of_list p2 no_pos))) (CP.conj_of_list p1 no_pos) no_pos
-    in
+    let p = CP.mkAnd (TP.pairwisecheck_raw (Infer.simplify_helper (CP.conj_of_list p2 no_pos))) (CP.conj_of_list p1 no_pos) no_pos in
     let p = if lst_assume = [] then x_add_1 CP.drop_rel_formula p (* need to recheck *)
       else
         let rels = CP.get_RelForm p in

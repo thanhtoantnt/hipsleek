@@ -4065,10 +4065,6 @@ and check_proc iprog (prog : prog_decl) (proc0 : proc_decl) cout_option (mutual_
                       x_tinfo_hp (add_str "NEW RANK" (pr_list_ln Cprinter.string_of_only_lhs_rhs)) lst_rank no_pos;
                       (* x_tinfo_hp (add_str "NEW CONJS" string_of_int) ((CF.no_of_cnts new_spec)-(CF.no_of_cnts proc.proc_static_specs)) no_pos; *)
                       stk_evars # reset;
-                      let () = if not (!do_infer_inc) then ()
-                        else Infer.print_spec (" " ^ (Infer.get_proc_name proc.proc_name) ^ "\n" ^
-                                               (pr_spec2 (CF.struc_to_prepost new_spec)))
-                            (Infer.get_file_name Sys.argv.(1)) in
                       (* let f = if f && !reverify_flag then *)
                       (*   let _,_,_,_,_,_,_,is_valid = check_specs_infer prog proc init_ctx new_spec body false in *)
                       (*   x_binfo_hp (add_str "Performing a Re-verification, Valid?" string_of_bool) is_valid no_pos; *)

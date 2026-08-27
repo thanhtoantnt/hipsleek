@@ -757,23 +757,6 @@ let main1 () =
 (* let main1 () = *)
 (*   Debug.loop_1_no "main1" (fun _ -> "?") (fun _ -> "?") main1 () *)
 
-let pre_main () =
-  process_cmd_line ();
-  Tpdispatcher.init_tp();
-  Scriptarguments.check_option_consistency ();
-  if !Globals.print_version_flag then
-    let () = print_version ()
-    in []
-  else
-    let () = record_backtrace_quite () in
-    if List.length (!Globals.source_files) = 0 then
-      print_string "Source file(s) not specified\n";
-    List.map ( fun x-> let _= print_endline_quiet ("SOURCE: "^x) in process_source_full_parse_only x) !Globals.source_files
-
-let loop_cmd parsed_content =
-  let todo_unk = List.map2 (fun s t -> process_source_full_after_parser s t) !Globals.source_files parsed_content in
-  ()
-
 let finalize_bug () =
   let () = Log.last_cmd # dumping "finalize on hip" in
   let cprog = !saved_cprog in
@@ -820,41 +803,5 @@ let old_main () =
     end
 
 let () = 
-  if not(!Globals.do_infer_inc) then
-    let () = x_dinfo_pp "Executing old_main() " no_pos in
-    old_main ()
-  else
-    (* this part seems to be for incremental inference *)
-    let res = pre_main () in
-    while true do
-      try
-        (* let () = print_endline "I am executing here.." in *)
-        let () = print_string "# " in
-        let s = Parse_cmd.parse_cmd (read_line ()) in
-        match s with
-        | (_,(false, None, None)) -> exit 0;
-        | _ ->
-          Iformula.cmd := s;
-          loop_cmd res;
-          (* let () =  *)
-          (*   if !Global.enable_counters then *)
-          (*     print_string (Gen.Profiling.string_of_counters ()) *)
-          (*   else () in *)
-          let () = Gen.Profiling.print_counters_info () in
-          let () = Gen.Profiling.print_info () in
-           ()
-      with _ as e -> begin
-          finalize_bug ();
-          print_string_quiet "caught\n"; Printexc.print_backtrace stdout;
-          print_string_quiet ("\nException occurred: " ^ (Printexc.to_string e));
-          print_string_quiet ("\nError4(s) detected at main \n");
-          (* print result for svcomp 2015 *)
-          (
-            if !Globals.tnt_web_mode then
-              print_web_mode ("\nError: " ^ (Printexc.to_string e))
-            else if (!Globals.svcomp_compete_mode) then
-              print_endline "UNKNOWN" (* UNKNOWN(7) *)
-          )
-        end
-    done;
-    hip_epilogue ()
+  let () = x_dinfo_pp "Executing old_main() " no_pos in
+  old_main ()

@@ -1470,24 +1470,6 @@ let rec trans_prog_x (prog4 : I.prog_decl) (*(iprims : I.prog_decl)*): C.prog_de
     else prog4
   in
   (*let () = print_string (Iprinter.string_of_program prog4) in*)
-  let prog4 = if not (!do_infer_inc) then prog4 else
-      try
-        let id_spec_from_file = Infer.get_spec_from_file prog4 in
-        let ids, specs = List.split id_spec_from_file in
-        {prog4 with I.prog_proc_decls =
-                      let new_proc, others = List.partition (fun x -> List.mem x.I.proc_name ids) prog4.I.prog_proc_decls in
-                      let new_proc =
-                        List.map (fun proc ->
-                            try
-                              let spec = List.assoc proc.I.proc_name id_spec_from_file in
-                              {proc with I.proc_static_specs = spec}
-                            with Not_found -> proc
-                          ) new_proc
-                      in
-                      others @ new_proc
-        }
-      with _ -> prog4
-  in
   (* Added by Zhuohong *)
   let prog4 = {prog4 with I.prog_data_decls = (mk_ret_type_into_data_decls prog4)@prog4.I.prog_data_decls; } in
   (*let () = print_endline ("@@prog4\n"^Iprinter.string_of_program prog4^"@@prog4\n") in*)
