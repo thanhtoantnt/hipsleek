@@ -63,13 +63,7 @@ let prover_arg = ref "z3" (* default prover *)
 let user_choice = ref false
 
 (* let prover_arg = ref "om" *)
-let external_prover = ref false
 let tp_batch_mode = ref true
-let external_host_ports = ref []
-let priority = ref 1
-let decr_priority = ref false
-let set_priority = ref false
-let prio_list = ref []
 
 let sat_cache = ref (Hashtbl.create 200)
 let imply_cache = ref (Hashtbl.create 200)
@@ -104,166 +98,6 @@ Omega.set_generated_prover_input := set_generated_prover_input;;
 Omega.set_prover_original_output := set_prover_original_output;;
 
 (* An Hoa : end *)
-
-module Netprover = struct
-  let debuglevel = 0 
-  let trace f s = if debuglevel <= 1 then (prerr_string (Printf.sprintf "\n%d: %s: %s" (Unix.getpid ()) f s); flush stderr) else ()
-  let show_info f s = if debuglevel <= 2 then (prerr_string (Printf.sprintf "\n%d: %s: %s" (Unix.getpid ()) f s); flush stderr) else ()
-
-  (* server-setting (prover-setting) -> ()                                 *)
-  (* proc_group(reqid,[[task]],timeout) -> [result]                        *)
-  (* proc_group_async(reqid,[[task]]) -> groupid                           *)
-  (* wait(groupid,[taskid::int],timeout) -> [result] timeout of -1 :       *)
-  (* indefinite kill(groupid,[taskid])                                     *)
-  (* wait_and_kill(groupid,[taskid::int],timeout) -> [result] timeout of   *)
-  (* -1 : indefinite                                                       *)
-  let use_pipe = ref false
-  let in_ch = ref stdin
-  let out_ch = ref stdout
-  let default_pipe = "default"
-  let default_timeout = 200.0
-  let seq_number = ref 0 (* for asynch calls in the future *)
-  let get_seq_no () = incr seq_number; !seq_number
-
-  let start_prover_process () =
-    (* let () = print_string ("\n Tpdispatcher: start_prover_process \n") in *)
-    let is_running cmd_args =
-      let cmd = "ps -u$USER -f" in
-      let ch = Unix.open_process_in cmd in
-      try
-        let re = Str.regexp_string cmd_args in
-        while true do
-          let s = input_line ch in
-          try
-            if Str.search_forward re s 0 >= 0 then raise Exit
-          with Not_found -> ()
-        done;
-        false
-      with Exit -> true
-         | End_of_file -> false
-         | e -> print_string "ho"; flush stdout; false
-    in
-    let cmd_args = "prover --pipe " ^ default_pipe in
-    if not (is_running cmd_args) then begin
-      print_string "\nLaunching default prover\n."; flush stdout;
-      ignore(Unix.system cmd_args)
-    end
-
-  let set_use_pipe () =
-    start_prover_process ();
-    external_prover := true;
-    use_pipe := true;
-    let i, o = Net.Pipe.init_client default_pipe in
-    in_ch := i; out_ch := o
-
-  let set_use_socket host_port =
-    external_prover := true ;
-    use_pipe := false;
-    let i, o = Net.Socket.init_client host_port in
-    in_ch := i; out_ch := o
-
-  let set_use_socket_map host_port =
-    external_prover := true ;
-    use_pipe := false;
-    let i, o = Net.Socket.init_client host_port in
-    in_ch := i; out_ch := o
-
-  let set_use_socket_for_web host_port =
-    external_host_ports := [host_port];
-    external_prover := true;
-    use_pipe := false;
-    let i, o = Net.Socket.init_client host_port in
-    in_ch := i; out_ch := o
-
-  let set_prio_list str =
-    try
-      set_priority := true;
-      let lst = Str.split (Str.regexp ";") str in
-      prio_list := List.map (fun name_prio -> let l = Str.split (Str.regexp ":") name_prio in ((List.hd l),int_of_string(List.nth l 1))) lst
-    with e -> print_endline_quiet "set_prio_list error"; raise e
-
-  let index_of elem lst =
-    (** return the first index of [elem] in the list [lst] *)
-    let rec find i elem lst =
-      match lst with
-      | [] -> (- 1)
-      | hd:: tl -> if elem = hd then i else find (i + 1) elem tl
-    in find 0 elem lst
-
-  exception ServerTimeout
-  exception ParStop
-
-  type pmap_result = One of string | All of string list | Unknown
-
-  let pmap (provers: string) (jobs: prove_type list) (stopper: result_type -> bool) : pmap_result =
-    (* [pmap] sends the tuple of [provers] and [jobs] list to the server   *)
-    (* and wait for results. When a result arrives, the [stopper] function *)
-    (* is applied to the result. If [stopper] returns true, the function   *)
-    (* exits with the result arrives. Otherwise it continues until all of  *)
-    (* the results arrives and return the whole list of results.           *)
-
-    let send_stop seqno = Net.IO.write !out_ch (Net.IO.msg_type_cancel_job, seqno) in
-    (* send out job list to server *)
-    let seqno = get_seq_no () in
-    (* let stopper_closure = Marshal.to_string stopper [Marshal.Closures] in   *)
-    (* trace "closure=" stopper_closure;                                       *)
-    Net.IO.write_job_to_master !out_ch seqno default_timeout provers jobs "true";
-
-    (* collect the results *)
-    let num_jobs = List.length jobs in
-    let result_arr = Array.make num_jobs "" in
-    let time_start = Unix.gettimeofday () in
-    try
-      let num_results = ref 0 in
-      let wait_fd = Unix.descr_of_in_channel !in_ch in
-      while !num_results < num_jobs do
-        let time_left = default_timeout -. ((Unix.gettimeofday ()) -. time_start) in
-        if time_left < 0. then
-          failwith "timeout" 
-        else begin
-          (* show_info "pmap" (Printf.sprintf "wait %d results" (num_jobs -          *)
-          (* !num_results));                                                         *)
-          let in_fds, _, _ = Gen.Basic.restart  (Unix.select [wait_fd] [] []) time_left in
-          (* let in_fds, _, _ = Unix.select [wait_fd] [] [] time_left in *)
-          if in_fds <> [] then begin
-            incr num_results;
-            let seqno, idx, result = Net.IO.read_result (Unix.in_channel_of_descr (List.hd in_fds)) in
-            match result with
-            | Result s ->
-              if idx >= 0 then begin
-                (* trace "pmap" (Printf.sprintf "idx = %d" idx); *)
-                let res = Net.IO.from_string s in
-                Array.set result_arr idx s;
-                if stopper res then begin
-                  show_info "pmap: discard others" "";
-                  send_stop seqno;
-                  Array.set result_arr 0 s; (* will return the first element only *)
-                  raise ParStop
-                end
-              end else
-                show_info "pmap result" "index is negative"
-            | Timeout -> trace "pmap result" " timed out."
-            | Failure s -> trace "pmap result" s
-          end;
-        end
-      done;
-      All (List.filter (fun s -> s <> "") (Array.to_list result_arr))
-    with
-    | ParStop -> trace "pmap" "\n by stoper."; (One result_arr.(0))
-    | ServerTimeout -> trace "pmap" "\npmap timed out."; Unknown
-    | e -> trace "pmap" (Printexc.to_string e); Unknown
-
-  let call_prover ( f : prove_type) = 
-    (** send message to external prover to get the result. *)
-    try
-      let ret = pmap !prover_arg [f] (fun _ -> false) in
-      match ret with Unknown -> None 
-                   | One s ->   if s <> "" then Some (Net.IO.from_string s) else None
-                   | All results -> let s = (List.hd results) in
-                     if s <> "" then Some (Net.IO.from_string s) else None
-    with e -> trace "pmap" (Printexc.to_string e); None
-
-end
 
 (* ##################################################################### *)
 
@@ -2183,12 +2017,7 @@ let simplify (f : CP.formula) : CP.formula =
     in
     (*      let redlog_simplify f =  wrap_pre_post norm_pure_input norm_pure_result Redlog.simplify f in
             let mona_simplify f =  wrap_pre_post norm_pure_input norm_pure_result Mona.simplify f in *)
-    if !external_prover then 
-      match Netprover.call_prover (Simplify f) with
-      | Some res -> res
-      | None -> f
-    else 
-      begin
+    begin
         let tstart = Gen.Profiling.get_time () in
         try
           if not !tp_batch_mode then start_prover ();
@@ -3495,11 +3324,7 @@ let imply_timeout (ante0 : CP.formula) (conseq0 : CP.formula) (old_imp_no : stri
   let cmd = PT_IMPLY_TOP(ante0,conseq0) in
   (* let () = Log.last_proof_command # set cmd in *)
   let fn () =
-    if !external_prover then 
-      match Netprover.call_prover (Imply (ante0,conseq0)) with
-        Some res -> (res,[],None)       
-      | None -> (false,[],None)
-    else begin
+    begin
       let ante0,conseq0 = if (!Globals.allow_locklevel) then
           (*should translate waitlevel before level*)
           let ante0 = CP.translate_waitlevel_pure ante0 in
@@ -3658,8 +3483,6 @@ let imply_timeout (ante0 : CP.formula) (conseq0 : CP.formula) (imp_no : string) 
 (*   x_dinfo_zp (lazy ("IMP #" ^ imp_no)) no_pos;   *)
 (*   x_dinfo_zp (lazy ("ante: " ^ (!print_pure ante0))) no_pos; *)
 (*   x_dinfo_zp (lazy ("conseq: " ^ (!print_pure conseq0))) no_pos; *)
-(*   if !external_prover then  *)
-(*     match Netprover.call_prover (Imply (ante0,conseq0)) with *)
 (*       | Some res -> (res,[],None)        *)
 (* 	  | None -> (false,[],None) *)
 (*   else begin  *)
@@ -3859,11 +3682,7 @@ let mix_imply ante0 conseq0 imp_no =
 
 (* CP.formula -> string -> 'a -> bool *)
 let is_sat f sat_no do_cache =
-  if !external_prover then
-    match Netprover.call_prover (Sat f) with
-      Some res -> res
-    | None -> false
-  else  begin
+  begin
     disj_cnt f None "sat";
     Gen.Profiling.do_1 "is_sat" (is_sat f) sat_no
   end

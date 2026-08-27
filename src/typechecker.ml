@@ -4328,30 +4328,6 @@ let init_files () =
     Setmona.init_files ();
   end
 
-let check_proc_wrapper_map iprog prog (proc,num) cout_option =
-  Debug.vv_debug ("check_proc_wrapper_map:"^proc.proc_name) ;
-  if !Tpdispatcher.external_prover then Tpdispatcher.Netprover.set_use_socket_map (List.nth !Tpdispatcher.external_host_ports (num mod (List.length !Tpdispatcher.external_host_ports))); (* make this dynamic according to availability of server machines*)
-  try
-    check_proc iprog prog proc cout_option []
-  with _ as e ->
-    if !Globals.check_all then begin
-      print_web_mode ("\nProcedure "^proc.proc_name^" FAIL.(3)\n");
-      print_string_quiet ("\nError(s) detected when checking procedure " ^ proc.proc_name ^ "\n");
-      false
-    end else
-      raise e
-
-let check_proc_wrapper_map_net iprog prog  (proc,num) cout_option =
-  try
-    check_proc iprog prog proc cout_option []
-  with _ as e ->
-    if !Globals.check_all then begin
-      print_web_mode ("\nProcedure "^proc.proc_name^" FAIL.(4)\n");
-      print_string_quiet ("\nError(s) detected when checking procedure " ^ proc.proc_name ^ "\n");
-      false
-    end else
-      raise e
-
 let stk_tmp_checks = new Gen.stack
 
 

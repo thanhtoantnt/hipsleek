@@ -680,12 +680,6 @@ let common_arguments = [
    "Matched debug calls and its calees with reg-exp");
   ("-v", Arg.Set Debug.debug_on,
    "Verbose");
-  ("--pipe", Arg.Unit Tpdispatcher.Netprover.set_use_pipe,
-   "use external prover via pipe");
-  ("--dsocket", Arg.Unit (fun () -> Tpdispatcher.Netprover.set_use_socket "loris-7:8888"),
-   "<host:port>: use external prover via loris-7:8888");
-  ("--socket", Arg.String Tpdispatcher.Netprover.set_use_socket,
-   "<host:port>: use external prover via socket");
   ("--prover", Arg.String (Tpdispatcher.set_tp true),
    "<p,q,..> comma-separated list of provers to try in parallel");
   (* ("--enable-sat-stat", Arg.Set Globals.enable_sat_statistics,  *)
@@ -726,10 +720,6 @@ let common_arguments = [
    "Simplification of existential for imply calls");
   ("-para", Arg.Int Typechecker.parallelize,
    "Run typechecking in parallel with N workers (was: Paralib map_para)");
-  ("--priority",Arg.String Tpdispatcher.Netprover.set_prio_list,
-   "<proc_name1:prio1;proc_name2:prio2;...> To be used along with webserver");
-  ("--decrprio",Arg.Set Tpdispatcher.decr_priority ,
-   "use a decreasing priority scheme");
   ("--rl-no-pseudo-ops", Arg.Clear Redlog.no_pseudo_ops,
    "Do not pseudo-strengthen/weaken formulas before send to Redlog");
   ("--rl-no-ee", Arg.Set Redlog.no_elim_exists,
