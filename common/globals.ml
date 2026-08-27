@@ -1260,14 +1260,7 @@ let print_derv = ref false
 
 let print_clean_flag = ref false
 
-(*is used during deployment, e.g. on a website*)
-(*Will shorten the error/warning/... message delivered
-  to end-users*)
-(*Unify is_deployed an web_compile_flag*)
-(* let is_deployed = ref true *)
-
 let print_assume_struc = ref false
-let web_compile_flag = ref false (*enable compilation flag for website*)
 
 
 (* Decide whether normalization/simplification
@@ -2208,7 +2201,7 @@ let sleek_timeout_limit = ref 5.
 
 
 let dis_inv_baga () =
-  if (not !web_compile_flag) then print_endline_q "Disabling baga inv gen ..";
+  print_endline_q "Disabling baga inv gen ..";
   let () = gen_baga_inv := false in
   ()
 
@@ -2221,7 +2214,7 @@ let dis_bk ()=
   ()
 
 let dis_pred_sat () =
-  if (not !web_compile_flag) then print_endline_q "Disabling pred sat ..";
+  print_endline_q "Disabling pred sat ..";
   (* let () = gen_baga_inv := false in *)
   let () = prove_invalid := false in
   (*baga bk*)

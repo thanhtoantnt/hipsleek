@@ -130,7 +130,7 @@ let start () =
     in
     rl_current_mode := OFSF;
     let set_process proc = process := proc in
-    let rl_bin = if !Globals.web_compile_flag then try FileUtil.which "redcsl" with Not_found -> "" else "redcsl" in
+    let rl_bin = "redcsl" in
     (* let rl_bin = "redcsl" in *)
     let () = Procutils.PrvComms.start !is_log_all log_file ("redlog", rl_bin,  [|"-w"; "-b";"-l reduce.log"|] ) set_process prelude in
     print_endline_quiet "Starting Reduce... ";
@@ -143,7 +143,7 @@ let stop () =
     let ending_fnc () = 
       let outchannel = !process.outchannel in
       output_string outchannel "quit;\n"; flush outchannel;
-      if not !Globals.web_compile_flag then print_endline_quiet "Halting Reduce... "; flush stdout;
+      print_endline_quiet "Halting Reduce... "; flush stdout;
       log DEBUG "\n***************";
       log DEBUG ("Number of Omega calls: " ^ (string_of_int !omega_call_count));
       log DEBUG ("Number of Redlog calls: " ^ (string_of_int !redlog_call_count));
@@ -161,7 +161,7 @@ let stop () =
 let restart reason =
   if !is_reduce_running then begin
     print_string reason;
-    if not !Globals.web_compile_flag then print_endline_quiet " Restarting Reduce... "; flush stdout;
+    print_endline_quiet " Restarting Reduce... "; flush stdout;
     Procutils.PrvComms.restart !is_log_all log_file "redlog" reason start stop
   end
 
@@ -1171,7 +1171,7 @@ let imply_no_cache_ops pr_w pr_s (f : CP.formula) (imp_no: string) : bool * floa
       if (has_eq_int eef) then
         begin
           (* If there is exist quantified over integers, issue the warning*)
-          let () = if not !Globals.web_compile_flag then
+          let () =
               (print_string ("\n[Redlog] WARNING: Found formula with existential quantified var(s), result may be unsound! (Imply #" ^ imp_no ^ ") for redlog\n"))
           in
           valid eef

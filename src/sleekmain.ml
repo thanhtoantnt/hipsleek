@@ -626,7 +626,7 @@ let main () =
         print_endline_quiet (str_res)
       else ()
     in
-    if (not (!Globals.web_compile_flag || not !Debug.webprint)) then 
+    if (!Debug.webprint) then 
       let rev_false_ctx_line_list = List.rev !Globals.false_ctx_line_list in
       print_string_quiet ("\n"^(string_of_int (List.length !Globals.false_ctx_line_list))^" false contexts at: ("^
                           (List.fold_left (fun a c-> a^" ("^(string_of_int c.VarGen.start_pos.Lexing.pos_lnum)^","^

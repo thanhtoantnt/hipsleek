@@ -392,7 +392,7 @@ let set_tp user_flag tp_str =
   let () = x_binfo_pp (* print_endline_quiet *) ("set_tp " ^ tp_str) no_pos in 
   if tp_str = "parahip" || tp_str = "rm" then allow_norm := false else allow_norm:=true;
   (**********************************************)
-  let redcsl_str = if !Globals.web_compile_flag then try FileUtil.which "redcsl" with Not_found -> "" else "redcsl" in
+  let redcsl_str = "redcsl" in
   let prover_str = ref [] in
   (*else if tp_str = "omega" then
     	(tp := OmegaCalc; prover_str := "oc"::!prover_str;)*)

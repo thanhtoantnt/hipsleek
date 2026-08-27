@@ -1319,7 +1319,7 @@ let stop () =
 let restart reason =
   if !is_mona_running then
     (* let () = print_string ("\n[mona.ml]: Mona is preparing to restart because of " ^ reason ^ "\nRestarting Mona ...\n"); flush stdout; in *)
-    let () = print_endline_if (not !compete_mode && not !Globals.web_compile_flag) ("\nMona is restarting ... " ^ reason); flush stdout; in
+    let () = print_endline_if (not !compete_mode) ("\nMona is restarting ... " ^ reason); flush stdout; in
     Procutils.PrvComms.restart !log_all_flag log_all reason "mona" start stop
 
 let restart reason =
@@ -1500,7 +1500,7 @@ let write_to_file  (is_sat_b: bool) (fv: CP.spec_var list) (f: CP.formula) (imp_
   let t = (if is_sat_b then "SAT no :" else "IMPLY no :")^imp_no in
   (* let hproc exc = (print_endline ("Timeout for MONA "^t));true in *)
   let hproc () =   
-    if not !Globals.web_compile_flag then print_string ("\n[MONA.ml]:Timeout exception "^t^"\n"); flush stdout;
+    print_string ("\n[MONA.ml]:Timeout exception "^t^"\n"); flush stdout;
     restart ("Timeout!");
     is_sat_b in
   let timeout  = if is_sat_b&& !user_sat_timeout then !sat_timeout_limit else !mona_timeout in
@@ -1547,7 +1547,7 @@ let imply_sat_helper_x (is_sat_b: bool) (fv: CP.spec_var list) (f: CP.formula) (
   with
   |Procutils.PrvComms.Timeout ->
     begin
-      if not !Globals.web_compile_flag then print_string ("\n[mona.ml]:Timeout exception\n"); flush stdout;
+      print_string ("\n[mona.ml]:Timeout exception\n"); flush stdout;
       restart ("Timeout when checking #" ^ imp_no ^ "!");
       is_sat_b
     end

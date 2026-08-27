@@ -14823,7 +14823,7 @@ and rewrite_coercion_x prog estate node f coer lhs_b rhs_b target_b weaken pos :
         let () = y_dinfo_hp (add_str "apply_coer" string_of_bool) apply_coer in
         if (flag || (is_cycle_coer coer origs))
         then
-          let () = if not !Globals.web_compile_flag then y_winfo_pp ("Rewrite cannot be applied : "^("0")^"\n") in
+          let () = y_winfo_pp ("Rewrite cannot be applied : "^("0")^"\n") in
           (x_dinfo_zp (lazy("[rewrite_coercion]: Rewrite cannot be applied!"(* ^s *)))
              pos; (0, mkTrue (mkTrueFlow ()) no_pos))
         else
