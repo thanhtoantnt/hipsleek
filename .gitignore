@@ -5,8 +5,9 @@ _build/
 # mona is vendored in-tree (mona-1.4/); ignore only runtime/build outputs
 mona.failure
 /mona_predicates.mona
+mona-1.4/bin/
+mona-1.4/obj/
 *.omega
-mona-1.4/config.h
 
 # external tools cloned/built by CI
 fixcalc_src/

@@ -52,7 +52,7 @@ export PATH="$PWD/omega_modified/omega_calc/obj:$PATH"
 # --- mona (vendored in-tree, source tracked) --------------------------------
 if [ ! -x mona-1.4/bin/mona ]; then
   log "building mona"
-  (cd mona-1.4 && ./configure --prefix="$PWD" && make install)
+  (cd mona-1.4 && make)
 fi
 [ -f mona_predicates.mona ] || cp mona-1.4/mona_predicates.mona .
 export PATH="$PWD/mona-1.4/bin:$PATH"
