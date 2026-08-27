@@ -397,7 +397,7 @@ let parse_file (parse) (source_file : string) =
   Sleekengine.unexpected_cmd # reset (* := [] *);
   List.iter proc_one_cmd cmds
 
-let main () =
+let main_engine () =
   let () = record_backtrace_quite () in
   let iprog = { I.prog_include_decls =[];
                 I.prog_data_decls = [iobj_def;ithrd_def];
@@ -565,7 +565,7 @@ let main () =
     if (!Tpdispatcher.tp_batch_mode) then Tpdispatcher.start_prover ();
     Gen.Profiling.push_time "Overall";
     (* let () = print_endline "before main" in *)
-    main ();
+    main_engine ();
     let _ =
       print_endline_quiet "";
       if !Globals.show_unexpected_ents && ((unexpected_cmd # len) > 0)

@@ -412,47 +412,23 @@ let saved_cprog = Cast.cprog (* ref None *)
 let saved_prim_names = ref None
 
 (*Working*)
-let process_source_full source =
-  if (not !Globals.web_compile_flag) then
-    Debug.info_zprint (lazy (("Full processing file \"" ^ source ^ "\"\n"))) no_pos;
+(*None Working: see process_source_full instead *)
+let process_source_full_parse_only source =
+  Debug.info_zprint (lazy (("Full processing file (parse only) \"" ^ source ^ "\"\n"))) no_pos;
   flush stdout;
-  let () = Gen.Profiling.push_time "Preprocessing" in
   let prog = parse_file_full source false in
-  let () = Debug.ninfo_zprint (lazy (("       iprog:" ^ (Iprinter.string_of_program prog)))) no_pos in
-  let () = Gen.Profiling.push_time "Process compare file" in
-  let prog = if(!Globals.validate || !Globals.cp_prefile) then (
-      process_validate prog
-    )
-    else prog
-  in
-  let prog = process_lib_file prog in
-  let () = Gen.Profiling.pop_time "Process compare file" in
   (* Remove all duplicated declared prelude *)
   let header_files = match !Globals.prelude_file with
     | None -> ["\"prelude.ss\""]
-    | Some s -> ["\""^s^"\""] in 
-  (* let header_files = Gen.BList.remove_dups_eq (=) !Globals.header_file_list in (\*prelude.ss*\) *)
-  (*let () = print_endline ("header_files"^((pr_list (fun x -> x)) header_files)) in*)
-  let header_files = if (!Globals.allow_inf) then "\"prelude_inf.ss\""::header_files else header_files in
+    | Some s -> ["\""^s^"\""] in
   let new_h_files = process_header_with_pragma header_files !Globals.pragma_list in
   let prims_list = process_primitives new_h_files in (*list of primitives in header files*)
-  let () = Debug.ninfo_hprint (add_str "prims_list.proc_decl" (pr_list ((fun prog -> pr_list (fun proc -> match proc.Iast.proc_body with Some b -> Iprinter.string_of_proc_decl proc | None -> "None") prog.Iast.prog_proc_decls)))) prims_list no_pos in
   let prims_incls = process_include_files prog.Iast.prog_include_decls source in
-  let () = Debug.ninfo_hprint (add_str "prims_incls.proc_decl" (pr_list ((fun prog -> pr_list (fun proc -> match proc.Iast.proc_body with Some b -> Iprinter.string_of_proc_decl proc | None -> "None") prog.Iast.prog_proc_decls)))) prims_incls no_pos in
   let prims_list = replace_with_user_include prims_list prims_incls in
+  let () = Gen.Profiling.pop_time "Preprocessing" in
+  (prog, prims_list, prims_incls)
 
-  let () = Debug.ninfo_hprint (add_str "new_prims_lists.proc_decl" (pr_list ((fun prog -> pr_list (fun proc -> Iprinter.string_of_proc_decl proc) prog.Iast.prog_proc_decls)))) prims_list no_pos in
-  (* Dump prog into ss file  *)
-  if (!Scriptarguments.dump_ss) then (
-    let dump_file = "logs/" ^ (Filename.basename source) ^ ".gen-ss" in
-    let oc = open_out dump_file in
-    Printf.fprintf  oc "%s\n" (Iprinter.string_of_program prog);
-    close_out oc;
-  );
-  if (!Scriptarguments.parse_only) then
-    let () = Gen.Profiling.pop_time "Preprocessing" in
-    print_string (Iprinter.string_of_program prog)
-  else
+let process_source_full_after_parser source (prog, prims_list, prims_incls) =
   if (!Tpdispatcher.tp_batch_mode) then Tpdispatcher.start_prover ();
   (* Global variables translating *)
   let () = Gen.Profiling.push_time "Translating global var" in
@@ -866,6 +842,49 @@ let process_source_full source =
                                          else "\n"
                               )
 
+let process_source_full source =
+  if (not !Globals.web_compile_flag) then
+    Debug.info_zprint (lazy (("Full processing file \"" ^ source ^ "\"\n"))) no_pos;
+  flush stdout;
+  let () = Gen.Profiling.push_time "Preprocessing" in
+  let prog = parse_file_full source false in
+  let () = Debug.ninfo_zprint (lazy (("       iprog:" ^ (Iprinter.string_of_program prog)))) no_pos in
+  let () = Gen.Profiling.push_time "Process compare file" in
+  let prog = if(!Globals.validate || !Globals.cp_prefile) then (
+      process_validate prog
+    )
+    else prog
+  in
+  let prog = process_lib_file prog in
+  let () = Gen.Profiling.pop_time "Process compare file" in
+  (* Remove all duplicated declared prelude *)
+  let header_files = match !Globals.prelude_file with
+    | None -> ["\"prelude.ss\""]
+    | Some s -> ["\""^s^"\""] in 
+  (* let header_files = Gen.BList.remove_dups_eq (=) !Globals.header_file_list in (\*prelude.ss*\) *)
+  (*let () = print_endline ("header_files"^((pr_list (fun x -> x)) header_files)) in*)
+  let header_files = if (!Globals.allow_inf) then "\"prelude_inf.ss\""::header_files else header_files in
+  let new_h_files = process_header_with_pragma header_files !Globals.pragma_list in
+  let prims_list = process_primitives new_h_files in (*list of primitives in header files*)
+  let () = Debug.ninfo_hprint (add_str "prims_list.proc_decl" (pr_list ((fun prog -> pr_list (fun proc -> match proc.Iast.proc_body with Some b -> Iprinter.string_of_proc_decl proc | None -> "None") prog.Iast.prog_proc_decls)))) prims_list no_pos in
+  let prims_incls = process_include_files prog.Iast.prog_include_decls source in
+  let () = Debug.ninfo_hprint (add_str "prims_incls.proc_decl" (pr_list ((fun prog -> pr_list (fun proc -> match proc.Iast.proc_body with Some b -> Iprinter.string_of_proc_decl proc | None -> "None") prog.Iast.prog_proc_decls)))) prims_incls no_pos in
+  let prims_list = replace_with_user_include prims_list prims_incls in
+
+  let () = Debug.ninfo_hprint (add_str "new_prims_lists.proc_decl" (pr_list ((fun prog -> pr_list (fun proc -> Iprinter.string_of_proc_decl proc) prog.Iast.prog_proc_decls)))) prims_list no_pos in
+  (* Dump prog into ss file  *)
+  if (!Scriptarguments.dump_ss) then (
+    let dump_file = "logs/" ^ (Filename.basename source) ^ ".gen-ss" in
+    let oc = open_out dump_file in
+    Printf.fprintf  oc "%s\n" (Iprinter.string_of_program prog);
+    close_out oc;
+  );
+  if (!Scriptarguments.parse_only) then
+    let () = Gen.Profiling.pop_time "Preprocessing" in
+    print_string (Iprinter.string_of_program prog)
+  else
+    process_source_full_after_parser source (prog, prims_list, prims_incls)
+
 let process_source_list source_files =
   match source_files with
   | [] -> []
@@ -882,156 +901,6 @@ let process_source_list source_files =
     in 
     let () = Parser.parser_name := parser in
     List.map process_source_full source_files
-
-(*None Working: see process_source_full instead *)
-let process_source_full_parse_only source =
-  Debug.info_zprint (lazy (("Full processing file (parse only) \"" ^ source ^ "\"\n"))) no_pos;
-  flush stdout;
-  let prog = parse_file_full source false in
-  (* Remove all duplicated declared prelude *)
-  let header_files = match !Globals.prelude_file with
-    | None -> ["\"prelude.ss\""]
-    | Some s -> ["\""^s^"\""] in 
-  (* let header_files = Gen.BList.remove_dups_eq (=) !Globals.header_file_list in (\*prelude.ss*\) *)
-  let new_h_files = process_header_with_pragma header_files !Globals.pragma_list in
-  let prims_list = process_primitives new_h_files in (*list of primitives in header files*)
-
-  let () = Gen.Profiling.pop_time "Preprocessing" in
-  (prog, prims_list)
-
-
-let process_source_full_after_parser source (prog, prims_list) =
-  Debug.info_zprint (lazy (("Full processing file (after parser) \"" ^ source ^ "\"\n"))) no_pos;
-  flush stdout;
-  if (!Tpdispatcher.tp_batch_mode) then Tpdispatcher.start_prover ();
-  (* Global variables translating *)
-  let () = Gen.Profiling.push_time "Translating global var" in
-  (* let () = print_string ("Translating global variables to procedure parameters...\n"); flush stdout in *)
-  (* Append all primitives in list into one only *)
-  let iprims_list = process_intermediate_prims prims_list in
-  let iprims = Iast.append_iprims_list_head iprims_list in
-  (* let _= List.map (fun x-> print_endline_quiet ("Bachle: iprims "^x.Iast.proc_name)) iprims in *)
-  (* let () = print_endline_quiet ("process_source_full: before Globalvars.trans_global_to_param") in *)
-  (* let () = print_endline_quiet (Iprinter.string_of_program prog) in *)
-  let intermediate_prog = x_add_1 Globalvars.trans_global_to_param prog in
-  (* let () = print_endline_quiet ("process_source_full: before pre_process_of_iprog") in *)
-  (* let () = print_endline_quiet (Iprinter.string_of_program intermediate_prog) in *)
-  let intermediate_prog =IastUtil.pre_process_of_iprog iprims intermediate_prog in
-  (* let () = print_endline_quiet ("process_source_full: before label_procs_prog") in *)
-  (* let () = print_endline_quiet (Iprinter.string_of_program intermediate_prog) in *)
-  let intermediate_prog = Iast.label_procs_prog intermediate_prog true in
-  (* let () = print_endline_quiet ("process_source_full: before --pip") in *)
-  let () = if (!Globals.print_input_all) then print_string (Iprinter.string_of_program intermediate_prog) 
-    else if(!Globals.print_input) then
-      print_string (Iprinter.string_of_program_separate_prelude intermediate_prog iprims)
-    else () in
-  (* let () = print_endline_quiet ("process_source_full: after --pip") in *)
-  let () = Gen.Profiling.pop_time "Translating global var" in
-  (* Global variables translated *)
-  (* let ptime1 = Unix.times () in
-     let t1 = ptime1.Unix.tms_utime +. ptime1.Unix.tms_cutime in *)
-  let () = Gen.Profiling.push_time "Translating to Core" in
-  (* let () = print_string ("Translating to core language...\n"); flush stdout in *)
-
-  (**************************************)
-  (*Simple heuristic for ParaHIP website*)
-  (*Heuristic: check if waitlevel and locklevels have been used for verification
-    If not detect waitlevel or locklevel -> set allow_locklevel==faslse
-    Note: this is used in ParaHIP website for demonstration only.
-    We could use the run-time flag "--dis-locklevel" to disable the use of locklevels
-    and waitlevel.
-  *)
-  let search_for_locklevel proc =
-    if (not !Globals.allow_locklevel) then
-      let struc_fv = Iformula.struc_free_vars false proc.Iast.proc_static_specs in
-      let b = List.exists (fun (id,_) -> (id = Globals.waitlevel_name)) struc_fv in
-      if b then
-        Globals.allow_locklevel := true
-  in
-  let () = if !Globals.web_compile_flag then
-      let todo_unk = List.map search_for_locklevel prog.Iast.prog_proc_decls in
-      ()
-  in
-  (**************************************)
-  (*annotate field*)
-  let () = Iast.annotate_field_pure_ext intermediate_prog in
-  (*used in lemma*)
-  (* let () =  Debug.info_zprint (lazy  ("XXXX 2: ")) no_pos in *)
-  (* let () = I.set_iprog intermediate_prog in *)
-  let cprog,tiprog = Astsimp.trans_prog intermediate_prog (*iprims*) in
-  let () = saved_cprog := cprog in
-  (* let cprog = Astsimp.trans_prog intermediate_prog (*iprims*) in *)
-
-  (* Forward axioms and relations declarations to SMT solver module *)
-  (* L2: not-in-used *)
-  let todo_unk = List.map (fun crdef -> 
-      let () = Smtsolver.add_relation crdef.Cast.rel_name crdef.Cast.rel_vars crdef.Cast.rel_formula in
-      Z3.add_relation crdef.Cast.rel_name crdef.Cast.rel_vars crdef.Cast.rel_formula
-    )
-      (List.rev (cprog.Cast.prog_rel_decls # get_stk)) in
-
-  let todo_unk = List.map (fun cadef ->
-      let () = Smtsolver.add_axiom cadef.Cast.axiom_hypothesis Smtsolver.IMPLIES cadef.Cast.axiom_conclusion in
-      Z3.add_axiom cadef.Cast.axiom_hypothesis Z3.IMPLIES cadef.Cast.axiom_conclusion
-    ) (List.rev cprog.Cast.prog_axiom_decls) in
-  (* let () = print_string (" done-2\n"); flush stdout in *)
-  let () = if (!Globals.print_core_all) then print_string (Cprinter.string_of_program cprog)
-    else if(!Globals.print_core) then
-      print_string (Cprinter.string_of_program_separate_prelude cprog iprims)
-    else ()
-  in
-  let _ =
-    if !Globals.verify_callees then begin
-      let tmp = Cast.procs_to_verify cprog !Globals.procs_verified in
-      Globals.procs_verified := tmp
-    end in
-  let () = Gen.Profiling.pop_time "Translating to Core" in
-  (* let ptime2 = Unix.times () in
-     let t2 = ptime2.Unix.tms_utime +. ptime2.Unix.tms_cutime in
-     let () = print_string (" done in " ^ (string_of_float (t2 -. t1)) ^ " second(s)\n") in *)
-  let () = Gen.Profiling.pop_time "Preprocessing" in
-
-  (* An Hoa : initialize html *)
-  let () = Prooftracer.initialize_html source in
-
-  if (!Scriptarguments.typecheck_only) 
-  then print_string (Cprinter.string_of_program cprog)
-  else (try
-          (* let () =  Debug.info_zprint (lazy  ("XXXX 3: ")) no_pos in *)
-          (* let () = I.set_iprog intermediate_prog in *)
-          ignore (Typechecker.check_prog intermediate_prog cprog);
-        with _ as e -> begin
-            print_string ("\nException"^(Printexc.to_string e)^"Occurred!\n");
-            print_string ("\nError2 (s) detected at main "^"\n");
-            raise e
-          end);
-  (* Stopping the prover *)
-  if (!Tpdispatcher.tp_batch_mode) then Tpdispatcher.stop_prover ();
-
-  (* An Hoa : export the proof to html *)
-  let () = if !Globals.print_proof then
-      begin 
-        print_string "\nExport proof to HTML file ... ";
-        Prooftracer.write_html_output ();
-        print_endline_quiet "done!" 
-      end
-  in
-
-  (* print mapping table control path id and loc *)
-  (*let () = print_endline_quiet (Cprinter.string_of_iast_label_table !Globals.iast_label_table) in*)
-  let ptime4 = Unix.times () in
-  let t4 = ptime4.Unix.tms_utime +. ptime4.Unix.tms_cutime +. ptime4.Unix.tms_stime +. ptime4.Unix.tms_cstime   in
-  if (not (!Globals.web_compile_flag || not !Debug.webprint)) then 
-    print_string_quiet ("\n"^(string_of_int (List.length !Globals.false_ctx_line_list))^" false contexts at: ("^
-                        (List.fold_left (fun a c-> a^" ("^(string_of_int c.VarGen.start_pos.Lexing.pos_lnum)^","^
-                                                   ( string_of_int (c.VarGen.start_pos.Lexing.pos_cnum-c.VarGen.start_pos.Lexing.pos_bol))^") ") "" !Globals.false_ctx_line_list)^")\n")
-  else ();
-  silenced_print print_string ("\nTotal verification time: " 
-                               ^ (string_of_float t4) ^ " second(s)\n"
-                               ^ "\tTime spent in main process: " 
-                               ^ (string_of_float (ptime4.Unix.tms_utime+.ptime4.Unix.tms_stime)) ^ " second(s)\n"
-                               ^ "\tTime spent in child processes: " 
-                               ^ (string_of_float (ptime4.Unix.tms_cutime +. ptime4.Unix.tms_cstime)) ^ " second(s)\n")
 
 let main1 () =
   let () = y_tinfo_pp "XXXX main1" in
