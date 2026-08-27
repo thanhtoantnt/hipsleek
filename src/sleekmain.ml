@@ -33,7 +33,6 @@ module IF = Iformula
 module IP = Ipure
 (* module AS = Astsimp *)
 
-module XF = Xmlfront
 module NF = Nativefront
 
 let () = Globals.sleek_flag := true
@@ -432,10 +431,7 @@ let main () =
   let () = exlist # compute_hierarchy  in  
   (* let () = print_endline ("GenExcNum"^(Exc.string_of_exc_list (1))) in *)
   let quit = ref false in
-  let parse x =
-    match !Scriptarguments.fe with
-    | Scriptarguments.NativeFE -> NF.parse_slk x
-    | Scriptarguments.XmlFE -> XF.parse x in
+  let parse x = NF.parse_slk x in
   let parse x = Debug.no_1 "parse" pr_id string_of_command parse x in
   let buffer = Buffer.create 10240 in
   try

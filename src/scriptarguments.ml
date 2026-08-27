@@ -50,11 +50,6 @@ let set_tp solver=
   let () = print_endline ("!!! init_tp by user: ") in
   Tpdispatcher.set_tp true solver
 
-let set_frontend fe_str = match fe_str  with
-  | "native" -> fe := NativeFE
-  | "xml" -> fe := XmlFE
-  | _ -> failwith ("Unsupported frontend: " ^ fe_str)
-
 
 (* arguments/flags that might be used both by sleek and hip *)
 let common_arguments = [
@@ -1412,8 +1407,6 @@ let hip_specific_arguments = [ ("-cp", Arg.String set_pred,
 
 (* arguments/flags used only by sleek *)
 let sleek_specific_arguments = [
-  ("-fe", Arg.Symbol (["native"; "xml"], set_frontend),
-   "Choose frontend:\n\tnative: Native (default)\n\txml: XML");
   ("-int", Arg.Set inter_hoa,
    "Run in interactive mode.");
   ("--slk-err", Arg.Set Globals.print_err_sleek,

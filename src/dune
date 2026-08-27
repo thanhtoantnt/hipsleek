@@ -1,8 +1,8 @@
 (library
   (public_name hipsleek)
-  (libraries hipsleek.common hipsleek.cil ocamlgraph xml-light)
+  (libraries hipsleek.common hipsleek.cil ocamlgraph)
   (preprocess (per_module
-    ((action (run cppo -I . -D TRACE %{input-file})) sleekmain typeclass monads spass prove cfsolver dda rtc share_prover_w2 frame typechecker gProcList cvc4 icontext rev_ast synUtils da stat_global gui rank ti3 bind_inference piecewise minisat scriptarguments isabelle checkeq nativefront ghip syn_checkeq globalvars drawing maingui net lemutil iincr fact dp derive checks share_prover norm cpgraph gLogViewWindow term mona imminfer layout ti acc_fold cvc3 cilparser icmd solver mathematica solver_dp saout intsparser terminf slsat csvutil fixbag test cleanUp pi specutil sa3 cfout lemsyn tlutils redlog musterr saerror java lemma vperm immutable auxnorm astsimp z3 cpure_pred gEntailmentList gsleek env error cprog_sleek tpdispatcher fixUtil fixpoint libSleek slk2smt infinity pointers inliner log expure soutil gSourceViewX shares_z3_lib gUtil syn cfutil iastUtil test_cilparser ti2 oast sacore sleekengine cvclite cputil coqinf fixcalc inferHP cfimmutils sap share_prover_w prooftracer coq cjava label_aggr lp hsprinter predicate sleekUtils trans_arr mem lemproving classic termUtils context monadicinterp predcomp xmlfront hgraph sautil typeinfer sleekcore template setmona cf_ext lem_store smtsolver rtc_algorithm infer cvutil))))
+    ((action (run cppo -I . -D TRACE %{input-file})) sleekmain typeclass monads spass cfsolver dda rtc share_prover_w2 frame typechecker icontext rev_ast synUtils da stat_global rank ti3 piecewise minisat scriptarguments isabelle checkeq nativefront syn_checkeq globalvars drawing net lemutil iincr dp derive checks share_prover norm cpgraph term mona imminfer layout ti acc_fold cvc3 cilparser icmd solver saout intsparser terminf slsat csvutil fixbag test cleanUp pi sa3 lemsyn tlutils musterr saerror java lemma vperm immutable auxnorm astsimp cpure_pred env cprog_sleek tpdispatcher fixUtil fixpoint slk2smt infinity pointers inliner log expure soutil syn cfutil iastUtil ti2 oast sacore sleekengine cvclite cputil coqinf fixcalc inferHP cfimmutils sap prooftracer cjava label_aggr lp predicate sleekUtils mem lemproving classic termUtils context monadicinterp predcomp hgraph sautil typeinfer sleekcore template setmona cf_ext rtc_algorithm infer cvutil))))
 
 (ocamllex
  (modules jlexer ilexer fixlexer))
@@ -16,7 +16,6 @@
 
 ; run-oc new-mona test-oo
 
-(data_only_dirs other)
 
 (env
  (dev

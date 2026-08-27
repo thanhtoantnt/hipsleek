@@ -23,7 +23,6 @@
   (camlp5 (>= 8.00))
   (camlp-streams (>= 5.0.1))
   num
-  (xml-light (>= 2.5))
   (ppx_expect (>= v0.15.1))
   (ppx_deriving (>= 6.0.3))
   (visitors (>= 20210608))
