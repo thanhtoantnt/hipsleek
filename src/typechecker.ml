@@ -2259,7 +2259,7 @@ and check_exp_a (prog : prog_decl) (proc : proc_decl) (ctx : CF.list_failesc_con
              print_string_quiet (tmp1 ^ tmp2));
           ctx
         end else begin
-          ignore (Drawing.dot_of_partial_context_file prog ctx visib_names str);
+          (* ponytail: used to emit a Graphviz .dot of the context; dropped with src/drawing.ml *)
           ctx
         end
       end;
