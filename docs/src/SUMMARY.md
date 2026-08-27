@@ -7,4 +7,7 @@
 
 # Developer Guide
 
+- [Architecture](./architecture.md)
 - [Core Language](./core.md)
+- [Writing Specifications](./specs.md)
+- [Testing](./testing.md)

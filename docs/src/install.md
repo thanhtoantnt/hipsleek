@@ -5,18 +5,16 @@ You will need opam and a recent OCaml compiler (tested on 4.14.1).
 
 ```sh
 opam install . --deps-only
-dune build @hipsleek
-
-# To use ocamldebug
-rake debug:hip debug:sleek
+dune build
 ```
 
 Try verifying some small programs.
-You will need Z3 (from opam, pip, or a system package manager) and Omega ([below](#omega)) on the PATH.
+You will need Z3 (from opam, pip, or a system package manager) on the PATH;
+optional provers are [below](#installing-external-provers).
 
 ```sh
 dune exec ./hip.exe dune-tests/hip/ll.t/ll.ss
-dune exec ./sleek.exe dune-tests/sleek/sleek2.t/sleek2.ss
+dune exec ./sleek.exe dune-tests/sleek/sleek2.t/sleek2.slk
 ```
 
 ## Installing SLEEK as a library
@@ -57,17 +55,20 @@ Mona source is vendored in `mona-1.4/`. Build it in place:
 
 ```sh
 cd mona-1.4
-./configure --prefix=$(pwd)
-make install
+make
 cp mona_predicates.mona ..
 cd -
 ```
+
+Note: HIP's mona backend currently needs a `mona_inter` wrapper binary that
+the build does not produce (issue #36); `-tp mona` falls back until that
+exists.
 
 Try some tests:
 
 ```sh
 ./hip -tp mona dune-tests/hip/ll.t/ll.ss
-./sleek -tp mona dune-tests/sleek/sleek2.t/sleek2.ss
+./sleek -tp mona dune-tests/sleek/sleek2.t/sleek2.slk
 ```
 
 ### Fixcalc
