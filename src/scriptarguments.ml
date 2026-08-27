@@ -13,8 +13,6 @@ let print_version_flag = ref false
 
 let inter_hoa = ref false
 
-let enable_gui = ref false
-
 type front_end =
   | XmlFE
   | NativeFE
@@ -726,8 +724,6 @@ let common_arguments = [
    "Cache result of satisfiability and validity checking");
   ("--dis-simplify-imply", Arg.Clear Globals.simplify_imply,
    "Simplification of existential for imply calls");
-  ("--web", Arg.String (fun s -> (Tpdispatcher.Netprover.set_use_socket_for_web s); Tpdispatcher.webserver := true; Typechecker.webserver := true) ,
-   "<host:port>: use external web service via socket");
   ("-para", Arg.Int Typechecker.parallelize,
    "Run typechecking in parallel with N workers (was: Paralib map_para)");
   ("--priority",Arg.String Tpdispatcher.Netprover.set_prio_list,
@@ -1381,20 +1377,11 @@ let sleek_specific_arguments = [
    "existentially wrap instantiations after the entailment");
 ]
 
-(* arguments/flags used only in the gui *)
-let gui_specific_arguments = [
-  ("--gui", Arg.Set enable_gui, "enable GUI");
-]
-
 (* all hip's arguments and flags *)
 let hip_arguments = common_arguments @ hip_specific_arguments
 
 (* all sleek's arguments and flags *)
 let sleek_arguments = common_arguments @ sleek_specific_arguments
-
-(* all arguments and flags used in the gui*)
-let gui_arguments = common_arguments @ hip_specific_arguments @ gui_specific_arguments
-;;
 
 
 (* let parseinput userinp = *)

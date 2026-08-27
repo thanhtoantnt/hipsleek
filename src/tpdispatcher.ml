@@ -66,7 +66,6 @@ let user_choice = ref false
 let external_prover = ref false
 let tp_batch_mode = ref true
 let external_host_ports = ref []
-let webserver = ref false
 let priority = ref 1
 let decr_priority = ref false
 let set_priority = ref false

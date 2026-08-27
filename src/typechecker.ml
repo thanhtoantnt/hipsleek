@@ -44,7 +44,6 @@ let flow_store = ref ([] : CF.flow_store list)
 
 let num_para = ref (1)
 let sort_input = ref false
-let webserver = ref false
 let proc_used_names = ref ([]:ident list)
 
 (* global option to switch on/off the simplification of context after symbolic execution *)
